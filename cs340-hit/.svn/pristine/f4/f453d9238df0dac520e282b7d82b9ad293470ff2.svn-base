@@ -1,0 +1,256 @@
+
+package model.report;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.FileWriter;
+import java.io.FileOutputStream;
+
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+
+/** Defines the Interface for creating PDF Reports
+	@author Christopher Tensmeyer
+	@version March 6th, 2013
+*/
+
+class PDFReportBuilder implements ReportBuilder
+{
+	
+	private boolean isOpen;
+	private boolean isInTable;
+	private File report;
+	private Document document;
+	private PdfWriter writer;	
+	private PdfPTable table;
+	private static final int WIDTH = 700;
+	private static final int HEIGHT = 1000;
+	private static Font defaultFont = new Font(Font.FontFamily.TIMES_ROMAN, 7);
+
+	public PDFReportBuilder()
+	{
+		isOpen = false;
+		isInTable = false;
+	}
+
+	/** Writes the Title of the Report
+		@param title The Title
+		@throws IOException If the PDFReportBuilder has not been opened for writing or
+								this method is called after startTable(int) and before endTable()
+	*/
+	public void writeTitle(String title) throws IOException
+	{
+		if(!isOpen)
+			throw new IOException("PDFReportBuilder needs to be opened before writing");
+		if(isInTable)
+			throw new IOException("PDFReportBuilder cannot write a title in the table");
+		try
+		{
+			document.addTitle(title);
+			document.addAuthor("BYU cs340 Team 8");
+			document.addCreator("BYU cs340 Team 8");
+			Paragraph titlePar = new Paragraph(title, defaultFont);
+			titlePar.setAlignment(Element.ALIGN_CENTER);
+			document.add(titlePar);
+		}
+		catch (DocumentException e)
+		{
+			throw new IOException(e.getMessage());
+		}
+
+	}
+
+	/** Starts a Table
+		@param columns The number of columns in the table
+		@param widths The width of the specified columns.  If null, assumed to be uniform.
+		@throws IOException If the ReportBuilder has not been opened for writing or
+						if this method is invoked twice without calling endTable()
+	*/
+	public void startTable(int columns, int[] widths) throws IOException
+	{
+		if(!isOpen)
+			throw new IOException("PDFReportBuilder needs to be opened before writing");
+		if(isInTable)
+			throw new IOException("PDFReportBuilder cannot nest tables");
+		writeBlankLine();
+		isInTable = true;
+		table = new PdfPTable(columns);
+		//TODO Implement widths
+	}
+
+	/** Starts a Table
+		@param columns The number of columns in the table
+		@throws IOException If the ReportBuilder has not been opened for writing or
+						if this method is invoked twice without calling endTable()
+	*/
+	public void startTable(int columns) throws IOException
+	{
+		startTable(columns, null);
+	}
+
+	/** Closes the Table 
+		@throws IOException If the ReportBuilder has not been opened for writing or
+						if this method is invoked without calling startTable(int)
+	*/
+	public void endTable() throws IOException
+	{
+		if(!isOpen)
+			throw new IOException("PDFReportBuilder needs to be opened before writing");
+		if(!isInTable)
+			throw new IOException("PDFReportBuilder cannot a table it has not started");
+		isInTable = false;
+		try
+		{
+			document.add(table);
+		}
+		catch(DocumentException e)
+		{
+			throw new IOException(e.getMessage());
+		}
+		table = null;
+	}
+
+	/** Writes the header for each column in the table in bold
+		@param headers The headers
+		@throws IOException If the ReportBuilder has not been opened for writing
+	*/
+	public void writeTableHeader(String[] headers) throws IOException
+	{
+		if(!isOpen)
+			throw new IOException("PDFReportBuilder needs to be opened before writing");
+		if(!isInTable)
+			throw new IOException("PDFReportBuilder cannot write table header");
+		//TODO: implement bold headers
+		writeTableRow(headers);
+	}
+
+	/** Writes a row in the table
+		@param content The content of each cell in the table.
+		@throws IOException If the ReportBuilder has not been opened for writing
+	*/
+	public void writeTableRow(String[] content) throws IOException
+	{
+		if(!isOpen)
+			throw new IOException("PDFReportBuilder needs to be opened before writing");
+		if(!isInTable)
+			throw new IOException("PDFReportBuilder cannot write table row");
+		for(String cellContent: content)
+		{
+			PdfPCell cell = new PdfPCell(new Phrase(cellContent, defaultFont));
+			table.addCell(cell);
+		}
+	}
+
+	/** Writes a blank line
+		@throws IOException If the ReportBuilder has not been opened for writing or
+							if a table has been started and not ended.
+	*/
+	public void writeBlankLine() throws IOException
+	{
+		if(!isOpen)
+			throw new IOException("PDFReportBuilder needs to be opened before writing");
+		if(isInTable)
+			throw new IOException("PDFReportBuilder cannot write blank line inside table");
+		try
+		{
+			document.add(new Paragraph(" "));
+		}
+		catch(DocumentException e)
+		{
+			throw new IOException(e.getMessage());
+		}
+	}
+
+	/** Writes a header (bold) of plain text 
+		@param header The text to be written
+		@throws IOException If the ReportBuilder has not been opened for writing or
+								this method is called after startTable(int) and before endTable()
+	*/
+	public void writeTextHeader(String header) throws IOException
+	{
+		if(!isOpen)
+			throw new IOException("PDFReportBuilder needs to be opened before writing");
+		if(isInTable)
+			throw new IOException("PDFReportBuilder cannot write text header inside table");
+		try
+		{
+			document.add(new Paragraph(header));
+		}
+		catch(DocumentException e)
+		{
+			throw new IOException(e.getMessage());
+		}
+	}
+
+	/** Writes a left justified line of text
+		@param text The text to be written
+		@throws IOException If the ReportBuilder has not been opened for writing or
+								this method is called after startTable(int) and before endTable()
+	*/
+	public void writeTextLine(String text) throws IOException
+	{
+		if(!isOpen)
+			throw new IOException("PDFReportBuilder needs to be opened before writing");
+		if(isInTable)
+			throw new IOException("PDFReportBuilder cannot write text line inside table");
+		try
+		{
+			document.add(new Paragraph(text));
+		}
+		catch(DocumentException e)
+		{
+			throw new IOException(e.getMessage());
+		}
+	}
+
+	/** Opens the file for writing
+		@param filename  The filename where we want to save the Report
+		@throws IOException If the ReportBuilder has already an opened file or
+					if the file could not be opened
+	*/
+	public void open(String filename) throws IOException
+	{
+		if(isOpen)
+			throw new IOException("PDFReportBuilder cannot open another file");
+		Random rand = new Random();
+		filename = filename + rand.nextInt();
+		report = new File(filename);
+		document = new Document(new Rectangle(WIDTH, HEIGHT));
+		try
+		{
+			writer = PdfWriter.getInstance(document, new FileOutputStream(filename));
+		}
+		catch(DocumentException e)
+		{
+			throw new IOException(e.getMessage());
+		}
+		document.open();
+		isOpen = true;
+		table = null;
+	}
+
+	/** Closes the File */
+	public void close() throws IOException
+	{
+		document.close();
+		isOpen = false;
+		writer = null;
+		document = null;
+	}
+
+	/** Returns the generated Report
+		@throws IOException If the ReportBuilder has been opened and not closed
+		@return A File object for the generated PDF report or null if the ReportBuilder
+					has not been opened.
+	*/
+	public File getReport() throws IOException
+	{
+		if(isOpen)
+			throw new IOException("PDFReportBuilder cannot retrieve" +
+					" a report untill it has been closed");
+		return report;
+	}
+
+}
+
+

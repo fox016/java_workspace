@@ -1,0 +1,94 @@
+
+package model.persistence;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.sql.SQLException;
+
+/** 
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+public interface PersistenceFacade
+{
+
+	/** Stores a newly created Item in the data persistence model.
+		@param ido The ItemDataObject representing the Item
+	*/
+	void createItem(ItemDataObject ido);
+
+	/** Updates an existing Item in the data persistence model.
+		@param ido The ItemDataObject representing the Item
+	*/
+	void updateItem(ItemDataObject ido);
+
+	/** Removes an Item from the data persistence model.
+		@param ido The ItemDataObject representing the Item
+	*/
+	void deleteItem(ItemDataObject ido);
+
+	/** Stores a newly created Product in the data persistence model.
+		@param pdo The ProductDataObject representing the Item
+	*/
+	void createProduct(ProductDataObject pdo);
+	
+	/** Updates an existing Product in the data persistence model.
+		@param pdo The ProductDataObject representing the Item
+	*/
+	void updateProduct(ProductDataObject pdo);
+
+	/** Removes a Product from the data persistence model.
+		@param pdo The ProductDataObject representing the Item
+	*/
+	void deleteProduct(ProductDataObject pdo);
+
+	/** Stores a newly created ProductGroup in the data persistence model.
+		@param pgdo The GroupDataObject representing the Item
+	*/
+	void createGroup(GroupDataObject pgdo);
+
+	/** Updates an existing ProductGroup in the data persistence model.
+		@param pgdo The GroupDataObject representing the Item
+	*/
+	void updateGroup(GroupDataObject pgdo);
+
+	/** Removes a ProductGroup from the data persistence model.
+		@param pgdo The GroupDataObject representing the Item
+	*/
+	void deleteGroup(GroupDataObject pgdo);
+
+	/** Stores a newly created StorageUnit in the data persistence model.
+		@param udo The UnitDataObject representing the Item
+	*/
+	void createUnit(UnitDataObject udo);
+
+	/** Updates an existing StorageUnit in the data persistence model.
+		@param udo The UnitDataObject representing the Item
+	*/
+	void updateUnit(UnitDataObject udo);
+
+	/** Removes a StorageUnit from the data persistence model.
+		@param udo The UnitDataObject representing the Item
+	*/
+	void deleteUnit(UnitDataObject udo);
+
+	/** Loads the persisted model into memory at application start 
+	 * @throws IOException 
+	 * @throws ClassNotFoundException 
+	 * @throws FileNotFoundException 
+	 * @throws SQLException */
+	void loadAll() throws FileNotFoundException, ClassNotFoundException, IOException, SQLException;
+
+	/** Saves the memory model into persisted memory at application close 
+	 * @throws IOException 
+	 * @throws FileNotFoundException */
+	void saveAll() throws FileNotFoundException, IOException;
+
+	/** Begins a transaction */
+	void begin();
+
+	/** Commits a transaction */
+	void end();
+}
+

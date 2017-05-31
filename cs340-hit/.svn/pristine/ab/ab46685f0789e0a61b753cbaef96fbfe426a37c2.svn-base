@@ -1,0 +1,53 @@
+package model;
+
+import static org.junit.Assert.*;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+public class ModelTest {
+	
+	private static BarcodeGenerator gen;
+	
+	private static Barcode itemCode;
+	private static Barcode productCode;
+	
+	@BeforeClass
+	public static void initialize()
+	{
+		gen = BarcodeGenerator.instance();
+	}
+
+	@Test
+	public void barcodeGeneratorTest()
+	{
+		Set<String> codes = new HashSet<String>();
+		for(int i = 0; i < 10000; i++)
+		{
+			String newCode = gen.generateBarcode();
+			assertTrue(codes.add(newCode)); // Test uniqueness
+			assertTrue(newCode.substring(0,1).equals("4")); // Test each begins with 4
+		}
+	}
+	
+	@Test
+	public void barcodeTest()
+	{
+		itemCode = new ItemBarcode();
+		assertTrue(itemCode.getLength() == 12);
+		assertNotNull(itemCode.toString());
+		
+		productCode = new ProductBarcode("005030260525");
+		assertTrue(productCode.getLength() == 12);
+		assertEquals(productCode.toString(), "005030260525");
+	}
+	
+	@Test(expected = IllegalArgumentException.class)
+	public void nullBarcodeTest()
+	{
+		productCode = null;
+		productCode = new ProductBarcode(null);
+	}
+}

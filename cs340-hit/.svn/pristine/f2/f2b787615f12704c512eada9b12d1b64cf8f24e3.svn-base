@@ -1,0 +1,61 @@
+
+package model.persistence;
+
+import model.Item;
+
+/** The class representing a Serialized Item
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+class DatabaseItemDataObject implements ItemDataObject
+{
+	public static final int NO_EXIT = 1;
+	private Item item;
+
+	/** Creates a DatabaseItemDataObject representing an Item
+		@param item The Item to be represented
+	*/
+	public DatabaseItemDataObject(Item item)
+	{
+		this.item = item;
+	}
+
+	public Item getItem()
+	{
+		return item;
+	}
+
+	/** @return Returns the string form of the Item's Product Barcode */
+	public String pBarcode()
+	{
+		return item.getProductBarcode().toString();
+	}
+
+	/** @return Returns the string form of the Item's Item Barcode */
+	public String iBarcode()
+	{
+		return item.getItemBarcode().toString();
+	}
+
+	/** @return Returns the unix timestamp of the Item's Exit Date
+					or -1 if it is unspecified */
+	public long entryDate()
+	{
+		return item.getEntryDate().getTimeInMillis()/1000;
+	}
+
+	/** @return Returns the StorageUnit Id of the Item's StorageUnit */
+	public int unitId()
+	{
+		return item.getStorageUnit().getContainerID();
+	}
+	
+	/** @return Returns the isLive() value of the Item */
+	public boolean live()
+	{
+		return item.isInSystem();
+	}
+
+}
+

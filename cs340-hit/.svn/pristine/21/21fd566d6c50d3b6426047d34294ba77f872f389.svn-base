@@ -1,0 +1,123 @@
+package model;
+
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Set;
+
+/**
+ * The class implements the Product interface
+ * @author Clint Rollins
+ */
+
+//TODO implement shelfLife not as an int
+public class Product implements Serializable, Comparable<Product> {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -6744337854867882901L;
+
+	/**The date on which this product was created*/
+	private Calendar creationDate;
+	
+	/**The manufacturer's barcode of this product*/
+	private ProductBarcode barcode;
+	
+	/**A description of this product*/
+	private String description;
+	
+	/**The size of the product.*/
+	private Size size;
+
+	/**The Product's shelf life, measured in months.*/
+	private int shelfLife;
+	
+	/**The number of this product required for a 3-month supply.
+	 * A value of zero means "unspecified." */
+	private int threeMonthSupply;
+	
+	/**Product containers that contain this product.*/
+	private Set<ProductContainer> productContainers;
+	
+	/**
+	 * 
+	 * Creates a product.  Shelf life is included. 
+	 */
+	
+	public Product(Calendar creationDate, ProductBarcode barcode, String description, Size size, int shelfLife){};
+	
+	/**
+	 * Creates a product.  Shelf life not included.
+	 */
+	
+	public Product(Calendar creationDate, ProductBarcode barcode, String description, Size size){};
+	
+	/**
+	 * Compares two products
+         * @param other Product to compare with.
+         * @return	0 if equal, non-zero integer otherwise
+	 */
+	public int compareTo(Product other)
+        {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+	
+	/**
+	 * A hash code for a hash map of products
+	 */
+        @Override
+	public int hashCode()
+        {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+		
+	
+	public Calendar getCreationDate() {
+		return creationDate;
+	}
+
+	public void setCreationDate(Calendar creationDate) {
+		this.creationDate = creationDate;
+	}
+
+	public ProductBarcode getBarcode() {
+		return barcode;
+	}
+
+	public void setBarcode(ProductBarcode barcode) {
+		this.barcode = barcode;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public Size getSize() {
+		return size;
+	}
+
+	public void setSize(Size size) {
+		this.size = size;
+	}
+
+	public int getShelfLife() {
+		return shelfLife;
+	}
+
+	public void setShelfLife(int shelfLife) {
+		this.shelfLife = shelfLife;
+	}
+
+	public int getThreeMonthSupply() {
+		return threeMonthSupply;
+	}
+
+	public void setThreeMonthSupply(int threeMonthSupply) {
+		this.threeMonthSupply = threeMonthSupply;
+	}
+
+}

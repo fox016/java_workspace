@@ -1,0 +1,98 @@
+package model;
+
+import java.util.Set;
+
+public interface Facade
+{
+	// ----------------------------------- Create
+	
+	public void addStorageUnit(StorageUnit unit);
+	
+	public void addProductGroup(String name, ProductContainer parent);
+	
+	public void addItem(Item item);
+	
+	public void addProductToSystem(Product product);
+	
+	public void addProductToContainer(Product product, ProductContainer container);
+	
+	// ----------------------------------- Read
+	
+	public Set<StorageUnit> getStorageUnits();
+	
+	public Set<String> getChildContainers(ProductContainer parent);
+	
+	public Set<ProductBarcode> getProductsByContainer(ProductContainer container);
+	
+	public Set<Item> getItemsByContainer(ProductContainer container);
+	
+	public Set<Item> getItemsByProduct(StorageUnit unit, Product product);
+	
+	public ProductContainer getProductContainer(StorageUnit unit, Product product);
+	
+	// ----------------------------------- Update
+	
+	public void setStorageUnitName(StorageUnit unit, String newName);
+	
+	public void updateProductGroup(ProductGroup oldGroup, ProductGroup newGroup);
+	
+	public void updateItem(Item oldItem, Item newItem);
+	
+	public void updateProduct(Product oldProduct, Product newProduct);
+	
+	public void transferProduct(Product product, ProductContainer newContainer);
+	
+	public void transferItem(Item item, StorageUnit newUnit);
+	
+	public void removeItemFromStorage(Item item);
+	
+	// ----------------------------------- Delete
+	
+	public void deleteStorageUnit(StorageUnit unit);
+	
+	public void deleteProductGroup(ProductGroup group);
+	
+	public void deleteProduct(Product product);
+	
+	// ----------------------------------- Validation
+	
+	public boolean canAddStorageUnit(String unitName);
+	
+	public boolean canAddProductGroup(ProductGroup group, ProductContainer parent);
+	
+	public boolean canAddItem(Item item, StorageUnit unit);
+	
+	public boolean canAddProduct(Product product, ProductContainer container);
+	
+	public boolean canUpdateStorageUnit(StorageUnit oldUnit, StorageUnit newUnit);
+	
+	public boolean canUpdateProductGroup(ProductGroup oldGroup, ProductGroup newGroup);
+	
+	public boolean canUpdateItem(Item oldItem, Item newItem);
+	
+	public boolean canUpdateProduct(Product oldProduct, Product newProduct);
+	
+	public boolean canTransferProduct(Product product, ProductContainer newContainer);
+	
+	public boolean canTransferItem(Item item, StorageUnit newUnit);
+	
+	public boolean canRemoveItemFromStorage(Item item);
+	
+	public boolean canDeleteStorageUnit(StorageUnit unit);
+	
+	public boolean canDeleteProductGroup(ProductGroup group);
+	
+	public boolean canDeleteItem(Item item);
+	
+	public boolean canDeleteProduct(Product product);
+	
+	// ----------------------------------- Data Persistence
+	
+	public void loadHouse();
+	
+	public void saveHouse();
+}
+
+
+
+

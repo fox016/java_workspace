@@ -1,0 +1,183 @@
+package model;
+
+import java.util.Set;
+
+public class FacadeImpl implements Facade
+{
+	// ----------------------------------- Create
+	
+	public void addStorageUnit(StorageUnit unit) throws IllegalArgumentException
+	{
+		House.instance().addStorageUnit(unit);
+	}
+	
+	public void addProductGroup(String name, ProductContainer parent)
+	{
+		parent.addContainer(name);
+	}
+	
+	public void addItem(Item item)
+	{
+		ItemManager.instance().insert(item,  new ItemBarcode());
+	}
+	
+	public void addProductToSystem(Product product)
+	{
+		ProductManager.instance().addProduct(product);
+	}
+	
+	public void addProductToContainer(Product product, ProductContainer container)
+	{
+		ProductManager.instance().addContainer(product, container);
+	}
+	
+	// ----------------------------------- Read
+	
+	public Set<StorageUnit> getStorageUnits() {
+		return null;
+	}
+	
+	public Set<ProductContainer> getChildContainers(ProductContainer parent) {
+		return null;
+	}
+	
+	public Set<Product> getProductsByContainer(ProductContainer container) {
+		return null;
+	}
+	
+	public Set<Item> getItemsByContainer(ProductContainer container) {
+		return null;
+	}
+	
+	public Set<Item> getItemsByProduct(StorageUnit unit, Product product) {
+		return null;
+	}
+	
+	public ProductContainer getProductContainer(StorageUnit unit, Product product) {
+		return null;
+	}
+	
+	// ----------------------------------- Update
+	
+	public void updateStorageUnit(StorageUnit oldUnit, StorageUnit newUnit) {
+		
+	}
+	
+	public void updateProductGroup(ProductGroup oldGroup, ProductGroup newGroup) {
+		
+	}
+	
+	public void updateItem(Item oldItem, Item newItem) {
+		
+	}
+	
+	public void updateProduct(Product oldProduct, Product newProduct) {
+		
+	}
+	
+	public void transferProduct(Product product, ProductContainer container)  {
+		
+	}
+	
+	public void transferItem(Item item, StorageUnit newUnit) {
+		
+	}
+	
+	public void removeItemFromStorage(Item item) {
+		
+	}
+	
+	// ----------------------------------- Delete
+	
+	public void deleteStorageUnit(StorageUnit unit) {
+		
+	}
+	
+	public void deleteProductGroup(ProductGroup group) {
+		
+	}
+	
+	public void deleteItem(Item item) {
+		
+	}
+	
+	public void deleteProduct(Product product) {
+		
+	}
+	
+	// ----------------------------------- Validation
+	
+	public boolean canAddStorageUnit(StorageUnit unit) {
+		return true;
+	}
+	
+	public boolean canAddProductGroup(ProductGroup group, ProductContainer parent) {
+		return true;
+	}
+	
+	public boolean canAddItem(Item item, StorageUnit unit) {
+		return true;
+	}
+	
+	public boolean canAddProduct(Product product, ProductContainer container) {
+		return true;
+	}
+	
+	public boolean canUpdateStorageUnit(StorageUnit oldUnit, StorageUnit newUnit) {
+		return true;
+	}
+	
+	public boolean canUpdateProductGroup(ProductGroup oldGroup, ProductGroup newGroup) {
+		return true;
+	}
+	
+	public boolean canUpdateItem(Item oldItem, Item newItem) {
+		return true;
+	}
+	
+	public boolean canUpdateProduct(Product oldProduct, Product newProduct) {
+		return true;
+	}
+	
+	public boolean canTransferProduct(Product product, ProductContainer newContainer) {
+		return true;
+	}
+	
+	public boolean canTransferItem(Item item, StorageUnit newUnit) {
+		return true;
+	}
+	
+	public boolean canRemoveItemFromStorage(Item item) {
+		return true;
+	}
+	
+	public boolean canDeleteStorageUnit(StorageUnit unit) {
+		return true;
+	}
+	
+	public boolean canDeleteProductGroup(ProductGroup group) {
+		return true;
+	}
+	
+	public boolean canDeleteItem(Item item) {
+		return true;
+	}
+	
+	public boolean canDeleteProduct(Product product) {
+		return true;
+	}
+	
+	// ----------------------------------- Data Persistence
+	
+	public void loadHouse() {
+		
+	}
+	
+	public void saveHouse() {
+		
+	}
+}
+
+
+
+

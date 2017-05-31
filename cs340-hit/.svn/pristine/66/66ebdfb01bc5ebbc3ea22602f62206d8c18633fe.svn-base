@@ -1,0 +1,21 @@
+
+Phase 1
+	When a Product is added to a ProductGroup, who needs to be notified?
+		See email
+
+	Bug 1 Adding a Product to the Storage unit through the Facade causes an error
+		Testcase: testAddProductsStorageUnit took 0.006 sec
+			Caused an ERROR
+		null
+		java.lang.NullPointerException
+			at model.ProductManager.removeProductFromContainer(ProductManager.java:87)
+			at model.FacadeImpl.addProductToContainer(FacadeImpl.java:109)
+			at model.TreeTest.testAddProductsStorageUnit(TreeTest.java:168)
+
+	Bug 2 Testing Problems with Singletons
+		We have several singltons so the singletons are reused from test case to test case.
+		This is undesirable.  I reccomment that for testing purposes, we add a reset() function
+		that resets the static instances to their initialial state (by making a new object).
+		That way our tests run clean.
+		
+

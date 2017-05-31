@@ -1,0 +1,89 @@
+package model;
+
+import static org.junit.Assert.*;
+
+import java.util.Iterator;
+import java.util.Set;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+public class FacadeTest {
+	
+	private static Facade f;
+	
+	private static StorageUnit su1;
+	private static StorageUnit su2;
+	private static StorageUnit su3;
+
+	@BeforeClass
+	public static void initFacadeTest()
+	{
+		f = FacadeImpl.instance();
+		
+		su1 = f.addStorageUnit("Kitchen");
+		su2 = f.addStorageUnit("Bathroom");
+		su3 = f.addStorageUnit("Basement");
+		
+		Set<StorageUnit> units = f.getStorageUnits();
+		assertFalse(units.isEmpty());
+		assertTrue(units.size() == 3);
+		assertTrue(House.instance().containsUnit(su1));
+		assertTrue(House.instance().containsUnit(su2));
+		assertTrue(House.instance().containsUnit(su3));
+	}
+	
+	@Test(expected = IllegalArgumentException.class)
+	public void testAddNullStorageUnit()
+	{
+		f.addStorageUnit(null);
+	}
+	
+	@Test(expected = IllegalArgumentException.class)
+	public void testAddEmptyStorageUnit()
+	{
+		f.addStorageUnit("");
+	}
+	
+	@Test(expected = IllegalArgumentException.class)
+	public void testAddDuplicateStorageUnit()
+	{
+		f.addStorageUnit("Library");
+		f.addStorageUnit("Library");
+	}
+	
+	@Test
+	public void testUpdateUnitName()
+	{
+		f.setStorageUnitName(su3, "Dungeon");
+		assertTrue(su3.getName().equals("Dungeon"));
+		
+		Set<StorageUnit> units = f.getStorageUnits();
+		Iterator<StorageUnit> iter = units.iterator();
+		while(iter.hasNext())
+			assertFalse(iter.next().getName().equals("Basement"));
+		
+		StorageUnit temp = f.addStorageUnit("Basement");
+		assertTrue(temp.getName().equals("Basement"));
+		f.deleteStorageUnit(temp);
+		
+		units = f.getStorageUnits();
+		iter = units.iterator();
+		while(iter.hasNext())
+			assertFalse(iter.next().getName().equals("Basement"));
+		
+		f.setStorageUnitName(su3, "Basement");
+		assertTrue(su3.getName().equals("Basement"));
+	}
+	
+	@AfterClass
+	public static void testRemoveStorageUnit()
+	{
+		f.deleteStorageUnit(su1);
+		f.deleteStorageUnit(su2);
+		f.deleteStorageUnit(su3);
+		
+		assertTrue(House.instance().getAllUnits().size() == 1);
+	}
+}

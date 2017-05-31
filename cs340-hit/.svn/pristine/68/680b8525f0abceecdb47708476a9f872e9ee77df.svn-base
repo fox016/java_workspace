@@ -1,0 +1,29 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+/**
+ *
+ * @author chris
+ */
+public interface FacadeDelete extends Facade {
+
+	void deleteProduct(Product product);
+
+	void deleteProductGroup(ProductGroup group);
+
+	void deleteStorageUnit(StorageUnit unit);
+
+	void removeItemFromStorage(Item item);
+	
+	public boolean canRemoveItemFromStorage(Item item);
+	
+	public boolean canDeleteStorageUnit(StorageUnit unit);
+	
+	public boolean canDeleteProductGroup(ProductGroup group);
+	
+	public boolean canDeleteProduct(Product product);
+	
+}

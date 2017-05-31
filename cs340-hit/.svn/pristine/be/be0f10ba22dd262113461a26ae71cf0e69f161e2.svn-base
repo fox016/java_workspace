@@ -1,0 +1,52 @@
+package model;
+
+/** This singleton class is used to communicate to the Facade layer
+ * and holds pointers to other singletons in the model
+ * 
+ * @author Nathan Fox
+ *
+ */
+public class HomeInventoryTracker
+{
+	/** The single instance of HomeInventoryTracker
+	 * 
+	 */
+	private static HomeInventoryTracker _hit;
+	
+	private static House house;
+	private static DataSerializer dataSerializer;
+	
+	/** The constructor gets the single instance of House
+	 *  and the single instance of DataSerializer
+	 *  
+	 * @param args	Isn't used
+	 */
+	private HomeInventoryTracker()
+	{
+		house = HouseImpl.instance();
+		dataSerializer = DataSerializerImpl.instance();
+	}
+	
+	public HomeInventoryTracker instance()
+	{
+		if(_hit == null)
+			_hit = new HomeInventoryTracker();
+		return _hit;
+	}
+	
+	/**
+	 * @param filename	The complete class path to save the data to
+	 */
+	public static void save(String filename)
+	{
+		dataSerializer.save(house, filename);
+	}
+	
+	/**
+	 * @param filename	The complete class path to load the data from
+	 */
+	public static House load(String filename)
+	{
+		return dataSerializer.load(filename);
+	}
+}

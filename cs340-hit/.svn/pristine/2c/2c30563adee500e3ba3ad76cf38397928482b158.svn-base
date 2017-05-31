@@ -1,0 +1,220 @@
+
+package model.report;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+
+import model.House;
+import model.StorageUnit;
+import model.Product;
+import model.ProductManager;
+
+	/**
+		This class is the package interface for generating reports
+		@author Christopher Tensmeyer
+		@version March 6, 2013
+	*/
+public class ReportGenerator
+{
+	/**
+		Generates the Expired Items Report
+		@param filename The filename to save the report
+		@param filetype The filetype (pdf, html) to create
+		@return Returns a File object of the created report
+	 * @throws IOException 
+	*/
+	public static File generateExpiredReport(String filename, ReportType filetype)
+			throws IOException
+	{
+		ReportBuilder builder = getBuilder(filetype);
+		builder.open(filename);
+		builder.writeTitle("Expired Item Report");
+
+		Visitor visitor = new ExpiredItemsVisitor(builder);
+		visitProductContainers(visitor);
+		
+		builder.endTable();
+		builder.close();
+		return builder.getReport();
+	}
+	/*
+
+		ReportBuilder builder;
+		ExpiredItemsVisitor visitor;
+		if(filetype.equals(ReportType.HTML)){
+			builder = new HTMLReportBuilder();		
+			builder.open(filename);
+			visitor = new ExpiredItemsVisitor(builder);
+			Set<StorageUnit> units = House.instance().getUnits();
+			for(StorageUnit unit : units){
+				unit.accept(visitor);
+			}
+			builder.endTable();
+			builder.close();
+			return ((HTMLReportBuilder) builder).getReport();
+			
+		}
+		else if(filetype.equals(ReportType.PDF)){
+			throw new UnsupportedOperationException();
+		}
+		else if(filetype.equals(ReportType.TEST)){
+			throw new UnsupportedOperationException();
+		}
+		else
+			throw new IllegalArgumentException();
+	}
+	*/
+
+	/**
+		Generates the Removed Items Report
+		@param filename The filename to save the report
+		@param filetype The filetype (pdf, html) to create
+		@return Returns a File object of the created report
+	*/
+	public static File generateRemovedItemReport(String filename, ReportType filetype,
+																Calendar startTime) throws IOException
+	{
+		ReportBuilder builder = getBuilder(filetype);
+		builder.open(filename);
+		builder.writeTitle("Removed Item Report");
+
+		Visitor visitor = new RemovedItemsVisitor(builder, startTime);
+		visitProducts(visitor);
+		
+		builder.endTable();
+		builder.close();
+		return builder.getReport();
+	}
+
+	/**
+		Generates the N-Month Supply Report
+		@param filename The filename to save the report
+		@param filetype The filetype (pdf, html) to create
+		@return Returns a File object of the created report
+	*/
+	public static File generateNMonthSupplyReport(String filename, ReportType filetype,
+																 int numMonths) throws IOException
+	{
+		ReportBuilder builder = getBuilder(filetype);
+		builder.open(filename);
+		builder.writeTitle("N-Month Supply Report");
+
+		Visitor visitor = new NMonthSupplyVisitor(builder, numMonths);
+		visitProductContainers(visitor);
+		
+		builder.endTable();
+		builder.close();
+		return builder.getReport();
+	}
+
+	/**
+		Generates the Product Statistics Report
+		@param filename The filename to save the report
+		@param filetype The filetype (pdf, html) to create
+		@return Returns a File object of the created report
+	*/
+	public static File generateProductStatisticsReport(String filename, ReportType filetype,
+																	   int numMonths) throws IOException
+	{
+		ReportBuilder builder = getBuilder(filetype);
+		builder.open(filename);
+		//builder.writeTitle("Product Statistics Report");
+
+		Visitor visitor = new ProductStatisticsVisitor(builder, numMonths);
+		visitProducts(visitor);
+		
+		builder.endTable();
+		builder.close();
+		return builder.getReport();
+	}
+
+	/**
+		Generates the Notices Report
+		@param filename The filename to save the report
+		@param filetype The filetype (pdf, html) to create
+		@return Returns a File object of the created report
+	*/
+	public static File generateNoticesReport(String filename, ReportType filetype) throws IOException
+	{
+		ReportBuilder builder = getBuilder(filetype);
+		builder.open(filename);
+		builder.writeTitle("Notices Report");
+		builder.writeBlankLine();
+		builder.writeBlankLine();
+		builder.writeTextHeader("3-Month Supply Warnings");
+
+		Visitor visitor = new NoticesVisitor(builder);
+		visitProductContainers(visitor);
+		
+		builder.close();
+		return builder.getReport();
+	}
+
+	/**
+		Factory method for creating a ReportBuilder
+		@param filetype Specifies the type of ReportBuilder changed
+		@return Returns a ReportBuilder to create the correct report format
+	*/
+	static ReportBuilder getBuilder(ReportType filetype)
+	{
+		switch(filetype)
+		{
+			case PDF:
+				return new PDFReportBuilder();
+			case HTML:
+				return new HTMLReportBuilder();
+			case TEST:
+				return new TestReportBuilder();
+			case EMPTY:
+				return new EmptyReportBuilder();
+			default:
+				throw new UnsupportedOperationException(
+					filetype.toString() + " is not a supported report type");
+
+		}
+	}
+
+	//For Product Statistics and Removed Item Reports
+	private static void visitProducts(Visitor visitor)
+	{
+		List<Product> products = new ArrayList<>(ProductManager.instance().getAllProducts());
+		ReportUtils.sortProducts(products);
+
+		for(Product p : products)
+		{
+			p.accept(visitor);
+		}
+	}
+
+	// For Expired Items, N-Month Supply, and Notices Reports
+	private static void visitProductContainers(Visitor visitor)
+	{
+		Set<StorageUnit> units = House.instance().getUnits();
+		for(StorageUnit unit : units){
+			unit.accept(visitor);
+		}
+	}
+
+}
+
+class ReportUtils
+{
+	/** Sorts Products lexographically by description */
+	static void sortProducts(List<Product> products)
+	{
+		Collections.sort(products, new Comparator<Product>()
+												{ public int compare(Product p1, Product p2)
+													{
+														return p1.getDescription().compareTo(p2.getDescription());
+													}
+												});
+	}
+
+}
+

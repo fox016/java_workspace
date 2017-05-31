@@ -1,0 +1,316 @@
+
+package model.report;
+
+import static org.junit.Assert.*;
+
+import model.*;
+import java.util.*;
+import java.io.IOException;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+public class ChrisPSReportTest
+{
+	//Test #7
+	/*
+		This tests over a period of one month
+	*/
+	//May 15, 2005 at 12:35:15 pm
+	static Calendar endDate = new GregorianCalendar(2005, Calendar.MAY, 15, 12, 35, 15);
+	//April 15, 2005
+	static Calendar startDate = new GregorianCalendar(2005, Calendar.APRIL, 15);
+
+	@Before
+	public void initTest()
+	{
+		House.reset();
+		ItemManager.reset();
+		ProductManager.reset();
+	}
+
+	static Product createProduct()
+	{
+		//May 15, 2004
+		Calendar creationDate = new GregorianCalendar(2004, Calendar.MAY, 15);
+		Size size = new Size(2.5, SupplyType.POUNDS);
+		String desc = "Product Description";
+		int threeMonthSupply = 5;
+		int shelfLife = 3;
+		ProductBarcode barcode = new ProductBarcode("Barcode123");
+
+		Product p = new Product(creationDate, barcode, desc, size, shelfLife, threeMonthSupply);
+		return p;
+	}
+
+	static TestReportStructure foo(Product p, boolean original)
+	{
+		try
+		{
+			TestReportBuilder builder = new TestReportBuilder();
+
+			Visitor visitor = (original) ?
+				new ProductStatisticsVisitor(builder, startDate, endDate) :
+				new ChrisPSVisitor(builder, startDate, endDate);
+			p.accept(visitor);
+			visitor.finish();
+			
+			return builder.getTestStructure();
+		}
+		catch(Exception e)
+		{
+			return null;
+		}
+	}
+
+	static void test(Product p, String title) throws IOException
+	{
+		System.out.println("\n");
+		System.out.println(title);
+
+		TestReportStructure nate = foo(p, true);
+		TestReportStructure chris = foo(p, false);
+			
+		boolean same = true;
+		
+		if(chris == null) // I'm not sure why chris is null sometimes, but it is - Nate
+		{
+			same = false;
+		}
+		else
+		{
+			System.out.println("Nate\tChris");
+			for(int k = 0; k < 10; k++)
+			{
+				String nateCell = nate.get(1,k);
+				String chrisCell = chris.get(1,k);
+	
+				System.out.println(nateCell + "\t" + chrisCell);
+				if(!nateCell.equals(chrisCell))
+					same = false;
+			}
+		}
+
+		assertTrue(same);
+	}
+
+	@Test
+	public void emptyTest()
+	{
+		assertTrue(true);
+	}
+
+	@Test
+	public void test7a() throws IOException
+	{
+		//Test items added long before reporting period
+		//Test items removed day before, first day, middle, last day, day after, not removed
+		Calendar entryDate = new GregorianCalendar(2004, Calendar.NOVEMBER, 1);
+		Product p = createProduct();
+		StorageUnit unit = new StorageUnitImpl("Kitchen");
+		ProductManager.instance().addProduct(p);
+		ProductManager.instance().addContainer(p, unit);
+
+		Item[] items = new Item[6];
+		Calendar[] exitDates = new Calendar[] {
+			new GregorianCalendar(2005, Calendar.APRIL, 14),
+			new GregorianCalendar(2005, Calendar.APRIL, 15),
+			new GregorianCalendar(2005, Calendar.MAY, 1),
+			new GregorianCalendar(2005, Calendar.MAY, 15),
+			new GregorianCalendar(2005, Calendar.MAY, 16),
+			null
+		};
+
+		for(int k = 0; k < items.length; k++)
+		{
+			items[k] = new Item(p, unit, entryDate);
+			ItemManager.instance().insert(items[k], new ItemBarcode());
+			Calendar exitDate = exitDates[k];
+			if(exitDate != null)
+			{
+				ItemManager.instance().removeItem(items[k]);
+				items[k].setExitDate(exitDate);
+			}
+		}
+
+		test(p, "Test 7a");
+	}
+
+	@Test
+	public void test7b() throws IOException
+	{
+		//Test items added the day before the reporting period
+		//Test items removed day before, first day, middle, last day, day after, not removed
+		Calendar entryDate = new GregorianCalendar(2005, Calendar.APRIL, 14);
+		Product p = createProduct();
+		StorageUnit unit = new StorageUnitImpl("Kitchen");
+		ProductManager.instance().addProduct(p);
+		ProductManager.instance().addContainer(p, unit);
+
+		Item[] items = new Item[6];
+		Calendar[] exitDates = new Calendar[] {
+			new GregorianCalendar(2005, Calendar.APRIL, 14, 12, 20, 10), //after entry date
+			new GregorianCalendar(2005, Calendar.APRIL, 15),
+			new GregorianCalendar(2005, Calendar.MAY, 1),
+			new GregorianCalendar(2005, Calendar.MAY, 15),
+			new GregorianCalendar(2005, Calendar.MAY, 16),
+			null
+		};
+
+		for(int k = 0; k < items.length; k++)
+		{
+			items[k] = new Item(p, unit, entryDate);
+			ItemManager.instance().insert(items[k], new ItemBarcode());
+			Calendar exitDate = exitDates[k];
+			if(exitDate != null)
+			{
+				ItemManager.instance().removeItem(items[k]);
+				items[k].setExitDate(exitDate);
+			}
+		}
+
+		test(p, "Test 7b");
+	}
+
+	@Test
+	public void test7c() throws IOException
+	{
+		//Test items added the first day of the reporting period
+		//Test items removed first day, middle, last day, day after, not removed
+		Calendar entryDate = new GregorianCalendar(2005, Calendar.APRIL, 14);
+		Product p = createProduct();
+		StorageUnit unit = new StorageUnitImpl("Kitchen");
+		ProductManager.instance().addProduct(p);
+		ProductManager.instance().addContainer(p, unit);
+
+		Item[] items = new Item[5];
+		Calendar[] exitDates = new Calendar[] {
+			new GregorianCalendar(2005, Calendar.APRIL, 15, 12, 20, 10), //after entry date
+			new GregorianCalendar(2005, Calendar.MAY, 1),
+			new GregorianCalendar(2005, Calendar.MAY, 15),
+			new GregorianCalendar(2005, Calendar.MAY, 16),
+			null
+		};
+
+		for(int k = 0; k < items.length; k++)
+		{
+			items[k] = new Item(p, unit, entryDate);
+			ItemManager.instance().insert(items[k], new ItemBarcode());
+			Calendar exitDate = exitDates[k];
+			if(exitDate != null)
+			{
+				ItemManager.instance().removeItem(items[k]);
+				items[k].setExitDate(exitDate);
+			}
+		}
+
+		test(p, "Test 7c");
+	}
+
+	@Test
+	public void test7d() throws IOException
+	{
+		//Test items added in the middle the reporting period
+		//Test items removed first day, middle, last day, day after, not removed
+		Calendar entryDate = new GregorianCalendar(2005, Calendar.MAY, 1);
+		Product p = createProduct();
+		StorageUnit unit = new StorageUnitImpl("Kitchen");
+		ProductManager.instance().addProduct(p);
+		ProductManager.instance().addContainer(p, unit);
+
+		Item[] items = new Item[5];
+		Calendar[] exitDates = new Calendar[] {
+			new GregorianCalendar(2005, Calendar.MAY, 1, 12, 20, 12),
+			new GregorianCalendar(2005, Calendar.MAY, 5),
+			new GregorianCalendar(2005, Calendar.MAY, 15),
+			new GregorianCalendar(2005, Calendar.MAY, 16),
+			null
+		};
+
+		for(int k = 0; k < items.length; k++)
+		{
+			items[k] = new Item(p, unit, entryDate);
+			ItemManager.instance().insert(items[k], new ItemBarcode());
+			Calendar exitDate = exitDates[k];
+			if(exitDate != null)
+			{
+				ItemManager.instance().removeItem(items[k]);
+				items[k].setExitDate(exitDate);
+			}
+		}
+
+		test(p, "Test 7d");
+	}
+
+	@Test
+	public void test7e() throws IOException
+	{
+		//Test items added the last day of the reporting period
+		//Test items removed first day, next day, and not
+		Calendar entryDate = new GregorianCalendar(2005, Calendar.MAY, 15);
+		Product p = createProduct();
+		StorageUnit unit = new StorageUnitImpl("Kitchen");
+		ProductManager.instance().addProduct(p);
+		ProductManager.instance().addContainer(p, unit);
+
+		Item[] items = new Item[3];
+		Calendar[] exitDates = new Calendar[] {
+			new GregorianCalendar(2005, Calendar.MAY, 15, 12, 20, 14),
+			new GregorianCalendar(2005, Calendar.MAY, 16),
+			null
+		};
+
+		for(int k = 0; k < items.length; k++)
+		{
+			items[k] = new Item(p, unit, entryDate);
+			ItemManager.instance().insert(items[k], new ItemBarcode());
+			Calendar exitDate = exitDates[k];
+			if(exitDate != null)
+			{
+				ItemManager.instance().removeItem(items[k]);
+				items[k].setExitDate(exitDate);
+			}
+		}
+
+		test(p, "Test 7e");
+	}
+
+	@Test
+	public void test7f() throws IOException
+	{
+		//Test items added the after the reporting period
+		//Test items removed first day, next day, long after, and not
+		Calendar entryDate = new GregorianCalendar(2005, Calendar.MAY, 16);
+		Product p = createProduct();
+		StorageUnit unit = new StorageUnitImpl("Kitchen");
+		ProductManager.instance().addProduct(p);
+		ProductManager.instance().addContainer(p, unit);
+
+		Item[] items = new Item[4];
+		Calendar[] exitDates = new Calendar[] {
+			new GregorianCalendar(2005, Calendar.MAY, 16, 5, 6, 5),
+			new GregorianCalendar(2005, Calendar.MAY, 17),
+			new GregorianCalendar(2006, Calendar.MAY, 17),
+			null
+		};
+
+		for(int k = 0; k < items.length; k++)
+		{
+			items[k] = new Item(p, unit, entryDate);
+			ItemManager.instance().insert(items[k], new ItemBarcode());
+			Calendar exitDate = exitDates[k];
+			if(exitDate != null)
+			{
+				ItemManager.instance().removeItem(items[k]);
+				items[k].setExitDate(exitDate);
+			}
+		}
+
+		test(p, "Test 7f");
+	}
+
+}
+
+

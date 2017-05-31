@@ -1,0 +1,67 @@
+package model;
+
+import java.io.Serializable;
+
+/** This abstract class is a parent of ItemBarcodes and ProductBarcodes.
+ *  It contains implementation details for shared functions between
+ *  the two child classes.
+ * 
+ * @author Nate Fox
+ *
+ */
+public abstract class Barcode implements Serializable, Comparable<Barcode>
+{
+	private static final long serialVersionUID = -1423968393343568640L;
+	
+	protected String barcodeString;
+	protected long barcodeLong;
+	
+	/** Gives string representation of barcode value
+	 * 
+	 * @return string representation of barcode value
+	 */
+	@Override
+	public String toString()
+	{
+		return barcodeString;
+	}
+	
+	/** Gives long representation of barcode value
+	 * 
+	 * @return long representation of barcode value
+	 */
+	public long toLong()
+	{
+		return barcodeLong;
+	}
+	
+	/** Gives length of string representation of barcode value,
+	 *  useful to know if long representation of value drops leading
+	 *  zeroes
+	 * 
+	 * @return length of string representation of barcode value
+	 */
+	public int getLength()
+	{
+		return barcodeString.length();
+	}
+	
+	/** Tests equality based on long representation of barcode
+	 * 
+	 * @return true iff other object has same barcode value
+	 */
+	@Override
+	public boolean equals(Object other)
+	{
+		return this.toLong() == ((Barcode)other).toLong();
+	}
+	
+	/** Compares two barcodes
+	 * 
+	 * @return 0 iff other object has same barcode value, non-zero int otherwise
+	 */
+	public int compareTo(Barcode other)
+	{
+		return (int) (this.toLong() - other.toLong());
+	}
+}

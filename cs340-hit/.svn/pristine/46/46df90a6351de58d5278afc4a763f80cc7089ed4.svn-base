@@ -1,0 +1,93 @@
+package model;
+
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * 
+ * This class manages actions that are to be performed on a product,
+ * including accessing, adding, deleting and editing products.
+ */
+
+//TODO lookup function.  Should use ProductBarcodes, not generic Barcodes
+public class ProductManager implements Serializable{
+
+	private static final long serialVersionUID = -2063247830932189426L;
+	private static ProductManager _productManager;
+	
+	/**
+	 * A map that allows us to access Products through their unique barcode.
+	 */
+	private Map<ProductBarcode, Product> products;
+	
+	private ProductManager()
+	{
+		products = new HashMap<ProductBarcode, Product>();
+	}
+	
+	public static ProductManager instance()
+	{
+		if(_productManager == null)
+			_productManager = new ProductManager();
+		return _productManager;
+	}
+	
+	/**
+	 * Checks all parameter constraints to determine if a product can be added.
+	 * Individual parameters are specified under each variable declaration of the Product class.
+	 * @return the truth value that determines whether or not a product can be added.
+	 */
+	public boolean canAddProduct(Calendar creationDate, ProductBarcode barcode,
+			String description, Size size, int shelfLife){
+		
+		throw new UnsupportedOperationException("Not implemented");
+	}
+	
+	
+	/** 
+	 * Adds a product to the products map.
+	 * Individual parameters are specified under each variable declaration of the Product class.
+	 * The method canAddProduct should have been called, thus eliminating the need to check
+	 * constraints on the variables.  We therefore assert that they are valid.
+	 */	
+	
+	public void addProduct(Calendar creationDate, ProductBarcode barcode,
+			String description, Size size, int shelfLife)
+	{
+		//Assert creationDate is after 1/1/2000 and before future -- How do I work with a calender?
+		assert(barcode != null);
+		assert(description != null && description != "");
+		assert(size.getAmount() != 0);
+		//make sure we have an integer if type is count;
+		if(size.getType() == SupplyType.COUNT){
+			assert(Math.floor(size.getAmount()) - size.getAmount() == 0);
+		}
+		assert(shelfLife >= 0);
+		
+		
+		
+		
+	};
+	
+	/**
+	 * Deletes a product using the given barcode
+	 * @param productToRemove The Barcode of the product we want to delete.
+	 * The canRemoveProduct method should have been called,  so we assert that we comply with the constraints.
+	 */
+	
+	public void removeProduct(Barcode productToRemove){
+		assert(products.containsKey(productToRemove));
+	};
+	
+	/**
+	 * Updates the Product
+	 * 
+	 * @param updatedProduct The Product containing the updated values that are to replace
+	 * the old Product's values
+	 */
+	public void update(Product updatedProduct){};
+	
+	
+}

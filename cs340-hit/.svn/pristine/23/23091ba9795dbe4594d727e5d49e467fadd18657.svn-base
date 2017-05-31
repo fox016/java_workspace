@@ -1,0 +1,40 @@
+package model;
+
+import gui.item.ItemData;
+import gui.product.ProductData;
+
+/**
+ *
+ * @author Talonos
+ */
+public class Translater 
+{
+    private static Translater instance;
+    
+    public static Translater instance()
+    {
+        return instance;
+    }
+    
+    
+    public ItemData getDataFromItem(Item i)
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+    
+    public Item getItemFromData(ItemData i)
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+    
+    public ProductData getDataFromProduct(Product p)
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+    
+    public Product getProductFromData(ProductData p)
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+    
+}

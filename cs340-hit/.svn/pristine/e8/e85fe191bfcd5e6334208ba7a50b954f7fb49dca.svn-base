@@ -1,0 +1,40 @@
+package model;
+
+/** This class hold the main method
+ * 
+ * @author Nathan Fox
+ *
+ */
+public class HomeInventoryTracker
+{
+	
+	private static House house;
+	private static DataSerializer dataSerializer;
+	
+	/** The main method creates the single instance of House
+	 *  and the single instance of DataSerializer
+	 *  
+	 * @param args	Isn't used
+	 */
+	public static void main(String[] args)
+	{
+		house = HouseImpl.instance();
+		dataSerializer = DataSerializerImpl.instance();
+	}
+	
+	/**
+	 * @param filename	The complete class path to save the data to
+	 */
+	public static void save(String filename)
+	{
+		dataSerializer.save(house, filename);
+	}
+	
+	/**
+	 * @param filename	The complete class path to load the data from
+	 */
+	public static House load(String filename)
+	{
+		return dataSerializer.load(filename);
+	}
+}

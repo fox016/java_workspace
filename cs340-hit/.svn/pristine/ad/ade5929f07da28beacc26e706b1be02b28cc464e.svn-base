@@ -1,0 +1,21 @@
+package model;
+
+import static org.junit.Assert.*;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.junit.Test;
+
+public class ModelTest {
+	
+	BarcodeGenerator gen = BarcodeGenerator.instance();
+
+	@Test
+	public void barcodeGeneratorTest() {
+		
+		// Test to make sure each Barcode is unique
+		Set<String> codes = new HashSet<String>();
+		for(int i = 0; i < 1000000; i++)
+			assertTrue(codes.add(gen.generateBarcode()));
+	}
+}

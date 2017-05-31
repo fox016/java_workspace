@@ -1,0 +1,98 @@
+package model;
+
+import static org.junit.Assert.*;
+
+import java.util.Iterator;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+public class TreeTest {
+	
+	private static Facade f;
+	
+	@Before
+	public void initTreeTest()
+	{
+		f = FacadeImpl.instance();
+		
+		f.addStorageUnit("Kitchen");
+		f.addStorageUnit("Bathroom");
+		f.addStorageUnit("Garage");
+		
+		assertTrue(House.instance().containsUnit(House.instance().getUnitByName("Kitchen")));
+		assertTrue(House.instance().containsUnit(House.instance().getUnitByName("Bathroom")));
+		assertTrue(House.instance().containsUnit(House.instance().getUnitByName("Garage")));
+		
+		StorageUnit temp = new StorageUnitImpl("Random");
+		assertFalse(House.instance().containsUnit(temp));
+	}
+	
+	@Test
+	public void testDeleteUnit()
+	{
+		f.deleteStorageUnit(House.instance().getUnitByName("Bathroom"));
+		
+		Iterator<StorageUnit> units = f.getStorageUnits().iterator();
+		while(units.hasNext())
+			assertFalse(units.next().getName().equals("Bathroom"));
+		
+		assertNull(House.instance().getUnitByName("SqueedalySpooch"));
+		
+		f.deleteStorageUnit(new StorageUnitImpl("The Best"));
+		
+		f.addStorageUnit("Bathroom");
+		assertTrue(House.instance().containsUnit(House.instance().getUnitByName("Bathroom")));
+	}
+	
+	@Test
+	public void testAddGroup()
+	{
+		ProductGroup[] testGroups = new ProductGroup[10];
+		
+		testGroups[0] = f.addProductGroup("K1", House.instance().getUnitByName("Kitchen"));
+		testGroups[1] = f.addProductGroup("K2", House.instance().getUnitByName("Kitchen"));
+		testGroups[2] = f.addProductGroup("K3", House.instance().getUnitByName("Kitchen"));
+		
+		testGroups[3] = f.addProductGroup("B1", House.instance().getUnitByName("Bathroom"));
+		
+		assertTrue(f.getChildContainers(House.instance().getUnitByName("Kitchen")).size() == 3);
+		assertTrue(f.getChildContainers(House.instance().getUnitByName("Bathroom")).size() == 1);
+		assertTrue(f.getChildContainers(House.instance().getUnitByName("Garage")).size() == 0);
+	}
+	
+	@Test
+	public void testAddGroupsToGroups()
+	{
+		ProductGroup[] testGroups = new ProductGroup[10];
+		
+		testGroups[0] = f.addProductGroup("K1", House.instance().getUnitByName("Kitchen"));
+		testGroups[1] = f.addProductGroup("K2", House.instance().getUnitByName("Kitchen"));
+		testGroups[2] = f.addProductGroup("K3", House.instance().getUnitByName("Kitchen"));
+		
+		testGroups[3] = f.addProductGroup("B1", House.instance().getUnitByName("Bathroom"));
+		
+		testGroups[4] = f.addProductGroup("C1_K1", testGroups[0]);
+		testGroups[5] = f.addProductGroup("C2_K1", testGroups[0]);
+		
+		testGroups[6] = f.addProductGroup("C1_K3", testGroups[2]);
+		
+		testGroups[7] = f.addProductGroup("C1_B1", testGroups[3]);
+		testGroups[8] = f.addProductGroup("C2_B1", testGroups[3]);
+		testGroups[9] = f.addProductGroup("C3_B1", testGroups[3]);
+		
+		assertTrue(f.getChildContainers(testGroups[0]).size() == 2);
+		assertTrue(f.getChildContainers(testGroups[1]).size() == 0);
+		assertTrue(f.getChildContainers(testGroups[2]).size() == 1);
+		assertTrue(f.getChildContainers(testGroups[3]).size() == 3);
+	}
+	
+	@After
+	public void cleanTreeTest()
+	{
+		f.deleteStorageUnit(House.instance().getUnitByName("Kitchen"));
+		f.deleteStorageUnit(House.instance().getUnitByName("Bathroom"));
+		f.deleteStorageUnit(House.instance().getUnitByName("Garage"));
+	}
+}

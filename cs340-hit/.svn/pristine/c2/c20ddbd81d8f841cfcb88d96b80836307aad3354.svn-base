@@ -1,0 +1,81 @@
+package gui.item;
+
+import java.util.List;
+import model.Item;
+import model.Product;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.File;
+import model.Barcode;
+//What are the correct imports for this?
+//import com.itext.text.*;
+//import com.itext.text.pdf.*;
+
+public class BarcodePrinter
+{
+	private static String filename = "<filepath>";
+	private static int[][] codeMap;
+	private static String codes = "3211 2221 2122 1411 1132 1231 1114 1312 1213 3112";
+
+	
+	public static void init()
+	{
+		generateCodeMap();
+	}
+
+	/** Writes a pdf file containing barcodes.  Defaults to a temporary file.
+		@param items The list of Items for which we wish to print the barcodes for	
+		@throws IOException If the file cannot be written
+		@return The File object associated with the newly created pdf
+	*/
+	public static File writeBarcodesToPdf(List<Item> items) throws IOException
+	{
+		return writeBarcodesToPdf(items, BarcodePrinter.filename);
+	}
+
+	/** Writes a pdf containing barcodes.
+		@param items The list of Items for which we wish to print the barcodes for	
+		@param filename The location where the pdf is to be written
+		@throws IOException If the file cannot be written
+		@return The File object associated with the newly created pdf
+	*/
+	public static File writeBarcodesToPdf(List<Item> items, String filename) throws IOException
+	{
+		File file = new File(filename);
+		if(file == null)
+			throw new IOException("Unable to create File");
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+
+	private static String getLineSequence(Barcode code)
+	{
+		String sequence = "";
+		//start
+
+		//first six digits
+
+		//middle sequence
+
+		//last six digits
+
+		//end
+
+		return sequence;
+	}
+
+	//hard coded values
+	private static void generateCodeMap()
+	{
+		codeMap = new int[10][4];
+		String[] tokens = codes.split("\\s+");
+		assert(tokens.length == 10);
+		for(int k = 0; k < tokens.length; k++)
+		{
+			String nums = tokens[k];
+			assert(nums.length() == 4);
+			for(int j = 0; j < nums.length(); j++)
+				codeMap[k][j] = Integer.parseInt(nums.substring(j, 1));
+		}
+	}
+
+}

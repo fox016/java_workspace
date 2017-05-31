@@ -1,0 +1,118 @@
+
+package model;
+import java.io.Serializable;
+import java.util.Calendar;
+
+/** This Interface represents an Item entity
+ * 
+ *	@author Christopher Tensmeyer
+ *	@version Phase 1.0 Jan 22, 2013
+ *
+ */
+public interface Item extends Serializable
+{
+	/* Start Accessor Methods */
+	
+	/** @return Returns the Product this Item is an instance of. */
+	Product getProduct();
+
+	/** @return Returns the barcode of the Item's Product */
+	ProductBarcode getProductBarcode();
+
+	/** @return Returns the unique barcode given to the Item when it was
+		added to the Home Inventory Tracker.  This is not the Product Barcode.
+	*/
+	ItemBarcode getItemBarcode();
+
+	/** @return Returns the date this Item was entered in the Home Inventory
+		Tracker.
+	*/
+	Calendar getEntryDate();
+
+	/** @return Returns the date and time this Item was removed from the Home
+		Inventory Tracker.  Returns EMPTY if the Item has not been removed.
+	*/
+	Calendar getExitTime();
+
+	/** @return Returns the Expiration Date of the Item if the Shelf Life
+		property of the Item's Product has been specified.  Otherwise returns
+		EMPTY*/
+	Calendar getExpirationDate();
+
+	/** @return Returns the Product Container holding this Item */
+	ProductContainer getProductContainer();
+
+	/** @return Returns true if the Item is in the system or false if
+		the Item has been removed from the system */
+	boolean isInSystem();
+	
+	StorageUnit getStorageUnit();
+
+	/* End Accessor Methods */
+
+
+	/* Start Modifier Methods */
+	//We don't need to modify some of the properties
+	
+	void setStorageUnit(StorageUnit unit);
+
+	/** Sets the ItemBarcode.
+		@param newBarcode The new Barcode */
+	void setItemBarcode(ItemBarcode newBarcode);
+
+	/** Do we want this? 
+		@param newDate The new Entry Date. It must be a Date on or
+			after Jan 1, 2000
+		@throws InvalidDateException - If newDate is before Jan 1, 2000*/
+	void setEntryDate(Calendar newDate);
+
+	/** Changes the Item's product and it's product specific information
+		like Expiration Date, Product Barcode
+		@param newProduct The new Product */
+	void setProduct(Product newProduct);
+
+	/** Changes the Item's product and it's product specific information
+		like Expiration Date,
+		@param newBarcode The new Product's Barcode */
+	void setProduct(ProductBarcode newBarcode);
+
+	/** Sets the ProductContainer
+		@param newProductContainer The new ProductContainer */
+
+	/** Removes the Item from the System. 
+		@throws AlreadyRemovedException if isInSystem() is false */
+	void removeItem();
+
+	/* End Modifier Methods */
+
+
+	/* Start Utility Methods */
+
+
+	/** @return Returns true if the Item's Product has a specified Shelf Life
+		otherwise false */
+	boolean hasExpirationDate();
+
+	/** @return Returns true if the two Items have equivilent Barcodes*/
+	boolean equals(Item other);
+
+	/** @return Returns the hashcode of the Item's Barcode */
+	int hashcode();
+
+	/** @param date Tests if the time expires before the specified date
+		@return Returns true if the Item expires previous to date If
+		the Item does not expire by that date, or does not have an expiration
+		date, returns false. */
+	boolean isExpiredBy(Calendar date);
+
+	/** @param product
+		@return Returns true if the Item is an instance of product
+	*/
+	boolean isProduct(Product product);
+
+	/* End Utility Methods */
+
+
+}
+
+

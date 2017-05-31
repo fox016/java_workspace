@@ -1,0 +1,60 @@
+DROP TABLE IF EXISTS Item;
+DROP TABLE IF EXISTS Product;
+DROP TABLE IF EXISTS StorageUnit;
+DROP TABLE IF EXISTS ProductGroup;
+DROP TABLE IF EXISTS LastID;
+DROP TABLE IF EXISTS storageUnitToProductGroup;
+DROP TABLE IF EXISTS productGroupToProductGroup;
+DROP TABLE IF EXISTS itemToProduct;
+DROP TABLE IF EXISTS itemToStorageUnit;
+DROP TABLE IF EXISTS productGroupToProduct;
+
+CREATE TABLE Item
+(itemBarcode VARCHAR(12) NOT NULL,
+alive INTEGER NOT NULL,
+entryDate INTEGER NOT NULL,
+exitTime INTEGER NOT NULL,
+productBarcode VARCHAR(255) NOT NULL,
+unitID VARCHAR(12) NOT NULL,
+PRIMARY KEY (itemBarcode),
+FOREIGN KEY(productBarcode) REFERENCES Product(productBarcode),
+FOREIGN KEY(unitID) REFERENCES StorageUnit(unitId));
+
+CREATE TABLE Product
+(productBarcode VARCHAR(255) NOT NULL,
+creationDate INTEGER NOT NULL,
+description VARCHAR(255) NOT NULL,
+amount FLOAT NOT NULL,
+measurement VARCHAR(10) NOT NULL,
+shelfLife INTEGER NOT NULL,
+threeMonthSupply INTEGER NOT NULL,
+PRIMARY KEY (productBarcode));
+
+CREATE TABLE StorageUnit
+(unitID VARCHAR(12) NOT NULL,
+name VARCHAR(255) NOT NULL,
+PRIMARY KEY (unitID));
+
+CREATE TABLE ProductGroup
+(groupID VARCHAR(255) NOT NULL,
+name VARCHAR(255) NOT NULL,
+amount FLOAT NOT NULL,
+measurement VARCHAR(10) NOT NULL,
+PRIMARY KEY (groupID));
+
+CREATE TABLE LastID
+(itemBarcode VARCHAR(12),
+prodContainerID VARCHAR(12));
+
+CREATE TABLE storageUnitToProductGroup
+(unitID VARCHAR(12) NOT NULL,
+groupID VARCHAR(12) NOT NULL);
+
+CREATE TABLE productGroupToProductGroup
+(parentGroupID VARCHAR(12) NOT NULL,
+childGroupID VARCHAR(12) NOT NULL);
+
+CREATE TABLE productGroupToProduct
+(groupID VARCHAR(12) NOT NULL,
+productBarcode VARCHAR(255) NOT NULL);
+

@@ -1,0 +1,134 @@
+package gui.productgroup;
+
+import gui.common.*;
+import gui.inventory.*;
+import model.FacadeAddImpl;
+import model.ProductContainer;
+//import model.ProductGroup;
+import model.Size;
+import model.SupplyType;
+
+/**
+ * Controller class for the add product group view.
+ */
+public class AddProductGroupController extends Controller implements
+		IAddProductGroupController 
+{
+    /**
+     * The ProductContainer we are going to add to.
+     */
+    private ProductContainerData parent;
+	
+	/**
+	 * Constructor.
+	 * 
+	 * @param view Reference to add product group view
+	 * @param container Product container to which the new product group is being added
+	 */
+	public AddProductGroupController(IView view, ProductContainerData container) 
+        {
+		super(view);
+                
+                this.parent=container;
+                assert(parent != null);
+		
+		construct();
+	}
+
+	//
+	// Controller overrides
+	//
+	
+	/**
+	 * Returns a reference to the view for this controller.
+	 * 
+	 * {@pre None}
+	 * 
+	 * {@post Returns a reference to the view for this controller.}
+	 */
+	@Override
+	protected IAddProductGroupView getView() 
+        {
+		return (IAddProductGroupView)super.getView();
+	}
+
+	/**
+	 * Sets the enable/disable state of all components in the controller's view.
+	 * A component should be enabled only if the user is currently
+	 * allowed to interact with that component.
+	 * 
+	 * {@pre None}
+	 * 
+	 * {@post The enable/disable state of all components in the controller's view
+	 * have been set appropriately.}
+	 */
+	@Override
+	protected void enableComponents() 
+        {
+            if (validate())
+            {
+                getView().enableOK(true);
+            }
+            else
+            {
+                getView().enableOK(false);
+            }
+	}
+
+	/**
+	 * Loads data into the controller's view.
+	 * 
+	 *  {@pre None}
+	 *  
+	 *  {@post The controller has loaded data into its view}
+	 */
+	@Override
+	protected void loadValues() 
+    {
+		// Initialize at 0 Count (See demo)
+		getView().setSupplyValue("0");
+		getView().setSupplyUnit(SizeUnits.Count);
+	}
+
+	//
+	// IAddProductGroupController overrides
+	//
+
+	/**
+	 * This method is called when any of the fields in the
+	 * add product group view is changed by the user.
+	 */
+	@Override
+	public void valuesChanged() 
+        {
+            enableComponents();
+	}
+	
+	/**
+	 * This method is called when the user clicks the "OK"
+	 * button in the add product group view.
+	 */
+	@Override
+	public void addProductGroup() 
+        {
+			String name = getView().getProductGroupName();
+			double amount = Double.parseDouble(getView().getSupplyValue());
+			SupplyType type =
+					Translator.instance().getSupplyTypeFromSizeUnit(getView().getSupplyUnit());
+			Size supply = new Size(amount, type);
+			ProductContainer parentContainer =
+					Translator.instance().getProductContainerFromData(parent);
+			
+			FacadeAddImpl.instance().addProductGroup(name, supply, parentContainer);
+	}
+        
+        private boolean validate()
+        {
+            return ProductGroupFuncs.validate(
+                    Translator.instance().getProductContainerFromData(parent),
+                    getView().getProductGroupName(), getView().getSupplyValue(),
+                    getView().getSupplyUnit(), null); //Yes, a null is intended here.
+        }
+
+}
+

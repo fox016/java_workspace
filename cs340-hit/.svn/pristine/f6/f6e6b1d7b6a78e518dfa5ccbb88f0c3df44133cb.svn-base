@@ -1,0 +1,137 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.io.*;
+//import java.util.logging.Level;
+//import java.util.logging.Logger;
+
+/** Size is a class that had an amount and a SupplyType,
+ *  such as "3.5 KILOGRAMS"
+ *
+ * @author Talonos
+ */
+public class Size implements Serializable
+{
+	private static final long serialVersionUID = 8675755791864828169L;
+	
+    private double amount;
+    private SupplyType type;
+
+    /**
+     * Duplicates a size object by creating a new size object with the same 
+     * parameters.
+     * @param toDuplicate the size of the object to duplicate.
+     */
+    public Size(Size toDuplicate)
+    {
+        assert(true);
+    	amount = toDuplicate.amount;
+        type = toDuplicate.type;
+    }
+    
+    /**
+     * Creates a new size object. Error checks to make sure that the new size
+     * has a type and amount that are consistent, that the amount is positive, 
+     * etc.
+     * @param amount the amount to set the size to.
+     * @param type the type to set the size to.
+     * @throws IllegalArgumentException if the amount or type is invalid. 
+     */
+    public Size(double amount, SupplyType type) throws IllegalArgumentException
+    {
+    	if(type == null)
+            throw new IllegalArgumentException("Type cannot be null");
+        if(amount < 0)
+            throw new IllegalArgumentException("Amount cannot be negative");
+    	
+        if (type==SupplyType.COUNT&&amount%1.0!=0)
+        {
+            throw new IllegalArgumentException("Countable units must be of an integer quantity");
+        }
+		 this.amount = amount;
+		 this.type = type;
+    }
+    
+    /**
+     * Returns the amount in this Size object.
+     * @return the amount in this size.
+     */
+    public double getAmount() 
+    {
+        assert(true);
+        return amount;
+    }
+
+    /**
+     * Changes the amount in this size object. Also, checks invalid sizes.
+     * @param amount the amount to change it to.
+     * @throws IllegalArgumentException if the amount is invalid. 
+     */
+    public void setAmount(double amount) throws IllegalArgumentException
+    {
+        if (amount < 0)
+        {
+            throw new IllegalArgumentException("Amount cannot be negative.");
+        }
+        if (type==SupplyType.COUNT&&amount%1.0!=0)
+        {
+            throw new IllegalArgumentException("Countable units must be of an integer quantity");
+        }
+        this.amount = amount;
+    }
+    
+    /**
+     * Returns the type in this Size object.
+     * @return the amount in this size.
+     */
+    public SupplyType getType() 
+    {
+        assert(true);
+        return type;
+    }
+
+    /**
+     * Changes the type of this size object. Also, checks to make sure the type makes sense.
+     * @param type the amount to change it to.
+     * @throws IllegalArgumentException if the type is invalid. 
+     */
+    public void setType(SupplyType type) 
+    {
+        if (type==SupplyType.COUNT&&amount%1.0!=0)
+        {
+            throw new IllegalArgumentException("Countable units must be of an integer quantity");
+        }
+        this.type = type;
+    }
+    
+    /**
+     * Checks to see if two sizes are equal.
+     * @param o the other type. Returns false if !instanceof Size.
+     * @return true if the two are equal, false otherwise.
+     */
+    @Override
+    public boolean equals(Object o)
+    {
+        assert(true);
+        if (o instanceof Size)
+        {
+            return ((Size)o).amount==amount&&((Size)o).type==type;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() 
+    {
+        assert(true);
+        int hash = 7;
+        hash = 89 * hash + (int) (Double.doubleToLongBits(this.amount) ^
+		  		(Double.doubleToLongBits(this.amount) >>> 32));
+        hash = 89 * hash + (this.type != null ? this.type.hashCode() : 0);
+        return hash;
+    }
+    
+}

@@ -1,0 +1,19 @@
+
+/**
+	Class ItemAlreadyRemovedException.  When you attempt to remove an Item
+		that has previously been removed, this exception should be thrown
+	@author Christopher Tensmeyer
+	@version Phase 1.0 Jan 26, 2013
+
+*/
+
+package model;
+public class IllegalItemOperationException extends RuntimeException
+{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2543881046804719851L;
+}
+

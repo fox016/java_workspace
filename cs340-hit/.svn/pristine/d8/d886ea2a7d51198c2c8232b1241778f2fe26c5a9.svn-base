@@ -1,0 +1,219 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.util.Calendar;
+import java.util.NoSuchElementException;
+
+import model.persistence.GroupDataObject;
+import model.persistence.ItemDataObject;
+import model.persistence.PersistenceFacade;
+import model.persistence.PersistenceFactory;
+import model.persistence.ProductDataObject;
+import model.persistence.UnitDataObject;
+
+/**
+ *
+ * @author chris
+ */
+class FacadeEdit {
+	
+	private static PersistenceFacade pf = PersistenceFactory.getFacade();
+	
+	/**
+	 * @param unit
+	 * @param newName
+	 * @throws IllegalArgumentException
+	 */
+	static void setStorageUnitName(StorageUnit unit, String newName)
+		throws IllegalArgumentException
+	{
+		if(unit == null || newName == null)
+			throw new IllegalArgumentException("Must provide valid unit and " +
+					"new name to rename storage unit");
+		
+		House.instance().setName(unit, newName);
+		
+		Facade.setChangedFlag();
+		Notification n = new Notification(OperationType.UPDATE,
+				ObjectType.STORAGE_UNIT, unit);
+		Facade.notifyAllObservers(n);
+		
+		UnitDataObject unitObj = PersistenceFactory.createUnitDataObject(unit);
+		pf.begin();
+		pf.updateUnit(unitObj);
+		pf.end();
+	}
+	
+	/**
+	 * @param group
+	 * @param newName
+	 * @param newSupply
+	 * @throws IllegalArgumentException
+	 * @throws NoSuchElementException
+	 */
+	static void updateProductGroup(ProductGroup group, String newName, Size newSupply)
+			throws IllegalArgumentException, NoSuchElementException
+	{
+                if (!newName.equals(group.getName()))
+                {
+                    group.getParent().renameContainer(group.getName(), newName);
+                }
+		group.setSupply(newSupply);
+		
+		Facade.setChangedFlag(); // notifyObservers only works if this is called first
+		Notification n = new Notification(OperationType.UPDATE,
+				ObjectType.PRODUCT_CONTAINER, group);
+		Facade.notifyAllObservers(n);
+		
+		GroupDataObject groupObj = PersistenceFactory.createGroupDataObject(group);
+		pf.begin();
+		pf.updateGroup(groupObj);
+		pf.end();
+	}
+	
+	/**
+	 * @param item
+	 * @param newEntryDate
+	 * @throws IllegalArgumentException
+	 */
+	static void updateItem(Item item, Calendar newEntryDate)
+		throws IllegalArgumentException
+	{
+		item.setEntryDate(newEntryDate);
+		ProductManager.instance().updateProductDate(item.getProduct(), newEntryDate);
+		
+		Facade.setChangedFlag();
+		Notification n = new Notification(OperationType.UPDATE,
+				ObjectType.ITEM, item);
+		Facade.notifyAllObservers(n);
+		
+		ItemDataObject itemObj = PersistenceFactory.createItemDataObject(item);
+		pf.begin();
+		pf.updateItem(itemObj);
+		pf.end();
+	}
+	
+	/**
+	 * 
+	 * @param oldProduct the oldProduct to be changed
+	 * @param newProduct the Product containing data for the oldProduct to retrieve
+	 * @throws IllegalArgumentException
+	 */
+	static void updateProduct(Product oldProduct, Product newProduct)
+		throws IllegalArgumentException
+	{
+		oldProduct.updateProduct(newProduct);
+		Facade.setChangedFlag(); // notifyObservers only works if this is called first
+		Notification n = new Notification(OperationType.UPDATE,
+				ObjectType.PRODUCT, oldProduct);
+		Facade.notifyAllObservers(n);
+		
+		ProductDataObject productObj = PersistenceFactory.createProductDataObject(newProduct);
+		pf.begin();
+		pf.updateProduct(productObj);
+		pf.end();
+	}
+	
+	/**
+         * Transfers an item to a new Storage unit. If the item's product is not
+         * present in the storage unit, then it throws an exception
+	 * @param item The item to move.
+	 * @param newUnit The unit to move it to.
+	 * @throws NullPointerException
+	 */
+	static void transferItem(Item item, StorageUnit newUnit)
+		throws NullPointerException
+	{
+                if(!newUnit.hasProduct(item.getProductBarcode()))
+                {
+                    throw new IllegalArgumentException("Cannot transfer item to this "
+                            + "storage unit: This storage unit doesnt' have the required product.");
+                }
+		if(canTransferItem(item, newUnit))
+			ItemManager.instance().transfer(item, newUnit);
+                Facade.setChangedFlag(); // notifyObservers only works if this is called first
+		Notification n = new Notification(OperationType.UPDATE,
+				ObjectType.ITEM, item);
+		Facade.notifyAllObservers(n);
+                Facade.setChangedFlag(); // notifyObservers only works if this is called first
+		n = new Notification(OperationType.CREATE,ObjectType.PRODUCT, 
+                        ProductManager.instance(). getProductByBarcode(item.getProductBarcode()));
+		Facade.notifyAllObservers(n);
+		
+		UnitDataObject unitObj = PersistenceFactory.createUnitDataObject(newUnit);
+		ItemDataObject itemObj = PersistenceFactory.createItemDataObject(item);
+		pf.begin();
+		pf.updateUnit(unitObj);
+		pf.updateItem(itemObj);
+		pf.end();
+	}
+	
+	
+	/**
+	 * @param unit
+	 * @param name
+	 * @return
+	 * @throws IllegalStateException
+	 * @throws IllegalArgumentException
+	 */
+	static boolean canSetStorageUnitName(StorageUnit unit, String name)
+		throws IllegalStateException, IllegalArgumentException
+	{
+		assert(true);
+		
+		if(unit == null)
+			return false;
+		if(!House.instance().containsUnit(unit))
+			return false;
+		
+		return House.instance().isValidName(name);
+	}
+	
+	/**
+	 * @param group
+	 * @param newName
+	 * @param newSupply
+	 * @return
+	 */
+	static boolean canUpdateProductGroup(ProductGroup group, String newName, Size newSupply)
+	{
+		assert(true);
+		
+		if(group == null ||
+			newName == null ||
+			newName.isEmpty() ||
+			newSupply == null)
+		{
+			return false;
+		}
+		
+		return group.getParent().isValidName(newName);
+	}
+	
+	/**
+	 * @param item
+	 * @param newEntryDate
+	 * @return
+	 */
+	static boolean canUpdateItem(Item item, Calendar newEntryDate)
+	{
+		return Item.isValidEntryDate(newEntryDate);
+	}
+
+	
+	/**
+	 * @param item
+	 * @param newUnit
+	 * @return
+	 */
+	static boolean canTransferItem(Item item, StorageUnit newUnit)
+	{
+		assert(true);
+		
+		return ItemManager.instance().canTransferItem(item, newUnit);
+	}
+}
+

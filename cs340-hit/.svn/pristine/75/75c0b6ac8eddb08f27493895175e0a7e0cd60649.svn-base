@@ -1,0 +1,41 @@
+
+package model;
+
+import static org.junit.Assert.*;
+
+import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+public class FacadeDeleteTest extends FacadeTest {
+
+    @Before
+    public void initDeleteTest()
+    {
+	 	super.init();
+    }
+
+    @Test
+    public void testDeleteStorageUnit()
+    {
+        f.deleteStorageUnit(House.instance().getUnitByName("Bathroom"));
+
+        Iterator<StorageUnit> units = f.getStorageUnits().iterator();
+        while(units.hasNext())
+            assertFalse(units.next().getName().equals("Bathroom"));
+
+        assertNull(House.instance().getUnitByName("SqueedalySpooch"));
+
+        f.deleteStorageUnit(new StorageUnitImpl("The Best"));
+
+        f.addStorageUnit("Bathroom"); assertTrue(House.instance().containsUnit(House.instance().getUnitByName("Bathroom")));
+	}
+
+}
+

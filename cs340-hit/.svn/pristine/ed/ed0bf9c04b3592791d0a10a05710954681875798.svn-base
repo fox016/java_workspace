@@ -1,0 +1,36 @@
+package model;
+
+import java.io.Serializable;
+
+public abstract class Barcode implements Serializable, Comparable<Barcode>
+{
+	private static final long serialVersionUID = -1423968393343568640L;
+	
+	protected String barcodeString;
+	protected long barcodeLong;
+	
+	public String toString()
+	{
+		return barcodeString;
+	}
+	
+	public long toLong()
+	{
+		return barcodeLong;
+	}
+	
+	public int getLength()
+	{
+		return barcodeString.length();
+	}
+	
+	public boolean equals(Barcode other)
+	{
+		return this.toLong() == other.toLong();
+	}
+	
+	public int compareTo(Barcode other)
+	{
+		return (int) (this.toLong() - other.toLong());
+	}
+}

@@ -1,0 +1,43 @@
+
+package model.persistence;
+
+import model.*;
+
+/** The factory class for database persistence
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+public class DatabasePersistenceFactory
+{
+	/** Factory method to get a reference to the single PersistenceFacade
+		@return The singleton PersistenceFacade
+	*/
+	public PersistenceFacade getFacade() { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Factory method to create an ItemDataObejct
+		@param item The model object represented by the returned DataObject
+		@return Returns a new ItemDataObject representing item
+	*/
+	public ItemDataObject createItemDataObject(Item item) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Factory method to create a ProductDataObejct
+		@param product The model object represented by the returned DataObject
+		@return Returns a new ProductDataObject representing product
+	*/
+	public ProductDataObject createProductDataObject(Product product) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Factory method to create a ProductGroupDataObejct
+		@param group The model object represented by the returned DataObject
+		@return Returns a new ProductGroupDataObject representing product
+	*/
+	public ProductGroupDataObject createProductGroupDataObject(ProductGroup group) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Factory method to create a UnitDataObject
+		@param unit The model object represented by the returned DataObject
+		@return Returns a new UnitDataObject representing unit
+	*/
+	public UnitDataObject createUnitDataObject(StorageUnit unit) { throw new UnsupportedOperationException("Not Implemented"); }
+
+}
+

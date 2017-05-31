@@ -1,0 +1,220 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.util.Calendar;
+import java.util.NoSuchElementException;
+
+/**
+ *
+ * @author chris
+ */
+public class FacadeEditImpl extends FacadeImpl implements FacadeEdit {
+	private static FacadeEdit _facade_edit;
+	
+	private FacadeEditImpl()
+	{
+		super();
+	}
+	
+	/**
+	 * @return The single instance of Facade
+	 */
+	public static FacadeEdit instance()
+	{
+		if(_facade_edit == null)
+			_facade_edit = new FacadeEditImpl();
+		return _facade_edit;
+	}
+	
+	/**
+	 * Resets instance
+	 */
+	public static void reset()
+	{
+		_facade_edit = null;
+	}
+	
+	/**
+	 * @param unit
+	 * @param newName
+	 * @throws IllegalArgumentException
+	 */
+	public void setStorageUnitName(StorageUnit unit, String newName)
+		throws IllegalArgumentException
+	{
+		if(unit == null || newName == null)
+			throw new IllegalArgumentException("Must provide valid unit and " +
+					"new name to rename storage unit");
+		
+		House.instance().setName(unit, newName);
+		
+		this.setChanged();
+		Notification n = new Notification(OperationType.UPDATE,
+				ObjectType.STORAGE_UNIT, unit);
+		notifyObservers(n);
+	}
+	
+	/**
+	 * @param group
+	 * @param newName
+	 * @param newSupply
+	 * @throws IllegalArgumentException
+	 * @throws NoSuchElementException
+	 */
+	public void updateProductGroup(ProductGroup group, String newName, Size newSupply)
+			throws IllegalArgumentException, NoSuchElementException
+	{
+                if (!newName.equals(group.getName()))
+                {
+                    group.getParent().renameContainer(group.getName(), newName);
+                }
+		group.setSupply(newSupply);
+		
+		this.setChanged(); // notifyObservers only works if this is called first
+		Notification n = new Notification(OperationType.UPDATE,
+				ObjectType.PRODUCT_CONTAINER, group);
+		notifyObservers(n);
+	}
+	
+	/**
+	 * @param item
+	 * @param newEntryDate
+	 * @throws IllegalArgumentException
+	 */
+	public void updateItem(Item item, Calendar newEntryDate)
+		throws IllegalArgumentException
+	{
+		item.setEntryDate(newEntryDate);
+		
+		this.setChanged();
+		Notification n = new Notification(OperationType.UPDATE,
+				ObjectType.ITEM, item);
+		notifyObservers(n);
+	}
+	
+	/**
+	 * 
+	 * @param oldProduct the oldProduct to be changed
+	 * @param newProduct the Product containing data for the oldProduct to retrieve
+	 * @throws IllegalArgumentException
+	 */
+	public void updateProduct(Product oldProduct, Product newProduct)
+		throws IllegalArgumentException
+	{
+		ProductManager.instance().updateProduct(oldProduct, newProduct);
+		
+		this.setChanged(); // notifyObservers only works if this is called first
+		Notification n = new Notification(OperationType.UPDATE,
+				ObjectType.PRODUCT, oldProduct);
+		notifyObservers(n);
+	}
+	
+	/**
+         * Transfers an item to a new Storage unit. If the item's product is not
+         * present in the storage unit, then it puts the product in the storage
+         * unit at the base level.
+	 * @param item The item to move.
+	 * @param newUnit The unit to move it to.
+	 * @throws NullPointerException
+	 */
+    @Override
+	public void transferItem(Item item, StorageUnit newUnit)
+		throws NullPointerException
+	{
+                if(!newUnit.hasProduct(item.getProductBarcode()))
+                {
+                    newUnit.addProduct(item.getProductBarcode());
+                }
+		if(canTransferItem(item, newUnit))
+			ItemManager.instance().transfer(item, newUnit);
+                this.setChanged(); // notifyObservers only works if this is called first
+		Notification n = new Notification(OperationType.UPDATE,
+				ObjectType.ITEM, item);
+		notifyObservers(n);
+                this.setChanged(); // notifyObservers only works if this is called first
+		n = new Notification(OperationType.CREATE,ObjectType.PRODUCT, 
+                        ProductManager.instance(). getProductByBarcode(item.getProductBarcode()));
+		notifyObservers(n);
+	}
+	
+	
+	/**
+	 * @param unit
+	 * @param name
+	 * @return
+	 * @throws IllegalStateException
+	 * @throws IllegalArgumentException
+	 */
+	public boolean canSetStorageUnitName(StorageUnit unit, String name)
+		throws IllegalStateException, IllegalArgumentException
+	{
+		assert(true);
+		
+		if(unit == null)
+			return false;
+		if(!House.instance().containsUnit(unit))
+			return false;
+		
+		return House.instance().isValidName(name);
+	}
+	
+	/**
+	 * @param group
+	 * @param newName
+	 * @param newSupply
+	 * @return
+	 */
+	public boolean canUpdateProductGroup(ProductGroup group, String newName, Size newSupply)
+	{
+		assert(true);
+		
+		if(group == null ||
+			newName == null ||
+			newName.isEmpty() ||
+			newSupply == null)
+		{
+			return false;
+		}
+		
+		return group.getParent().isValidName(newName);
+	}
+	
+	/**
+	 * @param item
+	 * @param newEntryDate
+	 * @return
+	 */
+	public boolean canUpdateItem(Item item, Calendar newEntryDate)
+	{
+		return Item.isValidEntryDate(newEntryDate);
+	}
+	
+	/**
+	 * @param product
+	 * @param description
+	 * @param size
+	 * @param shelfLife
+	 * @param threeMonthSupply
+	 * @return
+	 */
+	public boolean canUpdateProduct(Product product)
+	{
+		return ProductManager.instance().canUpdateProduct(product);
+	}
+	
+	/**
+	 * @param item
+	 * @param newUnit
+	 * @return
+	 */
+	public boolean canTransferItem(Item item, StorageUnit newUnit)
+	{
+		assert(true);
+		
+		return ItemManager.instance().canTransferItem(item, newUnit);
+	}
+}
+

@@ -1,0 +1,83 @@
+package model;
+
+import java.util.Objects;
+
+/**
+ *
+ * @author Talonos
+ */
+public class Notification 
+{
+    ObjectType objectType;
+    OperationType operationType;
+    Object object;
+    public Notification(OperationType opt, ObjectType obt, Object o)
+    {
+        objectType = obt;
+        operationType = opt;
+        object = o;
+    }
+
+    public Object getObject() {
+        return object;
+    }
+
+    public void setObject(Object object) {
+        this.object = object;
+    }
+
+    public ObjectType getObjectType() {
+        return objectType;
+    }
+
+    public void setObjectType(ObjectType objectType) {
+        this.objectType = objectType;
+    }
+
+    public OperationType getOperationType() {
+        return operationType;
+    }
+
+    public void setOperationType(OperationType operationType) {
+        this.operationType = operationType;
+    }
+
+    @Override
+    public boolean equals(Object obj) 
+    {
+        if (obj == null) 
+        {
+            return false;
+        }
+        if (getClass() != obj.getClass()) 
+        {
+            return false;
+        }
+        final Notification other = (Notification) obj;
+        if (this.objectType != other.objectType) 
+        {
+            return false;
+        }
+        if (this.operationType != other.operationType) 
+        {
+            return false;
+        }
+        if (!Objects.equals(this.object, other.object)) 
+        {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() 
+    {
+        int hash = 3;
+        hash = 83 * hash + (this.objectType != null ? this.objectType.hashCode() : 0);
+        hash = 83 * hash + (this.operationType != null ? this.operationType.hashCode() : 0);
+        hash = 83 * hash + Objects.hashCode(this.object);
+        return hash;
+    }
+
+    
+}

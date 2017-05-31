@@ -1,0 +1,533 @@
+
+package model;
+
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Map.Entry;
+import java.util.Collection;
+import java.io.Serializable;
+import java.util.NoSuchElementException;
+
+/**
+ * This Singleton Class represents a Lookup Table
+ * 	for Items based on their barcodes and if they are currently
+ * 	in the Tracking System.
+ * Impelemented with HashMaps and HashSets
+ * @author Christopher Tensmeyer
+ * @version Phase 1.0 Jan 26, 2013
+*/
+public class ItemManager implements Serializable
+{
+	/*
+		Responsibilities:
+			Get Live Items
+			Get all Dead
+			Product Container -> Set<Item>
+			(Product Container, Product) -> Set<Item>
+			Product -> Set<Item>
+				can we implement this as the intersection of the two maps?
+
+			canAddItem(Item params)
+			addItem(Item params)
+			removeProduct(Container, Product)
+			transfer(Item -> StorageUnit)
+			canPurge(Product)
+			transfer(Product, Old Conatainer, New Container)
+
+			An Item is only added as soon as it is created.  We only construct live Items.
+			Items only leave the deadTable when their Product is purged.
+
+	*/
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2560037083665187901L;
+	
+	private static ItemManager _manager;
+	private Map<ItemBarcode,Item> liveItems;
+	private Map<ItemBarcode,Item> deadItems;
+	private Map<ProductContainer,Set<Item>> itemsByProductContainer; //this is only live items
+	private Map<Product,Set<Item>> itemsByProduct; //this is live and dead items
+	private Map<ItemBarcode,Item> allItems;
+
+	private ItemManager()
+	{
+		liveItems = new HashMap<ItemBarcode,Item>();
+		deadItems = new HashMap<ItemBarcode,Item>();
+		itemsByProductContainer = new HashMap<ProductContainer,Set<Item>>();
+		itemsByProduct = new HashMap<Product,Set<Item>>();
+		allItems = new HashMap<ItemBarcode,Item>();
+	}
+
+	/** Returns the single instance of ItemManager
+	 * 
+	 * @return	The single instance of ItemManager
+	 */
+	public static ItemManager instance()
+	{
+		if(_manager == null)
+			_manager = new ItemManager();
+		return _manager;
+	}
+
+	/** Test for membership of an Item
+		@param barcode The Barcode of the Item we are looking for
+		@return Returns true if the ItemManager contains an Item with ItemBarcode barcode
+	*/
+	public boolean contains(ItemBarcode barcode)
+	{
+		assert(true);
+		return allItems.containsKey(barcode);
+	}
+
+	/** Test for membership of an Item
+		@param item The Item we are looking for
+		@return Returns true if the ItemManager contains the Item
+	*/
+	public boolean contains(Item item)
+	{
+		if(item == null || item.getItemBarcode() == null)
+			return false;
+		return this.contains(item.getItemBarcode());
+	}
+
+	/** The number of Items contained
+		@return the number of Items both in Storage and Removed
+	*/
+	public int totalItems()
+	{
+		assert(true);
+		return allItems.size();
+	}
+
+	/** The number of Items in the Tracking System
+		@return Returns the number of Items currenly in Storage
+	*/
+	public int numSystemItems()
+	{
+		assert(true);
+		return liveItems.size();
+	}
+
+	/** The number of Removed Items
+		@return Returns the number of Items that have been removed from Storage
+	*/
+	public int numRemovedItems()
+	{
+		assert(true);
+		return deadItems.size();
+	}
+
+	/** Ask if the Item is currenly in the System
+		@param barcode The ItemBarcode of the Item in question
+		@return Returns true if the Item is in Storage
+	*/
+	public boolean isInSystem(ItemBarcode barcode)
+	{
+		assert(true);
+		return liveItems.containsKey(barcode);
+	}
+
+	/** Ask if the Item has been removed from the System
+		@param barcode The ItemBarcode of the Item in question
+		@return Returns true if the Item has been removed
+	*/
+	public boolean isRemoved(ItemBarcode barcode)
+	{
+		assert(true);
+		return deadItems.containsKey(barcode);
+	}
+
+	/** Removes an Item from the System
+		@param barcode The ItemBarcode of the Item in question
+		@throws ItemAlreadyRemovedException If the Item has already been removed
+		@throws NoSuchElementException If the Item is not in the system
+		TODO: rework exceptions here
+	*/
+	public void removeItem(ItemBarcode barcode) throws ItemAlreadyRemovedException
+	{
+		if(!this.contains(barcode))
+			throw new NoSuchElementException();
+		if(deadItems.containsKey(barcode))
+			throw new ItemAlreadyRemovedException(barcode);
+		Item item = liveItems.get(barcode);
+		item.remove();
+		liveItems.remove(barcode);
+		deadItems.put(barcode,item);
+	}
+
+	/** Finds the Item
+		@param barcode The ItemBarcode of the Item
+		@return Returns - The Item if it is found, otherwise returns null
+	*/
+	public Item getItem(ItemBarcode barcode)
+	{
+		assert(true);
+		return allItems.get(barcode);
+	}
+
+	/** Finds the Item if it is in the System
+		@param barcode The ItemBarcode of the Item
+		@return Returns - The Item if it is found in the System, otherwise returns null
+	*/
+	public Item getSystemItem(ItemBarcode barcode)
+	{
+		assert(true);
+		if(liveItems.containsKey(barcode))
+			return liveItems.get(barcode);
+		else
+			return null;
+	}
+
+	/** Finds the Item if it has been removed from the System
+		@param barcode The ItemBarcode of the Item
+		@return Returns - The Item if it has been removed from the system, otherwise null
+	*/
+	public Item getRemovedItem(ItemBarcode barcode)
+	{
+		assert(true);
+		if(deadItems.containsKey(barcode))
+			return deadItems.get(barcode);
+		else
+			return null;
+	}
+
+	/** Returns all Items of a particular product
+		@param product The Product specifies what Items are returned
+		@return Returns a Set of Items.  Can be empty.
+	*/
+	public Set<Item> getItems(Product product)
+	{
+		assert(true);
+		Set<Item> items = itemsByProduct.get(product);
+		if(items == null)
+			items = emptySet();
+		return items;
+	}
+
+	/** Returns all Items inside of a ProductContainer
+		@param container The ProductContainer containing the Items
+		@param recurse A boolean flag.  If true, we return all Items contained
+			in the children of container as well
+		@return Returns a Set of Live Items.  Can be empty.
+		@throws NullPointerException If container is null
+	*/
+	public Set<Item> getItems(ProductContainer container, boolean recurse)
+	{
+		if(container == null)
+			throw new NullPointerException();
+		Set<Item> items = itemsByProductContainer.get(container);
+		if(items == null)
+			items = emptySet();
+
+		if(recurse)
+		{
+			Set<String> childNames = container.getContainers();
+			for(String name : childNames)
+			{
+				ProductContainer child = container.getProductContainer(name);
+				Set<Item> childItems = this.getItems(child, true);
+				items.addAll(childItems);
+			}
+		}
+		return items;
+	}
+	
+	/** Returns all Items inside of a ProductContainer of a specific product
+		@param container The ProductContainer containing the Items
+		@param product The Product specifying Item type
+		@param recurse A boolean flag.  If true, we return all Items of product contained
+			in the children of container as well
+		@return Returns a Set of Live Items.  Can be empty.
+		@throws NullPointerException If container is null or product is null
+		TODO: should this have the options to recurse or not?
+	*/
+	public Set<Item> getItems(ProductContainer container, Product product, boolean recurse)
+	{
+		if(container == null || product == null)
+			throw new NullPointerException();
+
+		Set<Item> systemItemsOfProduct = getSystemItems(product);
+		Set<Item> itemsInProductContainer = getItems(container, recurse);
+		Set<Item> items = emptySet();
+
+		//computes the intersection of the two sets
+		for(Item item : systemItemsOfProduct)
+			if(itemsInProductContainer.contains(item))
+				items.add(item);
+		return items;
+	}
+
+	/** Returns the Set of Items currently in the system of that product
+		@param product The Product specifies what Items are returned
+		@return Returns a Set of Items.  Can be empty.
+	*/
+	public Set<Item> getSystemItems(Product product)
+	{
+		assert(true);
+		Set<Item> items = emptySet();
+		Set<Item> candidates = itemsByProduct.get(product);
+		if(candidates != null)
+			for(Item item : candidates)
+				if(item.isInSystem())
+					items.add(item);
+		return items;
+	}
+
+	/** Returns the Set of Items removed from the System of that Product type
+		@param product The Product specifies what Items are returned
+		@return Returns a Set of Items. Can be empty
+	*/
+	public Set<Item> getRemovedItems(Product product)
+	{
+		assert(true);
+		Set<Item> items = emptySet();
+		Set<Item> candidates = itemsByProduct.get(product);
+		if(candidates != null)
+			for(Item item : candidates)
+				if(!item.isInSystem())
+					items.add(item);
+		return items;
+	}
+
+	/** Returns a set of all Items
+		@return Returns a set of all Items
+	*/
+	public Collection<Item> allItems()
+	{
+		assert(true);
+		return allItems.values();
+	}
+
+	/** Returns a set of all Items in the System
+		@return Returns a set of all Items in the System
+	*/
+	public Collection<Item> allSystemItems()
+	{
+		assert(true);
+		return liveItems.values();
+	}
+
+	/** Returns a set of all Removed Items
+		@return Returns a set of all Removed Items
+	*/
+	public Collection<Item> allRemovedItems()
+	{
+		assert(true);
+		return deadItems.values();
+	}
+
+	/** Precondition: !hasSystemItem(product)
+		Postcondition: All Items in the Removed Table are purged (permanently deleted)
+		@param product The product we wish to purge
+		@throws IllegalItemOperationException If the precondition is violated
+		@throws NullPointerException If product is null
+	*/
+	public void purgeProduct(Product product) throws IllegalItemOperationException
+	{
+		if(product == null)
+			throw new NullPointerException();
+		if(hasSystemItem(product))
+			throw new IllegalItemOperationException();
+		itemsByProduct.remove(product);
+			//Removing elements while iterating is difficult
+		Set<ItemBarcode> toRemove = new HashSet<ItemBarcode>();
+		for(ItemBarcode barcode : deadItems.keySet())
+		{
+			Item item = deadItems.get(barcode);
+			if(item.isProduct(product))
+				toRemove.add(barcode);
+		}
+
+		//purges all Items of that product
+		for(ItemBarcode barcode : toRemove)
+			deadItems.remove(barcode);
+	
+	}
+
+	/** Check the System for an Item of that Product 
+		@param product The product we are searching for
+		@return Returns true if there is an Item in the system that is an instance
+			of product
+	*/
+	public boolean hasSystemItem(Product product)
+	{
+		assert(true);
+		Set<Item> items = itemsByProduct.get(product);
+		if(items == null)
+			return false;
+
+		for(Item item : items)
+		{
+			if(item.isInSystem())
+				return true;
+		}
+		return false;
+	}
+
+	/** Inserts the item into the table
+	*/
+	public boolean insert(Item item)
+	{
+		if(!item.isValidItem() || !item.isInSystem())
+			throw new IllegalArgumentException("Invalid Item");
+		if(this.contains(item))
+			return false;
+		if(item.getItemBarcode() != null)
+			throw new ItemException("Item already has Barcode but it not indexed");
+
+		//this is the only place where barcodes are assigned to Items
+		item.setItemBarcode(new ItemBarcode());
+		allItems.put(item.getItemBarcode(),item);
+		liveItems.put(item.getItemBarcode(),item);
+
+		Set<Item> productItems = itemsByProduct.get(item.getProduct());
+		if(productItems == null)
+		{
+			productItems = emptySet();
+			productItems.add(item);
+			itemsByProduct.put(item.getProduct(),productItems);
+		}
+		else
+			productItems.add(item);
+
+		ProductContainer container = item.getStorageUnit().getProductContainer((item.getProduct()));
+		Set<Item> containerItems = itemsByProductContainer.get(container);
+		if(containerItems == null)
+		{
+			containerItems = emptySet();
+			containerItems.add(item);
+			itemsByProductContainer.put(container, containerItems);
+		}
+		else
+			containerItems.add(item);
+
+		return true;
+	}
+
+////////////////////////////////////working zone/////////////////////////////////////////////
+
+	/** This evaluates to true if we can construct an Item from these parameters
+		@param item The Item we want to add
+		@return Returns true if this item can be inserted into the table
+	*/
+	public boolean canInsertItem(Item item)
+	{
+		return item.isValidItem() && item.isInSystem() && item.getItemBarcode() == null;
+	}
+
+	/** Updates the Item indexing to reflect removing a Product from a ProductContainer
+			All Items of that product should be moved to the Storage Unit level
+		@param container This should be a Product Group. 
+		@param product The product beeing removed.
+		@throws NullPointerException If container or product is null
+	*/
+	public void removeProduct(ProductContainer container, Product product)
+	{
+		if(container == null)
+			throw new NullPointerException("ProductContainer is null");
+		if(product == null)
+			throw new NullPointerException("Product is null");
+
+		Set<Item> movingItems = getItems(container, product, false);
+		StorageUnit target = movingItems.iterator().next().getStorageUnit();
+		Set<Item> targetItems = itemsByProductContainer.get(target);
+		if(targetItems == null)
+			itemsByProductContainer.put(target, movingItems);
+		else
+			targetItems.addAll(movingItems);
+	}
+
+	/** Adds a Product to a ProductContainer
+		@param container This should be a Product Group. 
+		@param product The product beeing removed.
+		@throws NullPointerException If container or product is null
+	*/
+	public void addProduct(ProductContainer container, Product product)
+	{
+		if(container == null)
+			throw new NullPointerException("ProductContainer is null");
+		if(product == null)
+			throw new NullPointerException("Product is null");
+
+		StorageUnit parent = container.getRoot();
+		Set<Item> oldLoc = itemsByProductContainer.get(parent);
+		if(oldLoc == null)
+			return; //there are no Items to move
+
+		Set<Item> movingItems = emptySet();
+		for(Item item : oldLoc)
+			if(item.isProduct(product))
+				movingItems.add(item);
+
+		Set<Item> newLoc = itemsByProductContainer.get(container);
+		if(newLoc == null)
+		{
+			newLoc = emptySet();
+			itemsByProductContainer.put(container, newLoc);
+		}
+		
+		for(Item item : movingItems)
+		{
+			oldLoc.remove(item);
+			newLoc.add(item);
+		}
+	}
+
+	/** transfers the item to the appropiate StorageUnit
+		@param item The Item to be transfered
+		@param storageUnit Where the Item is moving.  It will be added to the appropiate
+			sub ProductGroup where Product of the Item resides
+		@throws NullPointerException If item or target is null
+	*/
+	public void transfer(Item item, StorageUnit storageUnit)
+	{
+		if(item == null)
+			throw new NullPointerException("Item is null");
+		if(storageUnit == null)
+			throw new NullPointerException("Storage Unit is null");
+		//find old ProductContainer
+		Product product = item.getProduct();
+		ProductContainer old = item.getStorageUnit().getProductContainer(product);
+		if(old == null)
+			old = item.getStorageUnit();
+		//unindex the Item to that ProductContainer
+		//if this line fails, then some invariants are broken
+		itemsByProductContainer.get(old).remove(item);
+
+		ProductContainer target = storageUnit.getProductContainer(product);
+		if(target == null)
+			target = storageUnit;
+		Set<Item> items = itemsByProductContainer.get(target);
+		if(items == null)
+		{
+			items = emptySet();
+			items.add(item);
+			itemsByProductContainer.put(target, items);
+		}
+		else
+			items.add(item);
+		item.setStorageUnit(storageUnit);
+	}
+	
+
+	/** You can only purge a Product from the system if no items of that Product exist
+		@param product The product we wish to purge from the system
+		@throws NullpointerException If product is null
+		@return Returns true if no Items are live in the system of this product
+	*/
+	public boolean canPurge(Product product)
+	{
+		return !hasSystemItem(product);
+	}
+
+	private Set<Item> emptySet()
+	{
+		return new HashSet<Item>();
+	}
+}
+
+

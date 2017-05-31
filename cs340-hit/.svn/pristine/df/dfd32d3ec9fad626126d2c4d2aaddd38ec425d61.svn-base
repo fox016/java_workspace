@@ -1,0 +1,91 @@
+
+package model.persistence;
+
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import model.StorageUnit;
+
+/** This class is responsible for executing individual sql statements concerning Units
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+class UnitSql
+{
+	/** Gets an Unit 
+		@param id Specifies which Storage Unit to get
+		@return Returns the UnitDataObject for the Unit of id
+	*/
+	UnitDataObject getUnit(int id) {
+		throw new UnsupportedOperationException("Not Implemented");
+		}
+
+	/** Stores a newly created Unit in the data persistence model.
+		@param udo The UnitDataObject representing the Unit
+	*/
+	void createUnit(DatabaseUnitDataObject udo) {
+		System.out.println(udo.unitId());
+		System.out.println(udo.name());
+		
+		try {
+			PreparedStatement stmt = DatabaseFacade.instance().connection()
+					.prepareStatement(SqlStatement.createUnit);
+			stmt.setInt(1, udo.unitId());
+			stmt.setString(2, udo.name());
+			stmt.executeUpdate();
+
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		DatabaseFacade.instance().updateLastIds();
+	}
+
+	/**
+	 * Updates an existing Unit in the data persistence model.
+	 * 
+	 * @param udo
+	 *            The UnitDataObject representing the Unit
+	 */
+	void updateUnit(DatabaseUnitDataObject udo) {
+		try {
+			removeUnit(udo);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		createUnit(udo);
+	}
+
+	/** Removes an Unit from the data persistence model and removes the parentToChild entry
+	 * associated with the unit removed.
+		@param udo The UnitDataObject representing the Unit
+	*/
+	void deleteUnit(DatabaseUnitDataObject udo) {
+		
+		try {
+			removeUnit(udo);
+			
+			PreparedStatement remParToChild = DatabaseFacade.instance().connection()
+					.prepareStatement(SqlStatement.deleteParToChild);
+			remParToChild.setInt(1,udo.unitId());
+			remParToChild.setInt(2, udo.unitId());
+			remParToChild.executeUpdate();
+
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private void removeUnit(DatabaseUnitDataObject udo) throws SQLException {
+		PreparedStatement stmt = DatabaseFacade.instance().connection()
+				.prepareStatement(SqlStatement.deleteUnit);
+		stmt.setInt(1, udo.unitId());
+		stmt.executeUpdate();
+	}
+		
+}
+

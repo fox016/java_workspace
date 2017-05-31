@@ -1,0 +1,79 @@
+package model;
+
+import static org.junit.Assert.*;
+
+import java.util.Set;
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class FacadeTest {
+	
+	private Facade f;
+	
+	StorageUnit su1;
+	StorageUnit su2;
+	StorageUnit su3;
+
+	@Before
+	public void initFacadeTest()
+	{
+		f = FacadeImpl.instance();
+		
+		su1 = f.addStorageUnit("Kitchen");
+		su2 = f.addStorageUnit("Bathroom");
+		su3 = f.addStorageUnit("Basement");
+	}
+	
+	@Test
+	public void testAddStorageUnit()
+	{
+		Set<StorageUnit> units = f.getStorageUnits();
+		assertFalse(units.isEmpty());
+		assertTrue(units.size() == 3);
+		assertTrue(House.instance().containsUnit(su1));
+		assertTrue(House.instance().containsUnit(su2));
+		assertTrue(House.instance().containsUnit(su3));
+	}
+	
+	@Test(expected=IllegalArgumentException.class)
+	public void testAddNullStorageUnit() throws IllegalArgumentException
+	{
+		f.addStorageUnit(null);
+	}
+	
+	@Test(expected=IllegalArgumentException.class)
+	public void testAddEmptyStorageUnit() throws IllegalArgumentException
+	{
+		f.addStorageUnit("");
+	}
+	
+	@Test(expected=IllegalArgumentException.class)
+	public void testAddDuplicateStorageUnit() throws IllegalArgumentException
+	{
+		f.addStorageUnit("Kitchen");
+	}
+	
+	@Test
+	public void testUpdateUnitName()
+	{
+		f.setStorageUnitName(su1, "Kitchenette");
+		
+		StorageUnit temp = f.addStorageUnit("Kitchen");
+		assertTrue(House.instance().getAllUnits().size() == 4);
+		
+		f.deleteStorageUnit(temp);
+		assertTrue(House.instance().getAllUnits().size() == 3);
+	}
+	
+	@Test
+	public void testRemoveStorageUnit()
+	{
+		f.deleteStorageUnit(su1);
+		f.deleteStorageUnit(su2);
+		f.deleteStorageUnit(su3);
+		
+		assertTrue(House.instance().getAllUnits().isEmpty());
+	}
+	
+}

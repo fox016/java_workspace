@@ -1,0 +1,45 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.util.Collection;
+
+/** This interface represents a StorageUnit, which contains
+ *  Items and Product Groups
+ *
+ * @author Talonos
+ */
+public interface StorageUnit extends ProductContainer
+{
+  
+    /**
+     * Adds items to this Storage unit. If the item is of a product type that
+     * does not currently exist anywhere within this storage unit, then this
+     * method adds the product to the top level of this product group 
+     * automatically.
+     * @param items the barcodes of the items to move.
+     */
+    public void addItems (Collection<ItemBarcode> items);
+    
+    /**
+     * Removes an item from this storage unit. By default, this item does not go
+     * anywhere else. To transfer items from one Storage Unit to another, use
+     * TransferItems.
+     * @param barCode the barcode of the item to remove.
+     */
+    public void removeItem(long barCode);
+    
+    /**
+     * Transfers items from the calling storage unit to the storage unit
+     * specified by "Destination".
+     * @param items the barcodes of the items to transfer.
+     * @param destination the storage unit to transfer them to.
+     */
+    public void transferItems(Collection<ItemBarcode> items, StorageUnit destination);
+    
+    public String getName();
+    
+    public String setName(String newName);
+}

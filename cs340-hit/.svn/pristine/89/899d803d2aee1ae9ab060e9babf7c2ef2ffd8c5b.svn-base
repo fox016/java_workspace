@@ -1,0 +1,49 @@
+
+package model.report;
+import model.StorageUnit;
+import model.ProductGroup;
+import model.Product;
+
+	/** 
+		This class extracts information needed for the Notices Report
+		@author Christopher Tensmeyer
+		@verison March 6th, 2013
+	*/
+
+class NoticesVisitor implements Visitor
+{
+
+	/** Constructs a NoticesVisitor
+		@param builder The builder that constructs the Report
+	*/
+	public NoticesVisitor(ReportBuilder builder)
+	{
+
+	}
+
+	/** Visits a StorageUnit
+		@param unit The StorageUnit to visit
+	*/
+	public void visit(StorageUnit unit)
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+
+	/** Visits a ProductGroup
+		@param group The ProductGroup to visit
+	*/
+	public void visit(ProductGroup group)
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+
+	/** Visits a Product
+		@param product The Product to visit
+	*/
+	public void visit(Product product)
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+
+}
+

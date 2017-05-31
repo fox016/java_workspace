@@ -1,0 +1,59 @@
+package gui.item;
+
+import java.util.Collection;
+import model.Item;
+import model.Product;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.File;
+import model.Barcode;
+//What are the correct imports for this?
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+
+public class BarcodePrinter
+{
+	private static String defaultFilename = "<filepath>";
+	private static final int WIDTH = 500;
+	private static final int HEIGHT = 500;
+	private String filename;
+
+	//for testing purposes
+	
+	public BarcodePrinter()
+	{
+		this(defaultFilename);
+	}
+
+	public BarcodePrinter(String fn)
+	{
+		filename = fn;
+	}
+
+	/** Writes a pdf containing barcodes.
+		@param items The list of Items for which we wish to print the barcodes for	
+		@param filename The location where the pdf is to be written
+		@throws IOException If the file cannot be written
+		@return The File object associated with the newly created pdf
+	*/
+	public File writeBarcodesToPdf(Collection<Item> items) throws IOException
+	{
+		Document document = new Document(new Rectangle(WIDTH, HEIGHT));
+		PDFWriter writer = new PdfWriter.getInstance(document,
+									new FileOutputStream(this.filename));
+		document.open();
+
+		for(Item item : items)
+			writeItem(document, writer, item);
+
+		document.close();
+
+	}
+
+	private void writeItem(Document document, PDFWriter writer, Item item)
+	{
+
+	}
+
+}
+

@@ -1,0 +1,93 @@
+package gui.item;
+
+import java.util.Collection;
+import model.Item;
+import model.Product;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.File;
+//What are the correct imports for this?
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+
+public class BarcodePrinter
+{
+	private static String defaultFilename = "<filepath>";
+	private static final int WIDTH = 500;
+	private static final int HEIGHT = 500;
+	private static final int BARCODES_PER_ROW = 10;
+	private String filename;
+
+	//for testing purposes
+	
+	public BarcodePrinter()
+	{
+		this(defaultFilename);
+	}
+
+	public BarcodePrinter(String fn)
+	{
+		filename = fn;
+	}
+
+	/** Writes a pdf containing barcodes.
+		@param items The list of Items for which we wish to print the barcodes for	
+		@param filename The location where the pdf is to be written
+		@throws IOException If the file cannot be written
+		@return The File object associated with the newly created pdf
+	*/
+	public File writeBarcodesToPdf(Collection<Item> items) throws IOException
+	{
+		try
+		{
+			Document document = new Document(new Rectangle(WIDTH, HEIGHT));
+			PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream(this.filename));
+			document.open();
+			PdfContentByte cb = writer.getDirectContent();
+			BarcodeEAN barcodeMaker = new BarcodeEAN();
+
+			PdfPTable table = new PdfPTable(BARCODES_PER_ROW);
+
+			for(Item item : items)
+			{
+				barcodeMaker.setCodeType(Barcode.UPCA);
+				barcodeMaker.setCode(item.getItemBarcode().toString());
+
+				table.addCell(barcodeMaker.createImageWithBarcode(cb, null, null));
+			}
+
+	//		for(int k = items.size(); k < BARCODES_PER_ROW; k++)
+	//			table.addCell(new BufferedImage(50,50, BufferedImage.TYPE_BYTE_GRAY));
+
+			document.add(table);
+
+/*
+			Makes a single column
+			for(Item item : items)
+			{
+				//writeItem(document, writer, item);
+				barcodeMaker.setCodeType(Barcode.UPCA);
+				barcodeMaker.setCode(item.getItemBarcode().toString());
+
+				document.add(barcodeMaker.createImageWithBarcode(cb, null, null));
+			}
+*/
+
+			document.close();
+		}
+		catch(DocumentException e)
+		{
+			throw new IOException("Could not produce pdf");
+		}
+
+		return new File(this.filename);
+	}
+
+
+	private void writeItem(Document document, PdfWriter writer, Item item) throws IOException, DocumentException
+	{
+
+	}
+
+}
+

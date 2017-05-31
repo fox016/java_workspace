@@ -1,0 +1,35 @@
+
+package model.persistence;
+
+import model.Product;
+
+/** This class is responsible for executing individual sql statements concerning Products
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+class ProductSql
+{
+	/** Gets an Product 
+		@param id Specifies which Product to get
+		@return Returns the ProductDataObject for the Product of id
+	*/
+	ProductDataObject getProduct(int id) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Stores a newly created Product in the data persistence model.
+		@param pdo The ProductDataObject representing the Product
+	*/
+	void createProduct(ProductDataObject pdo) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Updates an existing Product in the data persistence model.
+		@param pdo The ProductDataObject representing the Product
+	*/
+	void updateProduct(ProductDataObject pdo) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Removes an Product from the data persistence model.
+		@param pdo The ProductDataObject representing the Product
+	*/
+	void deleteProduct(ProductDataObject pdo) { throw new UnsupportedOperationException("Not Implemented"); }
+
+}
+

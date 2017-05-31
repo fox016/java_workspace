@@ -1,0 +1,16 @@
+package model;
+
+public class ItemException extends Exception
+{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4323908672407092189L;
+	
+	public ItemException()
+	{
+		super();
+	}
+
+}

@@ -1,0 +1,33 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package common.commands;
+
+/**
+ *
+ * @author Talonos
+ */
+public class CmdAddProduct implements Command
+{
+
+    /**
+     * Adds a product to a storage unit. Note that this implies the storage unit didn't have
+     * the product anywhere inside of it to begin with.
+     */
+    @Override
+    public void doAction() 
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * Removes a product from a storage unit. Note that this is sufficient to undo the
+     * above, because we assume that the storage unit never had the product in it to begin with.
+     */
+    @Override
+    public void undoAction() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+}

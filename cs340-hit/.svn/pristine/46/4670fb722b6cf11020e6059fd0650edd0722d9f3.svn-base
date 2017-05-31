@@ -1,0 +1,158 @@
+package model.report;
+
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.Set;
+
+import model.Item;
+import model.ItemManager;
+import model.StorageUnit;
+import model.ProductGroup;
+import model.Product;
+
+	/** 
+		This class extracts information needed for the Product Statistics Report
+		@author Christopher Tensmeyer
+		@version March 6th, 2013
+	*/
+
+class ProductStatisticsVisitor implements Visitor
+{
+	private ReportBuilder builder;
+	private final int COLUMNS = 10;
+	
+	private Calendar startDate;
+	private Calendar endDate;
+
+	/** Constructs a ProductStatisticsVisitor
+		@param builder The builder that constructs the Report
+		@param numMonths The number of months to use in
+			constructing the Product Statistics Report
+		@throws IOException
+	*/
+	public ProductStatisticsVisitor(ReportBuilder builder, int numMonths)
+		throws IOException
+	{
+		this.builder = builder;
+		builder.writeTitle("Product Report (" + numMonths + " Months)");
+		builder.startTable(COLUMNS);	
+		builder.writeTableHeader(getColumnTitles());
+		calculateDateRange(numMonths);
+	}
+	
+	/**
+	 * Calculates range of dates to be used to build report
+	 * 
+	 * @param months
+	 */
+	private void calculateDateRange(int months)
+	{
+		endDate = Calendar.getInstance();
+		startDate = Calendar.getInstance();
+		startDate.add(Calendar.MONTH, months * -1);
+	}
+
+	/** Visits a StorageUnit
+		@param unit The StorageUnit to visit
+	*/
+	public void visit(StorageUnit unit)
+	{
+		throw new UnsupportedOperationException("Storage Unit Visit Not Implemented");
+	}
+
+	/** Visits a ProductGroup
+		@param group The ProductGroup to visit
+	*/
+	public void visit(ProductGroup group)
+	{
+		throw new UnsupportedOperationException("Product Group Visit Not Implemented");
+	}
+
+	/** Visits a Product
+		@param product The Product to visit
+	*/
+	public void visit(Product product)
+	{
+		Set<Item> allItems = ItemManager.instance().getItems(product);
+		
+		int currentSupply = getCurrentSupply(allItems);
+		
+		// Calculate average supply TODO
+		double averageSupply = 0;
+		
+		// Calculate min supply TODO
+		int minSupply = 0;
+		
+		// Calculate max supply TODO
+		int maxSupply = 0;
+		
+		// Calculate number of items used TODO
+		int usedSupply = 0;
+		
+		// Calculate number of items added TODO
+		int addedSupply = 0;
+		
+		// Calculate average age of all used items TODO
+		double averageUsedAge = 0;
+		
+		// Calculate max age of all used items TODO
+		int maxUsedAge = 0;
+		
+		// Calculate average age of items in system TODO
+		double averageCurrentAge = 0;
+		
+		// Calculate max age of items in system TODO
+		int maxCurrentAge = 0;
+		
+		// Set row values
+		String[] row = new String[COLUMNS];
+		row[0] = product.getDescription();
+		row[1] = product.getBarcode().toString();
+		row[2] = product.getSize().toString();
+		row[3] = product.getThreeMonthSupply() + "";
+		row[4] = currentSupply + " / " + averageSupply;
+		row[5] = minSupply + " / " + maxSupply;
+		row[6] = usedSupply + " / " + addedSupply;
+		row[7] = product.getShelfLife() + " months";
+		row[8] = averageUsedAge + " / " + maxUsedAge;
+		row[9] = averageCurrentAge + " / " + maxCurrentAge;
+		
+		// Write row to file
+		try {
+			builder.writeTableRow(row);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * @param allItems
+	 * @return Number of items currently in system
+	 */
+	private int getCurrentSupply(Set<Item> allItems) {
+		int currentSupply = 0;
+		for(Item item : allItems)
+		{
+			if(item.getEntryDate().compareTo(startDate) >= 0)
+			{
+				if(item.getExitTime() == null)
+				{
+					System.out.println(item.toString() + ", " + item.getItemBarcode().toString());
+					currentSupply++;
+				}
+			}
+		}
+		return currentSupply;
+	}
+	
+	/**
+	 * @return Column titles for this report
+	 */
+	private String[] getColumnTitles(){
+		String[] columnTitles = {"Description","Barcode", "Size", "3-Month Supply",
+				"Supply: Cur/Avg", "Supply: Min/Max", "Supply: Used/Added", "Shelf Life",
+				"Used Age: Avg/Max", "Cur Age: Avg/Max"};
+		return columnTitles;
+	}
+}
+

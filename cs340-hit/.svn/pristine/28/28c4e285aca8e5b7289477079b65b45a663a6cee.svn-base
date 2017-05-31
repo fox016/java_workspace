@@ -1,0 +1,106 @@
+
+package model.report;
+import java.io.IOException;
+import java.util.Set;
+
+import model.Item;
+import model.ItemManager;
+import model.StorageUnit;
+import model.ProductGroup;
+import model.Product;
+
+	/** 
+		This class extracts information needed for the Expired Item Report
+		@author Christopher Tensmeyer
+		@version March 6th, 2013
+	*/
+
+class ExpiredItemsVisitor implements Visitor
+{
+	ReportBuilder builder;
+	final int COLUMNS = 6;
+
+	/** Constructs an ExpiredItemVisitor
+		@param builder The builder that constructs the Report
+	 * @throws IOException 
+	*/
+	public ExpiredItemsVisitor(ReportBuilder builder) throws IOException
+	{
+		this.builder = builder;
+		builder.writeTitle("Expired Items");
+		builder.startTable(COLUMNS);	
+		builder.writeTableHeader(getColumnTitles());
+		
+	}
+	
+	private String[] getColumnTitles(){
+		String[] columnTitles = {"Description","Storage Unit", "Product Group", "Entry Date"
+				, "Expire Date", "Item Barcode"};
+		return columnTitles;
+	}
+
+	/** Visits a StorageUnit
+		@param unit The StorageUnit to visit
+	*/
+	public void visit(StorageUnit unit)
+	{
+		Set<Item> items = ItemManager.instance().getSystemItems(unit, false);
+		for(Item item : items){
+			
+			if(item.getExpirationDate() == null){
+				continue;
+			}
+			
+			String[] row = new String[COLUMNS];
+			row[0] = item.getDescription();
+			row[1] = unit.getName();
+			row[2] = "";
+			row[3] = item.getEntryDate().getTime().toString();			
+			row[4] = item.getExpirationDate().getTime().toString();	
+			row[5] = item.getItemBarcode().toString();
+			try {
+				builder.writeTableRow(row);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+	}
+
+	/** Visits a ProductGroup
+		@param group The ProductGroup to visit
+	*/
+	public void visit(ProductGroup group)
+	{
+		Set<Item> items = ItemManager.instance().getSystemItems(group, false);
+		for(Item item : items){
+			
+			if(item.getExpirationDate() == null){
+				continue;
+			}
+			
+			String[] row = new String[COLUMNS];
+			row[0] = item.getDescription();
+			row[1] = group.getRoot().getName();
+			row[2] = group.getName();
+			row[3] = item.getEntryDate().getTime().toString();			
+			row[4] = item.getExpirationDate().getTime().toString();	
+			row[5] = item.getItemBarcode().toString();
+			try {
+				builder.writeTableRow(row);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/** Visits a Product
+		@param product The Product to visit
+	*/
+	public void visit(Product product)
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+
+}
+

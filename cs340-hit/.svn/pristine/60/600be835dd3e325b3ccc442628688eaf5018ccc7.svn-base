@@ -1,0 +1,172 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.util.NoSuchElementException;
+import java.util.Set;
+
+/**
+ *
+ * @author chris
+ */
+public class FacadeDeleteImpl extends FacadeImpl implements FacadeDelete {
+	private static FacadeDelete _facade_delete;
+	
+	private FacadeDeleteImpl()
+	{
+		super();
+	}
+	
+	/**
+	 * @return The single instance of Facade
+	 */
+	public static FacadeDelete instance()
+	{
+		if(_facade_delete == null)
+			_facade_delete = new FacadeDeleteImpl();
+		return _facade_delete;
+	}
+	
+	/**
+	 * Resets instance
+	 */
+	public static void reset()
+	{
+		_facade_delete = null;
+	}
+	
+	
+	
+	/**
+	 * @param item
+	 * @throws ItemAlreadyRemovedException
+	 * @throws NoSuchElementException
+	 */
+	public void removeItemFromStorage(Item item)
+		throws ItemAlreadyRemovedException, NoSuchElementException
+	{
+		ItemManager.instance().removeItem(item.getItemBarcode());
+		this.setChanged(); // notifyObservers only works if this is called first
+		Notification n = new Notification(OperationType.DELETE,
+				ObjectType.ITEM, item);
+		notifyObservers(n);
+	}
+	
+	// ----------------------------------------------------------------- Delete
+	
+	/**
+	 * @param unit
+	 * @throws IllegalArgumentException
+	 * @throws IllegalStateException
+	 * @throws NullPointerException
+	 */
+	public void deleteStorageUnit(StorageUnit unit)
+		throws IllegalArgumentException, IllegalStateException,
+		NullPointerException
+	{
+		if(unit == null)
+			throw new IllegalArgumentException("Cannot delete null unit");
+		
+		// Unit cannot hold items
+		Set<Item> items = ItemManager.instance().getItems(unit, true);
+		if(!items.isEmpty())
+			throw new IllegalStateException("Cannot delete storage unit until you " +
+					"remove all items");
+		
+		House.instance().removeStorageUnit(unit);
+	}
+	
+	/**
+	 * @param group
+	 * @throws IllegalArgumentException
+	 * @throws IllegalStateException
+	 * @throws NullPointerException
+	 * @throws NoSuchElementException
+	 */
+	public void deleteProductGroup(ProductGroup group)
+			throws IllegalArgumentException, IllegalStateException,
+			NullPointerException, NoSuchElementException
+	{
+		if(group == null)
+			throw new IllegalArgumentException("Cannot delete null product group");
+		
+		// Grup cannot hold items
+		Set<Item> items = ItemManager.instance().getItems(group, true);
+		if(!items.isEmpty())
+			throw new IllegalStateException("Cannot delete product group until you " +
+					"remove all items");
+		
+		group.getParent().deleteContainer(group.getName());
+	}
+	
+	/**
+	 * @param product
+	 * @throws NullPointerException
+	 * @throws IllegalItemOperationException
+	 */
+	public void deleteProduct(Product product)
+		throws NullPointerException, IllegalItemOperationException
+	{
+		if(ItemManager.instance().canPurge(product))
+		{
+			System.out.println("Can purge " + product.getDescription() + " from system");
+			ItemManager.instance().purgeProduct(product);
+		}
+	}
+	
+	// ------------------------------------------------------------- Validation
+	
+	
+	/**
+	 * @param item
+	 * @return
+	 */
+	public boolean canRemoveItemFromStorage(Item item)
+	{
+		if(item == null)
+			return false;
+		
+		return ItemManager.instance().isInSystem(item.getItemBarcode());
+	}
+	
+	/**
+	 * @param unit
+	 * @return
+	 */
+	public boolean canDeleteStorageUnit(StorageUnit unit)
+	{
+		if(unit == null)
+			return false;
+		
+		Set<Item> items = ItemManager.instance().getItems(unit, true);
+		return items.isEmpty();
+	}
+	
+	/**
+	 * @param group
+	 * @return
+	 */
+	public boolean canDeleteProductGroup(ProductGroup group)
+	{
+		if(group == null)
+			return false;
+		
+		Set<Item> items = ItemManager.instance().getItems(group, true);
+		return items.isEmpty();
+	}
+	
+	/**
+	 * @param product
+	 * @return
+	 */
+	public boolean canDeleteProduct(Product product)
+	{
+		if(product == null)
+			return false;
+		
+		return ItemManager.instance().canPurge(product);
+	}
+
+}

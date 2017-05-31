@@ -1,0 +1,240 @@
+
+package model.persistence;
+
+import model.*;
+import java.sql.*;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.Calendar;
+import java.util.Date;
+
+/** This class is responsible for initializing the in memory Model from
+	the external database
+	@author Chris Tensmeyer
+	@version March 27 2013
+*/
+/*
+		Connection connection = null;
+		try {
+			connection = DatabaseFacade.instance().connection();
+		} catch (ClassNotFoundException | SQLException e) {
+			e.printStackTrace();
+			System.exit(0);
+		}
+		if(connection == null)
+		{
+			throw new IllegalStateException("Connection should not be null");
+		}
+*/
+
+class DatabaseModelLoader
+{
+	private Map<String, Item> items;
+	private Map<String, Product> products;
+	private Map<Integer, ProductGroup> groups;
+	private Map<Integer, StorageUnit> units;
+
+	private String message;
+	private String logFile = "database.log";
+	/** Creates a new DatabaseModelLoader */
+	DatabaseModelLoader()
+	{
+		message = "";
+	}
+
+	/** This method defines the interface to this object.  Loads the Model into memory from the database */ 
+	void load() throws SQLException
+	{ 
+		getAllTables();
+		constructTree();
+		assignProducts();
+	}
+
+	/** Loads all tables from the database */
+	private void getAllTables() throws SQLException
+	{ 
+		//getItems() depends on getUnits()
+		getUnits();
+		getGroups();
+		getProducts();
+		getItems();
+	}
+
+	private ResultSet executeQuery(String sql) throws SQLException
+	{
+		Connection connection = null;
+		try {
+			connection = DatabaseFacade.instance().connection();
+		} catch (ClassNotFoundException | SQLException e) {
+			e.printStackTrace();
+			System.exit(0);
+		}
+		if(connection == null)
+		{
+			throw new IllegalStateException("Connection should not be null");
+		}
+
+		PreparedStatement stmt = connection.prepareStatement(sql);
+		ResultSet rs = stmt.executeQuery();
+		return rs;
+	}
+
+	//assumes that units Map is populated by calling getUnits()
+	private void getItems() throws SQLException
+	{
+		//TODO: Remove Expiration date from item table
+		String sql = "SELECT itemBarcode, alive, entryDate, " + 
+							" exitTime, productBarcode, unitID FROM Item";
+		ResultSet rs = executeQuery(sql);
+		items = new TreeMap<String, Item>();
+		while(rs.next())
+		{
+			//item Fields
+			ItemBarcode ib = new ItemBarcode(rs.getString(1));
+			boolean alive = rs.getInt(2) == 1;
+			Calendar entry = Calendar.getInstance();
+			entry.setTime(new Date(rs.getInt(3)));
+			Calendar exit = Calendar.getInstance();
+			exit.setTime(new Date(rs.getInt(4)));
+			ProductBarcode pb = new ProductBarcode(rs.getString(5));
+			StorageUnit unit = units.get((long)rs.getInt(6));
+
+			//create and configure Item
+			Item item = new Item(pb, unit, entry);
+			item.setItemBarcode(ib);
+			if(!alive)
+				item.remove();
+			item.setExitDate(exit);
+
+			//index item
+			items.put(rs.getString(1), item);
+			ItemManager.instance().unAnnihilateItem(item);
+		}
+
+	}
+
+	private void getProducts() throws SQLException
+	{
+		String sql = "SELECT productBarcode, creationDate, description, amount, " + 
+							" measurement, shelfLife, threeMonthSupply FROM Product";
+		ResultSet rs = executeQuery(sql);
+		products = new TreeMap<String, Product>();
+		while(rs.next())
+		{
+			//create fields
+			ProductBarcode pb = new ProductBarcode(rs.getString(1));
+			Calendar creation = Calendar.getInstance();
+			creation.setTime(new Date(rs.getInt(2)));
+			String desc = rs.getString(3);
+			double amount = rs.getFloat(4);
+			SupplyType type = SupplyType.parse(rs.getString(5));
+			int shelf = rs.getInt(6);
+			int three = rs.getInt(7);
+
+			Product product = new Product(creation, pb, desc, new Size(amount, type), shelf, three);
+
+			//index Product
+			ProductManager.instance().addProduct(product);
+			products.put(rs.getString(1), product);
+		}
+	}
+
+	private void getGroups() throws SQLException
+	{
+		//TODO: Remove threeMonthSupply field from database
+		String sql = "SELECT groupID, name, amount, measurement FROM ProductGroup";
+		ResultSet rs = executeQuery(sql);
+		groups = new TreeMap<Integer, ProductGroup>();
+		while(rs.next())
+		{
+			//create fields
+			int id = Integer.parseInt(rs.getString(1));
+			String name = rs.getString(2);
+			double amount = rs.getFloat(3);
+			SupplyType type = SupplyType.parse(rs.getString(4));
+
+			ProductGroup group = new ProductGroupImpl(name);
+			group.setSupply(new Size(amount, type));
+			group.setContainerID(id);
+
+			//index group
+			groups.put(id, group);
+		}
+	}
+
+	private void getUnits() throws SQLException
+	{
+		String sql = "SELECT unitID, name FROM StorageUnit";
+		ResultSet rs = executeQuery(sql);
+		units = new TreeMap<Integer, StorageUnit>();
+		while(rs.next())
+		{
+			//create fields
+			int id = Integer.parseInt(rs.getString(1));
+			String name = rs.getString(2);
+
+			StorageUnit unit = new StorageUnitImpl(name);
+			unit.setContainerID(id);
+
+			//index unit
+			units.put(id, unit);
+		}
+
+	}
+
+	/** Creates the SU and PG model object tree from the loaded tables */
+	private void constructTree() throws SQLException
+	{
+		setUpUnits();
+		setUpGroups();
+	}
+
+	private void setUpUnits() throws SQLException
+	{
+		String sql = "SELECT unitID, groupID FROM storageUnitToProductGroup";
+		ResultSet rs = executeQuery(sql);
+		while(rs.next())
+		{
+			long unitId = rs.getInt(1);
+			long groupId = rs.getInt(2);
+
+			StorageUnit parent = units.get(unitId);
+			ProductGroup child = groups.get(groupId);
+			parent.addContainer(child);
+		}
+	}
+
+	private void setUpGroups() throws SQLException
+	{
+		String sql = "SELECT parentGroupID, childGroupID FROM productGroupToProductGroup";
+		ResultSet rs = executeQuery(sql);
+		while(rs.next())
+		{
+			long parentId = rs.getInt(1);
+			long childId = rs.getInt(2);
+
+			ProductGroup parent = groups.get(parentId);
+			ProductGroup child = groups.get(childId);
+			parent.addContainer(child);
+		}
+	}
+
+	/** Uses productAssignments to construct the mapping from PC to Products in the model objects */
+	private void assignProducts() throws SQLException
+	{ 
+		String sql = "SELECT groupID, productBarcode FROM productGroupToProduct";
+		ResultSet rs = executeQuery(sql);
+		while(rs.next())
+		{
+			long groupId = rs.getInt(1);
+			ProductBarcode barcode = new ProductBarcode(rs.getString(2));
+			Product product = ProductManager.instance().getProductByBarcode(barcode);
+
+			ProductGroup group = groups.get(groupId);
+			group.addProduct(barcode);
+			ProductManager.instance().addContainer(product, group);
+		}
+	}
+	
+}
+

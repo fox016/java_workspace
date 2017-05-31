@@ -1,0 +1,307 @@
+
+package model.report;
+
+import model.*;
+import java.util.*;
+
+	/** 
+		This interface defines the Abstraction for the Visitor Pattern
+		@author Christopher Tensmeyer
+		@version March 6th, 2013
+	*/
+
+public class ChrisPSVisitor implements Visitor
+{
+	private ReportBuilder builder;
+	private Calendar start;
+	private Calendar end;
+	private Calendar endExact;
+	private static final int NUM_COLS = 10;
+
+	public ChrisPSVisitor(ReportBuilder b, int numMonths)
+	{
+		builder = b;
+		//now
+		end = Calendar.getInstance();
+		endExact = end;
+		end = copyMidnight(end);
+		Calendar tmp = Calendar.getInstance();
+		tmp.add(Calendar.MONTH, -1 * numMonths);
+		start = copyMidnight(tmp);
+		start(numMonths);
+	}
+
+	public ChrisPSVisitor(ReportBuilder b, Calendar s, Calendar e)
+	{
+		builder = b;
+		start = copyMidnight(s);
+		end = copyMidnight(e);
+		start(diff(start, end, Calendar.MONTH));
+	}
+
+	//linear in the difference
+	int diff(Calendar one, Calendar two, int field)
+	{
+		if(two.before(one))
+		{
+			Calendar tmp = two;
+			two = one;
+			one = two;
+		}
+		//one is before two;
+		int diff = 0;
+
+		do
+		{
+			one.add(field, 1);
+			diff++;
+		} while(one.before(two));
+		
+		return diff;
+	}
+
+	private void start(int numMonths)
+	{
+		try
+		{
+			builder.writeTitle("Product Report (" + numMonths + " Months)");
+			builder.startTable(NUM_COLS);
+			builder.writeTableHeader(getHeaders());
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	private String[] getHeaders()
+	{
+		return new String[] { "Description", "Barcode", "Size", "3-Month Supply",
+			"Supply: Cur/Avg", "Supply: Min/Max", "Supply: Used/Added", "Shelf Life",
+			"Used Age: Avg/Max", "Cur Age: Avg/Max"};
+	}
+
+	private Calendar copyMidnight(Calendar c)
+	{
+		int year = c.get(Calendar.YEAR);
+		int month = c.get(Calendar.MONTH);
+		int day = c.get(Calendar.DAY_OF_MONTH);
+		GregorianCalendar cal = new GregorianCalendar(year, month, day, 0, 0, 0);
+		return cal;
+	}
+
+	/** Visits a StorageUnit
+		@param unit The StorageUnit to visit
+	*/
+	public void visit(StorageUnit unit)
+	{
+		throw new UnsupportedOperationException("Not Implemeneted");
+	}
+
+	/** Visits a ProductGroup
+		@param group The ProductGroup to visit
+	*/
+	public void visit(ProductGroup group)
+	{
+		throw new UnsupportedOperationException("Not Implemeneted");
+	}
+
+	/** Visits a Product
+		@param product The Product to visit
+	*/
+	public void visit(Product product)
+	{
+		String desc = product.getDescription();
+		String barcode = product.getBarcode().toString();
+		String size = product.getSize().toString();
+		int _3ms = product.getThreeMonthSupply();
+		String threeMonthSupply = (_3ms == 0) ? "" : String.valueOf(_3ms);
+
+		String[] supply = supply(product);
+		String supplyCurAvg = supply[0];
+		String supplyMinMax = supply[1];
+		String supplyUsedAdded = supply[2];
+
+		int sl = product.getShelfLife();
+		String shelfLife = (sl == 0) ? "" : (sl + " months");
+
+		String usedAge = usedAge(product);
+		String curAge = curAge(product);
+
+		String[] row = new String[] { desc, barcode, size, threeMonthSupply,
+				supplyCurAvg, supplyMinMax, supplyUsedAdded, shelfLife,  usedAge, curAge};
+		try
+		{
+			builder.writeTableRow(row);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	private String[] supply(Product p)
+	{
+		Set<Item> allItems = ItemManager.instance().getItems(p);
+
+		Calendar st;
+		if(p.getCreationDate().before(start))
+			st = copyMidnight(start);
+		else
+			st = copyMidnight(p.getCreationDate());
+
+
+		int numDays = 0;
+		int curSupply = 0;
+		int totalSupply = 0;
+		int min = Integer.MAX_VALUE;
+		int max = -1;
+		Calendar curDay = (Calendar)st.clone();
+		while(!end.before(curDay))
+		{
+			curSupply = calcSupply(allItems, curDay);
+			totalSupply += curSupply;
+
+			if(curSupply < min)
+				min = curSupply;
+			if(curSupply > max)
+				max = curSupply;
+
+			numDays++;
+			curDay.add(Calendar.DAY_OF_MONTH, 1);
+		}
+
+		double averageSupply = totalSupply / (double) numDays;
+		int todaySupply = ItemManager.instance().getSystemItems(p).size();
+
+		int initialTotalCount = calcTotal(allItems, st);
+		int finalTotalCount = calcTotal(allItems, endExact);
+		int itemsAdded = finalTotalCount - initialTotalCount;
+
+		int initalLiveCount = calcTotal(allItems, st);
+		int finalLiveCount = todaySupply;
+
+		int itemsUsed = initalLiveCount - finalLiveCount + itemsAdded;
+
+		return new String[] {todaySupply + "/" + averageSupply,
+									min + "/" + max,
+									itemsUsed + "/" + itemsAdded};
+	}
+
+	private int calcTotal(Set<Item> items, Calendar day)
+	{
+		int num = 0;
+		for(Item item : items)
+			if(item.getEntryDate().before(day))
+				num++;
+		return num;
+	}
+	
+	private int calcSupply(Set<Item> items, Calendar cal)
+	{
+		int num = 0;
+		for(Item item : items)
+			if(item.isLiveAt(cal))
+				num++;
+		return num;
+	}
+
+	private String usedAge(Product p)
+	{
+		Set<Item> items = ItemManager.instance().getRemovedItems(p);
+		int total= 0;
+		int max = 0;
+		int num = 0;
+		for(Item item: items)
+		{
+			if(item.getExitTime().before(start))
+				continue;
+			int age = calcDeadAge(item);
+			if(age > max)
+				max = age;
+			total += age;
+			num++;
+		}
+
+		double average; 
+		if(num == 0)
+			average = 0.0;
+		else
+			average = total / (double) num;
+
+		return average + " days / " + max + " days";
+	}
+
+	int dayDiff(Calendar one, Calendar two)
+	{
+		if(two.before(one))
+		{
+			Calendar tmp = two;
+			two = one;
+			one = two;
+		}
+
+		int days = 0;
+		while(one.get(Calendar.YEAR) != two.get(Calendar.YEAR) ||
+				one.get(Calendar.MONTH) != two.get(Calendar.MONTH) ||
+				one.get(Calendar.DAY_OF_MONTH) != two.get(Calendar.DAY_OF_MONTH) )
+		{
+			days++;
+			one.add(Calendar.DAY_OF_MONTH, 1);
+		}
+
+		return days;
+	}
+
+	int calcDeadAge(Item item)
+	{
+		return dayDiff(copyMidnight(item.getEntryDate()), copyMidnight(item.getExitTime()));
+	}
+	
+	int calcLiveAge(Item item)
+	{
+		//System.out.println(item.getEntryDate());
+		//System.out.println(end);
+		return dayDiff(copyMidnight(item.getEntryDate()), end);
+	}
+
+	private String curAge(Product p)
+	{
+		Set<Item> items = ItemManager.instance().getSystemItems(p);
+		int total= 0;
+		int max = 0;
+		int num = 0;
+		for(Item item: items)
+		{
+			int age = calcLiveAge(item);
+			if(age > max)
+				max = age;
+			total += age;
+			num++;
+		}
+
+		double average; 
+		if(num == 0)
+			average = 0.0;
+		else
+			average = total / (double) num;
+
+		return average + " days / " + max + " days";
+	}
+
+	/** Finish the Algorithm */
+	public void finish()
+	{
+		try
+		{
+			builder.endTable();
+			builder.close();
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+}
+

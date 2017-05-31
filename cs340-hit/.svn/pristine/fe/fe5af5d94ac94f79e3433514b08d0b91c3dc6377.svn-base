@@ -1,0 +1,282 @@
+package gui.common;
+
+import gui.inventory.ProductContainerData;
+import gui.item.ItemData;
+import gui.product.ProductData;
+
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Set;
+
+import model.*;
+
+/**
+ *
+ * @author Talonos
+ */
+public class Translator 
+{
+    private static Translator _translator;
+    
+    public static Translator instance()
+    {
+    	if(_translator == null)
+    		_translator = new Translator();
+    	return _translator;
+    }
+    
+    private Translator()
+    {
+    }
+   
+    /**
+     * Turns an item into an item data.
+     * @param i the item to turn into an item data.
+     * @return a new ItemData representing that Item.
+     * @throws IllegalArgumentException if i is null. 
+     */
+    public ItemData getDataFromItem(Item i) throws IllegalArgumentException
+    {
+        nullCheck(i,"Item");
+        ItemData toReturn = new ItemData();
+        toReturn.setBarcode(i.getItemBarcode().toString());
+        toReturn.setEntryDate(i.getEntryDate().getTime());
+        toReturn.setExpirationDate(i.getExpirationDate().getTime());
+        toReturn.setProductGroup(i.getStorageUnit().getProductContainer(i.getProduct()).getName());
+        toReturn.setStorageUnit(i.getStorageUnit().getName());
+        toReturn.setTag(i);
+        return toReturn;
+    }
+
+    /**
+     * Turns an itemData into an item. It does so by looking at the 
+     * itemdata's Barcode, which means that you don't meed to worry about
+     * the itemData ever not matching its original object.
+     * @param i the itemData whose item you will retrieve.
+     * @return the Item that ItemData represented.
+     * @throws NoSuchElementException if that product is not in the database.
+     * @throws IllegalArgumentException if i is null 
+     */
+    public Item getItemFromData(ItemData i) throws NoSuchElementException,
+            IllegalArgumentException
+    {
+        nullCheck(i,"ItemData");
+        ItemBarcode itemCode = new ItemBarcode(i.getBarcode());
+        Item toReturn = ItemManager.instance().getItem(itemCode);
+        if (toReturn == null)
+        {
+            throw new NoSuchElementException("Attempted to translate item with barcode "
+                    +itemCode+", but it wasn't in the item database!");
+        }
+        return toReturn;
+    }
+    
+    /**
+     * Turns a product into a ProductData
+     * @param p the Product to turn into a ProductData
+     * @return a new ProductData representing that product.
+     * @throws IllegalArgumentException if p is null; 
+     */
+    public ProductData getDataFromProduct(Product p) throws IllegalArgumentException
+    {
+        nullCheck(p, "Product");
+        //NOTE: There is a field for "count" and a field for "size". I don't know
+        //what the difference is between them. I just used the Size.toString method
+        //for them both. When I figure out how count and size are used, I'll fix
+        //this up. Sorry for the obviously incorrect current implementation.
+        ProductData toReturn = new ProductData();
+        toReturn.setBarcode(p.getBarcode().toString());
+        toReturn.setCount(p.getSize().toString());
+        toReturn.setDescription(p.getDescription());
+        toReturn.setShelfLife(p.getShelfLife()+" months");
+        toReturn.setSize(p.getSize().toString());
+        toReturn.setSupply(p.getThreeMonthSupply()+"");
+        toReturn.setTag(p);
+        return toReturn;
+    }
+    
+    /**
+     * Turns a ProductData into a Product. It does so by looking at the 
+     * ProductData's Barcode, which means that you don't meed to worry about
+     * the itemData ever not matching its original object.
+     * @param p the ProductData whose item you will retrieve.
+     * @return the Product that ItemData represented.
+     * @throws NoSuchElementException if that product is not in the database.
+     * @throws IllegalArgumentException if p is null. 
+     */
+    public Product getProductFromData(ProductData p) throws 
+            NoSuchElementException, IllegalArgumentException
+    {
+        nullCheck(p, "ProductData");
+        ProductBarcode productCode = new ProductBarcode(p.getBarcode());
+        Product toReturn = (ProductManager.instance().getProductByBarcode(productCode));
+        if (toReturn == null)
+        {
+            throw new NoSuchElementException("Attempted to translate product with barcode "
+                    +productCode+", but it wasn't in the product database!");
+        }
+        return toReturn;
+    }
+        
+    
+    /**
+     * Turns a ProductContainer into a ProductContainerData
+     * @param pc the ProductContainer to turn into a product.
+     * @return a new ProductContainerData representing this Product.
+     * @throws IllegalArgumentException if pc is null.
+     */
+    public ProductContainerData getDataFromProductContainer(ProductContainer pc)
+    	throws IllegalArgumentException
+    {
+    	nullCheck(pc, "ProductContainer");
+    	
+    	ProductContainerData toReturn = new ProductContainerData();
+    	
+    	toReturn.setName(pc.getName());
+    	toReturn.setTag(pc);
+    	
+    	return toReturn;
+    }
+    
+    /**
+     * Retrieves a ProductContainer from a tagged ProductContainerData. Note that
+     * because ProductContainerData does not have a spot for the ID of the Product
+     * Container, we must rely on the "Tagable" interface to allow a ProductContainer
+     * Data refer back to it's corresponding ProductContainer. I am, of course,
+     * leery of this. Test any methods using this method more rigorously than
+     * usual.
+     * @param pc
+     * @return the ProductContainer pc is tagged with.
+     * @throws IllegalArgumentException if pc is null.
+     * @throws IllegalStateException if pc isn't tagged with a ProductContainer 
+     */
+    public ProductContainer getProductContainerFromData(ProductContainerData pc) 
+            throws IllegalArgumentException, IllegalStateException
+    {
+        nullCheck(pc, "ProductContainerData");
+        if (!(pc.getTag() instanceof ProductContainer))
+        {
+            throw new IllegalStateException ("Something horrible has happened! "+
+                    pc.getName()+" was tagged with something that was not a product container!");
+        }
+        
+    	return (ProductContainer) pc.getTag();
+    }
+    
+    
+    /**
+     * Checks to see if an object is null. Throws an argument if it is.
+     * 
+     * Why in the world did I not think of this sooner? It seems a simple way
+     * to avoid code duplication...
+     * 
+     * @param o the object to check to see if it's null.
+     * @param s a string saying what the object is.
+     * @throws IllegalArgumentException if o is null.
+     */
+    private void nullCheck(Object o, String s) throws IllegalArgumentException
+    {
+        if (o == null)
+        {
+            throw new IllegalArgumentException("Cannot translate a null "+s+".");
+        }
+    }
+
+	/**
+	 * Converrts SizeUnits to SupplyType
+	 * 
+	 * @param sizeUnit
+	 * @return
+	 */
+	public SupplyType getSupplyTypeFromSizeUnit(SizeUnits sizeUnit) {
+		
+		switch(sizeUnit)
+		{
+			case Pounds: return SupplyType.POUNDS;
+			case Ounces: return SupplyType.OUNCES;
+			case Grams: return SupplyType.GRAMS;
+			case Kilograms: return SupplyType.KILOGRAMS;
+			case Gallons: return SupplyType.GALLONS;
+			case Quarts: return SupplyType.QUARTS;
+			case Pints: return SupplyType.PINTS;
+			case FluidOunces: return SupplyType.FLUID_OUNCES;
+			case Liters: return SupplyType.LITERS;
+			default: return SupplyType.COUNT;
+		}
+		
+	}
+
+    /**
+     * Converts SupplyType to SizeUnits
+     * 
+     * @param type
+     * @return
+     */
+    public SizeUnits getSizeUnitFromSupplyType(SupplyType type) 
+    {
+        	switch(type)
+		{
+			case POUNDS: return SizeUnits.Pounds;
+			case OUNCES: return SizeUnits.Ounces;
+			case GRAMS: return SizeUnits.Grams;
+			case KILOGRAMS: return SizeUnits.Kilograms;
+			case GALLONS: return SizeUnits.Gallons;
+			case QUARTS: return SizeUnits.Quarts;
+			case PINTS: return SizeUnits.Pints;
+			case FLUID_OUNCES: return SizeUnits.FluidOunces;
+			case LITERS: return SizeUnits.Liters;
+			default: return SizeUnits.Count;
+		}
+    }
+
+	/**
+	 * Converts a set of ProductBarcodes into an array of ProductData
+	 * 
+	 * @param barcodes
+	 * @return
+	 */
+	public ProductData[] getDataFromProductBarcodes(Set<ProductBarcode> barcodes) {
+		
+		if(barcodes == null)
+			return null;
+		
+		ProductData[] data = new ProductData[barcodes.size()];
+		
+		int index = 0;
+		Iterator<ProductBarcode> iter = barcodes.iterator();
+		while(iter.hasNext())
+		{
+			// TODO set tags
+			data[index] = this.getDataFromProduct(
+					ProductManager.instance().getProductByBarcode(iter.next()));
+			index++;
+		}
+		
+		return data;
+	}
+
+	/**
+	 * Converts a set of items to an array of ItemData
+	 * 
+	 * @param items
+	 * @return
+	 */
+	public ItemData[] getDataFromItems(Set<Item> items) {
+		
+		if(items == null)
+			return null;
+		
+		ItemData[] data = new ItemData[items.size()];
+		
+		int index = 0;
+		Iterator<Item> iter = items.iterator();
+		while(iter.hasNext())
+		{
+			// TODO set tags
+			data[index] = this.getDataFromItem(iter.next());
+			index++;
+		}
+		
+		return data;
+	}
+}

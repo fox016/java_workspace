@@ -1,0 +1,39 @@
+package model;
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class FacadeTest {
+	
+	private Facade f;
+
+	@Before
+	public void initFacadeTest()
+	{
+		f = FacadeImpl.instance();
+	}
+	
+	@Test
+	public void testAddStorageUnit()
+	{
+		f.addStorageUnit("Kitchen");
+		f.addStorageUnit("Bathroom");
+		f.addStorageUnit("Basement");
+	}
+	
+	@Test
+	public void testAddInvalidStorageUnit()
+	{
+		f.addStorageUnit(null);
+		f.addStorageUnit("");
+		f.addStorageUnit("Kitchen");
+		f.addStorageUnit("Kitchen");
+	}
+	
+	@Test
+	public void testRemoveStorageUnit()
+	{
+		
+	}
+	
+}

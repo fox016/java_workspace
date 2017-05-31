@@ -1,0 +1,63 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package common.commands;
+
+import model.Facade;
+import model.Item;
+import model.StorageUnit;
+
+/**
+ *
+ * @author Talonos
+ */
+public class CmdTransferItem implements Command
+{
+
+    private Item itemToTransfer;
+    private StorageUnit targetContainer;
+    private StorageUnit parentContainer;
+    
+    public CmdTransferItem(Item itemToTransfer, StorageUnit targetContainer,
+    		StorageUnit parentContainer) 
+    {
+        this.itemToTransfer=itemToTransfer;
+        this.targetContainer=targetContainer;
+        this.parentContainer = parentContainer;
+    }
+
+    /**
+     * Moves an item from one storage unit to the other.
+     */
+    @Override
+    public void doAction() 
+    {
+        Facade.transferItem(itemToTransfer, targetContainer);
+    }
+
+    /**
+     * Moves an item the the other storage unit to the one. Note that I just reversed
+     * the order of "one" and "other" in comparison to imply that it undoes the above
+     * operation. That is exactly what this does.
+     */
+    @Override
+    public void undoAction() 
+    {
+        if (itemToTransfer == null)
+        {
+            System.out.println("Item is null");
+        }
+        if (parentContainer == null)
+        {
+            System.out.println("Container is null");
+        }
+        Facade.transferItem(itemToTransfer, parentContainer);
+    }
+
+    public Item getItem() 
+    {
+        return itemToTransfer;
+    }
+    
+}

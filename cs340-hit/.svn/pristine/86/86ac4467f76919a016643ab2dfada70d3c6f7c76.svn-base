@@ -1,0 +1,159 @@
+package gui.product;
+
+import java.util.Calendar;
+
+import model.FacadeImpl;
+import model.Product;
+import model.ProductBarcode;
+import model.Size;
+import model.SupplyType;
+import gui.common.*;
+
+/**
+ * Controller class for the add item view.
+ */
+public class AddProductController extends Controller implements
+		IAddProductController {
+	
+	/**
+	 * Constructor.
+	 * 
+	 * @param view Reference to the add product view
+	 * @param barcode Barcode for the product being added
+	 */
+	public AddProductController(IView view, String barcode) {
+		super(view);
+		
+		construct();
+		
+		getView().enableBarcode(barcode == null || barcode.isEmpty());
+	}
+
+	//
+	// Controller overrides
+	//
+	
+	/**
+	 * Returns a reference to the view for this controller.
+	 * 
+	 * {@pre None}
+	 * 
+	 * {@post Returns a reference to the view for this controller.}
+	 */
+	@Override
+	protected IAddProductView getView() {
+		return (IAddProductView)super.getView();
+	}
+
+	/**
+	 * Sets the enable/disable state of all components in the controller's view.
+	 * A component should be enabled only if the user is currently
+	 * allowed to interact with that component.
+	 * 
+	 * {@pre None}
+	 * 
+	 * {@post The enable/disable state of all components in the controller's view
+	 * have been set appropriately.}
+	 */
+	@Override
+	protected void enableComponents() {
+	}
+
+	/**
+	 * Loads data into the controller's view.
+	 * 
+	 *  {@pre None}
+	 *  
+	 *  {@post The controller has loaded data into its view}
+	 */
+	@Override
+	protected void loadValues() {
+	}
+
+	//
+	// IAddProductController overrides
+	//
+	
+	/**
+	 * This method is called when any of the fields in the
+	 * add product view is changed by the user.
+	 */
+	@Override
+	public void valuesChanged() {
+		
+		boolean canAdd = false;
+		
+		// Get values from view to validate
+		String barcodeStr = getView().getBarcode();
+		String desc = getView().getDescription();
+		SizeUnits sizeUnit = getView().getSizeUnit();
+		String sizeValueStr = getView().getSizeValue();
+		String shelfStr = getView().getShelfLife();
+		String supplyStr = getView().getSupply();
+		
+		if(productValuesEmpty(barcodeStr, desc, sizeUnit, sizeValueStr, shelfStr, supplyStr))
+		{
+			this.getView().enableOK(canAdd);
+			return;
+		}
+		
+		// Create Product Barcode
+		ProductBarcode barcode = new ProductBarcode(barcodeStr);
+		
+		// Create size
+		double amount = 0;
+		try {
+			amount = Double.parseDouble(sizeValueStr);
+		}catch(NumberFormatException e)
+		{
+			this.getView().enableOK(canAdd);
+			return;
+		}
+		SupplyType supplyType = Translator.instance().getSupplyTypeFromSizeUnit(sizeUnit);
+		Size size = new Size(amount, supplyType);
+		
+		// Parse shelf life and 3-month-supply
+		int shelfLife = 0;
+		int supply = 0;
+		try {
+			shelfLife = Integer.parseInt(shelfStr);
+			supply = Integer.parseInt(supplyStr);
+		}catch(NumberFormatException e)
+		{
+			this.getView().enableOK(canAdd);
+			return;
+		}
+		
+		// Create product and test validity
+		Product product = new Product(Calendar.getInstance(), barcode,
+				desc, size, shelfLife, supply);
+		canAdd = FacadeImpl.instance().canAddProductToSystem(product);
+		this.getView().enableOK(canAdd);
+	}
+	
+	/**
+	 * This method is called when the user clicks the "OK"
+	 * button in the add product view.
+	 */
+	@Override
+	public void addProduct() {
+	}
+
+	private boolean productValuesEmpty(String barcodeStr, String desc, SizeUnits sizeUnit,
+			String sizeValueStr, String shelfStr, String supplyStr)
+	{
+		if(stringValueEmpty(barcodeStr) ||
+				stringValueEmpty(desc) ||
+				stringValueEmpty(sizeValueStr) ||
+				stringValueEmpty(shelfStr) ||
+				stringValueEmpty(supplyStr))
+			return true;
+		return sizeUnit == null;
+	}
+	
+	private boolean stringValueEmpty(String str)
+	{
+		return (str == null || str.isEmpty());
+	}
+}
+

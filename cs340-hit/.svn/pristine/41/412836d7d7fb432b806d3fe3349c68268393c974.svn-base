@@ -1,0 +1,54 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package gui.productgroup;
+
+import gui.common.SizeUnits;
+import gui.common.Translator;
+//import gui.inventory.ProductContainerData;
+import model.ProductContainer;
+import model.Size;
+import model.SupplyType;
+
+/**
+ *
+ * @author Talonos
+ */
+public class ProductGroupFuncs 
+{
+        //You'll notice this is not a singleton. This is intentional! This contains no data,
+        //and therefore does not require serialization, nor does it ever need an instance.
+        //This is just a wrapper class around a group of functions. Turning it into a singleton
+        //would complicate calls to its functions. If you feel this should be a singleton,
+        //bring it up at a group meeting instead of just doing it!
+    
+        @SuppressWarnings("unused")
+		public static boolean validate(ProductContainer parent, String proposedName,
+                    String proposedCount, SizeUnits proposedUnit, String currentName)
+        {
+
+            if (!parent.isValidName(proposedName)&&
+                    !proposedName.equals(currentName))
+            { //If the name is different than the start name, and is not valid, then,
+                return false;
+            }
+            try
+            {
+                double proposedAmount = Double.parseDouble(proposedCount);
+                SupplyType proposedType = Translator.instance().
+                        getSupplyTypeFromSizeUnit(proposedUnit);
+                Size proposedSize = new Size(proposedAmount, proposedType);
+                //We don't do anything with the new size, but creating it runs
+                //error checking to make sure it is a valid size. (See @throws
+                //tags on the size constructors.)
+            }
+            catch(NullPointerException | IllegalArgumentException e) //Also includes 
+                // NumberFormatException, catching non-numeric proposed amounts.
+            {
+                return false;
+            }
+
+            return true;
+        }
+}

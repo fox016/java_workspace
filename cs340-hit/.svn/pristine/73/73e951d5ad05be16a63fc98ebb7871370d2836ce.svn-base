@@ -1,0 +1,135 @@
+package gui.productgroup;
+
+import gui.common.*;
+import gui.inventory.*;
+import model.*;
+
+/**
+ * Controller class for the edit product group view.
+ */
+public class EditProductGroupController extends Controller 
+                         implements IEditProductGroupController 
+{
+    
+    /**
+     * The ProductContainer we are going to change
+     */
+    private ProductContainerData target;
+	
+	/**
+	 * Constructor.
+	 * 
+	 * @param view Reference to edit product group view
+	 * @param target Product group being edited
+	 */
+	public EditProductGroupController(IView view, ProductContainerData target) 
+        {
+		super(view);
+                
+                this.target = target;
+
+		construct();
+	}
+
+	//
+	// Controller overrides
+	//
+	
+	/**
+	 * Returns a reference to the view for this controller.
+	 * 
+	 * {@pre None}
+	 * 
+	 * {@post Returns a reference to the view for this controller.}
+	 */
+	@Override
+	protected IEditProductGroupView getView() 
+        {
+		return (IEditProductGroupView)super.getView();
+	}
+
+	/**
+	 * Sets the enable/disable state of all components in the controller's view.
+	 * A component should be enabled only if the user is currently
+	 * allowed to interact with that component.
+	 * 
+	 * {@pre None}
+	 * 
+	 * {@post The enable/disable state of all components in the controller's view
+	 * have been set appropriately.}
+	 */
+	@Override
+	protected void enableComponents() 
+        {
+            if (validate())
+            {
+                getView().enableOK(true);
+            }
+            else
+            {
+                getView().enableOK(false);
+            }
+	}
+
+	/**
+	 * Loads data into the controller's view.
+	 * 
+	 *  {@pre None}
+	 *  
+	 *  {@post The controller has loaded data into its view}
+	 */
+	@Override
+	protected void loadValues() 
+        {
+            getView().setProductGroupName(target.getName());
+            getView().setSupplyUnit(
+                    Translator.instance().getSizeUnitFromSupplyType(
+                    Translator.instance().getProductContainerFromData(target).beProductGroup().
+                    getSupply().getType()));
+            getView().setSupplyValue(
+                    Translator.instance().getProductContainerFromData(target).beProductGroup().
+                    getSupply().getAmount()+"");
+	}
+
+	//
+	// IEditProductGroupController overrides
+	//
+
+	/**
+	 * This method is called when any of the fields in the
+	 * edit product group view is changed by the user.
+	 */
+	@Override
+	public void valuesChanged() 
+        {
+            enableComponents();
+	}
+	
+	/**
+	 * This method is called when the user clicks the "OK"
+	 * button in the edit product group view.
+         * 
+         * @pre: OK button is enabled, implying that the validate function
+         * has succeeded. We verify this with an assert, because the "kind" error
+         * checking that does *not* crash the program should have already been
+         * done.
+	 */
+	@Override
+	public void editProductGroup() 
+        {
+            assert(validate());
+            FacadeImpl.instance().updateProductGroup((ProductGroup)target.getTag(), 
+                    getView().getProductGroupName(), 
+                    new Size(Double.parseDouble(getView().getSupplyValue()),
+                    Translator.instance().getSupplyTypeFromSizeUnit(getView().getSupplyUnit())));
+	}
+        
+        private boolean validate()
+        {
+            return ProductGroupFuncs.validate(
+                    Translator.instance().getProductContainerFromData(target).getParent(), 
+                    getView().getProductGroupName(), getView().getSupplyValue(),
+                    getView().getSupplyUnit(), target.getName());
+        }
+}
+

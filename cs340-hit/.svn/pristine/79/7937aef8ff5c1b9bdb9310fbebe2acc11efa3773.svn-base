@@ -1,0 +1,14 @@
+package model;
+
+import model.Barcode;
+
+public class ItemBarcode extends Barcode
+{
+	private static final long serialVersionUID = 1343463344592050610L;
+
+	public ItemBarcode(String value)
+	{
+		barcodeString = value;
+		barcodeLong = Long.parseLong(value);
+	}
+}

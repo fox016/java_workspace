@@ -1,0 +1,295 @@
+package model;
+
+import static org.junit.Assert.*;
+
+import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+public class TreeTest {
+
+    private static Facade f;
+    protected static ArrayList<Product> products;
+    protected static ArrayList<Item> items;
+    protected static ArrayList<Calendar> itemDates;
+    protected static ArrayList<Calendar> productDates;
+
+    @Before
+    public void initTreeTest()
+    {
+	 	FacadeImpl.reset();
+		House.reset();
+		ProductManager.reset();
+		ItemManager.reset();
+        f = FacadeImpl.instance();
+
+        f.addStorageUnit("Kitchen");
+        f.addStorageUnit("Bathroom");
+        f.addStorageUnit("Garage");
+
+        assertTrue(House.instance().containsUnit(House.instance().getUnitByName("Kitchen")));
+        assertTrue(House.instance().containsUnit(House.instance().getUnitByName("Bathroom")));
+        assertTrue(House.instance().containsUnit(House.instance().getUnitByName("Garage")));
+
+        StorageUnit temp = new StorageUnitImpl("Random");
+        assertFalse(House.instance().containsUnit(temp));
+
+        initDates();
+        initProducts();
+        initItems();
+    }
+
+    private static void initDates()
+    {
+        productDates = new ArrayList<Calendar>();
+        itemDates = new ArrayList<Calendar>();
+        //get a bunch of dates
+        //month fields are JANUARY=0, ... , DECEMBER=11
+        for(int k = 0; k < 12; k++)
+            productDates.add(new GregorianCalendar(2000 , k, k * 2 + 1));
+
+        for(int k = 0; k < 24; k++)
+            itemDates.add(new GregorianCalendar(2000 + k / 4, k / 2, k + 1));
+    }
+
+    private static void initItems()
+    {
+        StorageUnit su1 = House.instance().getUnitByName("Kitchen");
+        StorageUnit su2 = House.instance().getUnitByName("Bathroom");
+        StorageUnit su3 = House.instance().getUnitByName("Garage");
+        items = new ArrayList<Item>();
+        //Make Items
+        for(int k = 0; k < 24; k++)
+        {
+            StorageUnit tmp;
+            if(k % 3 == 0)
+                tmp = su1;
+            else if(k % 3 == 1)
+                tmp = su2;
+            else
+                tmp = su3;
+            Item item = new Item(products.get(k / 3), tmp, itemDates.get(k));
+            items.add(item);
+        }
+    }
+
+
+    private static void initProducts()
+    {
+        products = new ArrayList<Product>();
+        Product p1 = new Product(productDates.get(0), new ProductBarcode("1024"), "8oz Cans of Sprite", new Size(12, SupplyType.COUNT), 0, 5);
+        Product p2 = new Product(productDates.get(1), new ProductBarcode("2048"), "8oz Cans of Fanta", new Size(12, SupplyType.COUNT), 10, 5);
+        Product p3 = new Product(productDates.get(2), new ProductBarcode("4048"), "8oz Cans of Dr Pepper", new Size(12, SupplyType.COUNT), 2, 5);
+        Product p4 = new Product(productDates.get(3), new ProductBarcode("8096"), "Brown Sugar", new Size(5, SupplyType.POUNDS), 10, 5);
+        Product p5 = new Product(productDates.get(4), new ProductBarcode("16192"), "White Sugar", new Size(4, SupplyType.POUNDS), 15, 5);
+        Product p6 = new Product(productDates.get(5), new ProductBarcode("32384"), "Water", new Size(5, SupplyType.GALLONS), 24, 5);
+        Product p7 = new Product(productDates.get(6), new ProductBarcode("64768"), "Beef Jerky", new Size(2, SupplyType.KILOGRAMS), 12, 5);
+        Product p8 = new Product(productDates.get(7), new ProductBarcode("129536"), "Turkey Jerky", new Size(2, SupplyType.KILOGRAMS), 12, 5);
+        Product p9 = new Product(productDates.get(8), new ProductBarcode("259072"), "Toilet Paper", new Size(24, SupplyType.COUNT), 0, 5);
+
+        products.add(p1);
+        products.add(p2);
+        products.add(p3);
+        products.add(p4);
+        products.add(p5);
+        products.add(p6);
+        products.add(p7);
+        products.add(p8);
+        products.add(p9);
+    }
+
+    @Test
+    public void testDeleteUnit()
+    {
+        f.deleteStorageUnit(House.instance().getUnitByName("Bathroom"));
+
+        Iterator<StorageUnit> units = f.getStorageUnits().iterator();
+        while(units.hasNext())
+            assertFalse(units.next().getName().equals("Bathroom"));
+
+        assertNull(House.instance().getUnitByName("SqueedalySpooch"));
+
+        f.deleteStorageUnit(new StorageUnitImpl("The Best"));
+
+        f.addStorageUnit("Bathroom"); assertTrue(House.instance().containsUnit(House.instance().getUnitByName("Bathroom"))); }
+
+    @Test
+    public void testAddGroup()
+    {
+        ProductGroup[] testGroups = new ProductGroup[10];
+
+        testGroups[0] = f.addProductGroup("K1", House.instance().getUnitByName("Kitchen"));
+        testGroups[1] = f.addProductGroup("K2", House.instance().getUnitByName("Kitchen"));
+        testGroups[2] = f.addProductGroup("K3", House.instance().getUnitByName("Kitchen"));
+
+        testGroups[3] = f.addProductGroup("B1", House.instance().getUnitByName("Bathroom"));
+
+        assertTrue(f.getChildContainers(House.instance().getUnitByName("Kitchen")).size() == 3);
+        assertTrue(f.getChildContainers(House.instance().getUnitByName("Bathroom")).size() == 1);
+        assertTrue(f.getChildContainers(House.instance().getUnitByName("Garage")).size() == 0);
+    }
+
+    @Test
+    public void testAddGroupsToGroups()
+    {
+        ProductGroup[] testGroups = new ProductGroup[10];
+
+        testGroups[0] = f.addProductGroup("K1", House.instance().getUnitByName("Kitchen"));
+        testGroups[1] = f.addProductGroup("K2", House.instance().getUnitByName("Kitchen"));
+        testGroups[2] = f.addProductGroup("K3", House.instance().getUnitByName("Kitchen"));
+
+        testGroups[3] = f.addProductGroup("B1", House.instance().getUnitByName("Bathroom"));
+
+        testGroups[4] = f.addProductGroup("C1_K1", testGroups[0]);
+        testGroups[5] = f.addProductGroup("C2_K1", testGroups[0]);
+
+        testGroups[6] = f.addProductGroup("C1_K3", testGroups[2]);
+
+        testGroups[7] = f.addProductGroup("C1_B1", testGroups[3]);
+        testGroups[8] = f.addProductGroup("C2_B1", testGroups[3]);
+        testGroups[9] = f.addProductGroup("C3_B1", testGroups[3]);
+
+        assertTrue(f.getChildContainers(testGroups[0]).size() == 2);
+        assertTrue(f.getChildContainers(testGroups[1]).size() == 0);
+        assertTrue(f.getChildContainers(testGroups[2]).size() == 1);
+        assertTrue(f.getChildContainers(testGroups[3]).size() == 3);
+    }
+
+    @Test
+    public void testAddProductsStorageUnit()
+    {
+        StorageUnit kitchen = House.instance().getUnitByName("Kitchen");
+        Product p = products.get(0);
+		  //f.addProduct(p);
+
+        assertFalse(kitchen.hasProduct(p.getBarcode()));
+        f.addProductToContainer(p, kitchen);
+        assertEquals(ProductManager.instance().getProductByBarcode(p.getBarcode()), p);
+        assertTrue(kitchen.hasProduct(p.getBarcode()));
+    }
+
+    @Test
+    public void testAddProductsToProductGroups()
+    {
+        //ProductGroup[] testGroups = new ProductGroup[10];
+
+        ProductContainer container = f.addProductGroup("K1", House.instance().getUnitByName("Kitchen"));
+
+		  Product p = products.get(0);
+		  //f.addProduct(p);
+
+		  assertFalse(container.hasProduct(p.getBarcode()));
+		  f.addProductToContainer(p, container);
+		  assertTrue(container.hasProduct(p.getBarcode()));
+		  //Next line fails Product lacks equals method
+		  assertEquals(ProductManager.instance().getProductByBarcode(p.getBarcode()), p);
+
+    }
+
+	 @Test
+	 public void testAddItemToStorageUnit()
+	 {
+        StorageUnit kitchen = House.instance().getUnitByName("Kitchen");
+        Product p = products.get(0);
+        f.addProductToContainer(p, kitchen);
+			
+			Item item = new Item(p, kitchen, itemDates.get(0));
+			assertTrue(item.isProduct(p));
+			assertEquals(item.getStorageUnit(), kitchen);
+
+			f.addItem(item);
+			assertTrue(ItemManager.instance().getItems(p).contains(item));
+			assertTrue(ItemManager.instance().getItems(kitchen).contains(item));
+	 }
+
+	 @Test
+	 public void testAddItemToProductGroup()
+	 {
+        StorageUnit kitchen = House.instance().getUnitByName("Kitchen");
+        ProductContainer container = f.addProductGroup("K1", kitchen);
+        assertTrue(kitchen.getContainers().contains("K1"));
+
+        Product p = products.get(0);
+        f.addProductToContainer(p, container);
+        assertEquals(f.getProductContainer(kitchen, p), container);
+
+		Item item = new Item(p, kitchen, itemDates.get(0));
+		assertTrue(item.isProduct(p));
+		assertEquals(item.getStorageUnit(), kitchen);
+		assertEquals(item.getStorageUnit().getProductContainer((item.getProduct())), container);
+			
+		//addItem depends on this to be correct
+		assertEquals(kitchen.getProductContainer(p), container);
+
+		f.addItem(item);
+		//items by product
+		assertTrue(ItemManager.instance().getItems(p).contains(item));
+		//all items in container
+		assertTrue(ItemManager.instance().getItems(container).contains(item));
+		//all items in kitchen, but not in subtree
+		assertFalse(ItemManager.instance().getItems(kitchen, false).contains(item));
+		//all items in kitchen and it's children
+		assertTrue(ItemManager.instance().getItems(kitchen, true).contains(item));
+	 }
+
+	 @Test
+	 public void testAddProductMovesExistingItem()
+	 {
+	 	//Make child ProductGroup
+      StorageUnit kitchen = House.instance().getUnitByName("Kitchen");
+      ProductContainer container = f.addProductGroup("K1", kitchen);
+      assertTrue(kitchen.getContainers().contains("K1"));
+
+		//get Products, assign to Kitchen
+      Product p1 = products.get(0);
+		Product p2 = products.get(1);
+      f.addProductToContainer(p1, kitchen);
+      f.addProductToContainer(p2, kitchen);
+
+		//create Items
+		Item item1 = new Item(p1, kitchen, itemDates.get(0));
+		assertTrue(item1.isProduct(p1));
+		assertEquals(item1.getStorageUnit(), kitchen);
+		Item item2 = new Item(p2, kitchen, itemDates.get(1));
+
+		//Add Items to Kitchen
+		assertTrue(f.canAddItem(item1));
+		f.addItem(item1);
+		f.addItem(item2);
+		assertTrue(ItemManager.instance().getItems(kitchen, false).contains(item1));
+		assertTrue(ItemManager.instance().getItems(kitchen, false).contains(item2));
+
+		//Move Product from Kitchen to it's ProductGroup.  The Item should move too
+		f.addProductToContainer(p1, container);
+
+		//all items
+		assertTrue(ItemManager.instance().getItems(p1).contains(item1));
+		assertFalse(ItemManager.instance().getItems(p1).contains(item2));
+		assertTrue(ItemManager.instance().getItems(p2).contains(item2));
+		assertFalse(ItemManager.instance().getItems(p2).contains(item1));
+
+		//all items in container
+		assertTrue(ItemManager.instance().getItems(container).contains(item1));
+		assertFalse(ItemManager.instance().getItems(container).contains(item2));
+
+		//all items in kitchen, but not in subtree
+		assertFalse(ItemManager.instance().getItems(kitchen, false).contains(item1));
+		assertTrue(ItemManager.instance().getItems(kitchen, false).contains(item2));
+
+		//all items in kitchen and it's children
+		assertTrue(ItemManager.instance().getItems(kitchen, true).contains(item1));
+		assertTrue(ItemManager.instance().getItems(kitchen, true).contains(item2));
+
+	 }
+
+    @After
+    public void cleanTreeTest()
+    {
+	 		FacadeImpl.reset();
+    }
+}

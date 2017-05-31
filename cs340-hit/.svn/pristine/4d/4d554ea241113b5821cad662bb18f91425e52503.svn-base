@@ -1,0 +1,52 @@
+
+package model.report;
+import model.StorageUnit;
+import model.ProductGroup;
+import model.Product;
+
+import java.util.Calendar;
+
+	/** 
+		This class extracts information needed for the Removed Items Visitor
+		@author Christopher Tensmeyer
+		@version March 6th, 2013
+	*/
+
+class RemovedItemsVisitor implements Visitor
+{
+
+	/** Constructs a RemovedItemsVisitor
+		@param builder The builder that constructs the Report
+		@param startDate The startDate of the Removed Items Report
+	*/
+	public RemovedItemsVisitor(ReportBuilder builder, Calendar startDate)
+	{
+
+	}
+
+	/** Visits a StorageUnit
+		@param unit The StorageUnit to visit
+	*/
+	public void visit(StorageUnit unit)
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+
+	/** Visits a ProductGroup
+		@param group The ProductGroup to visit
+	*/
+	public void visit(ProductGroup group)
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+
+	/** Visits a Product
+		@param product The Product to visit
+	*/
+	public void visit(Product product)
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+
+}
+

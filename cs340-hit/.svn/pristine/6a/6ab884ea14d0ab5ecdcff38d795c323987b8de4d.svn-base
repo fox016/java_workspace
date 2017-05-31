@@ -1,0 +1,154 @@
+package model;
+
+import model.report.Visitor;
+
+/** This interface represents a Product Group, a collection
+ *  of related products
+ *
+ * @author Talonos
+ */
+public class ProductGroupImpl extends ProductContainerImpl implements ProductGroup
+{
+    private static final long serialVersionUID = -7577752507400234391L;
+    
+    private Size supply = null;
+    private StorageUnit root = null;
+    private ProductContainer parent;
+
+    /**
+     * Creates a new ProductGroup with the given name.
+     * @param name 
+     */
+    public ProductGroupImpl(String name) 
+    {
+        assert(true);
+        this.rename(name);
+    }
+
+    public ProductGroupImpl(String name, ProductContainer parent) 
+    {
+        assert(true);
+        this.rename(name);
+        this.parent = parent;
+        while (parent.beStorageUnit()==null)
+        {
+            parent = parent.getParent();
+        }
+        root = parent.beStorageUnit();
+    }
+
+    /**
+     * Gets the amount of supply needed in a three month supply.
+     * Note that because this returns a pointer to the size held in the Product
+     * group internally, editing the returned size object edits the supply
+     * in this product group... Beware setting two product groups to have the same
+     * size object! Use the Size(Size) constructor to duplicate one if need be!
+     * @return the type and amount necessary to fuel a 3 month supply.
+     */
+    @Override
+    public Size getSupply()
+    {
+        assert(true);
+    	return supply;
+    }
+    
+    /**
+     * Sets the 3 month supply of the product group.
+     * @param supply the new Supply type.
+     */
+    @Override
+    public void setSupply(Size supply)    
+    {
+        assert(true);
+    	this.supply = supply;
+    }
+    
+    /**
+     * Converts this ProductGroup into a String representation of this 
+     * ProductGroup, for use with debugging.
+     * @return String representation of product group
+     */
+    @Override
+    public String toString()
+    {
+        assert(true);
+        StringBuilder toReturn = new StringBuilder("ProductGroup called "+getName()+" contains:");
+    	for (ProductBarcode tCode : products)
+        {
+            toReturn.append("\n  ").append(ProductManager.instance().
+                    getProductByBarcode(tCode).getDescription());
+        }
+        return toReturn.toString();
+    }
+
+    @Override
+    public ProductGroup beProductGroup() 
+    {
+        assert(true);
+        return this;
+    }
+
+    @Override
+    public StorageUnit beStorageUnit() 
+    {
+        assert(true);
+        return null;
+    }
+
+    @Override
+    public StorageUnit getRoot() 
+    {
+        assert(true);
+        return root;
+    }
+
+    @Override
+    public int compareTo(Object o) 
+    {
+        assert(true);
+        if (!(o instanceof ProductGroup))
+        {
+            return -1;
+        }
+        return this.getName().compareTo(((ProductGroup)o).getName());
+    }
+
+    @Override
+    public ProductContainer getProductContainer(Product product) 
+    {
+        assert(true);
+        if (products.contains(product.getBarcode()))
+        {
+            return this;
+        }
+        else
+        {
+            for (ProductContainer tContainer : groups)
+            {
+                ProductContainer location = tContainer.getProductContainer(product);
+                if (location != null)
+                {
+                    return location;
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public ProductContainer getParent() 
+    {
+        assert(true);
+        return parent;
+    }
+
+	/** For the Visitor Pattern
+		@param visitor The visitor
+	*/
+	 public void accept(Visitor visitor)
+	 {
+		visitor.visit(this);
+		for(ProductContainer child: groups)
+			child.accept(visitor);
+	 }
+}

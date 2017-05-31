@@ -1,0 +1,271 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.util.NoSuchElementException;
+import java.util.Set;
+import org.junit.*;
+import static org.junit.Assert.*;
+
+/**
+ *
+ * @author Talonos
+ */
+public class ProductContainerImplTest 
+{
+    
+    public ProductContainerImplTest() 
+    {
+    }
+
+    @BeforeClass
+    public static void setUpClass() throws Exception 
+    {
+        
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws Exception 
+    {
+    }
+    
+    @Before
+    public void setUp() 
+    {
+    }
+    
+    @After
+    public void tearDown() 
+    {
+    }
+    
+        /**
+     * Test of isValidName method, of class ProductContainerImpl.
+     */
+    @Test
+    public void testIsValidName() 
+    {
+        System.out.println("isValidName");
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        assertEquals(false, instance.isValidName(""));
+        assertEquals(false, instance.isValidName(null));
+        assertEquals(true, instance.isValidName("Bread Products"));
+        instance.addContainer("Bread Products");
+        assertEquals(false, instance.isValidName("Bread Products"));
+    }
+    
+    @Test (expected = IllegalArgumentException.class)
+    public void testAddContainerException()
+    {
+        System.out.println("addContainer - Exception");
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        instance.addContainer("");
+    }
+
+    /**
+     * Test of addContainer method, of class ProductContainerImpl.
+     */
+    @Test
+    public void testAddContainer() 
+    {
+        System.out.println("addContainer");
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        ProductGroup result = instance.addContainer("Bread Products");
+        assertEquals("Bread Products", result.getName());
+        assertEquals(result, instance.getProductContainer("Bread Products"));
+        Set<String> returns = instance.getContainers();
+        assertEquals (returns.size(), 1);
+        for (String s : returns)
+        {
+            assertEquals("Bread Products", s);   
+        }
+    }
+
+    
+    @Test (expected = IllegalArgumentException.class)
+    public void testRenameContainerException1()
+    {
+        System.out.println("addContainer - Exception 1");
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        instance.addContainer("Bread Products");
+        instance.renameContainer(null, "Grain Products");
+    }
+        
+    @Test (expected = IllegalArgumentException.class)
+    public void testRenameContainerException2()
+    {
+        System.out.println("addContainer - Exception 2");
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        instance.addContainer("Bread Products");
+        instance.addContainer("Grain Products");
+        instance.renameContainer("Bread Products", "Grain Products");
+    }
+    
+    @Test (expected = NoSuchElementException.class)
+    public void testRenameContainerException3()
+    {
+        System.out.println("addContainer - Exception 3");
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        instance.renameContainer("Bread Products", "Grain Products");
+    }
+   /**
+     * Test of renameContainer method, of class ProductContainerImpl.
+     */
+    @Test
+    public void testRenameContainer() 
+    {
+        System.out.println("renameContainer");
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        instance.addContainer("Bread Products");
+        instance.renameContainer("Bread Products", "Grain Products");
+        Set<String> returns = instance.getContainers();
+        assertEquals (returns.size(), 1);
+        for (String s : returns)
+        {
+            assertEquals("Grain Products", s);   
+        }
+    }
+
+    /**
+     * Test of deleteContainer method, of class ProductContainerImpl.
+     */
+    @Test
+    public void testDeleteContainer() {
+        System.out.println("deleteContainer");
+        String name = "";
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        instance.deleteContainer(name);
+        // TODO review the generated test code and remove the default call to fail.
+        fail("The test case is a prototype.");
+    }
+
+    /**
+     * Test of getProductContainer method, of class ProductContainerImpl.
+     */
+    @Test
+    public void testGetProductContainer_String() {
+        System.out.println("getProductContainer");
+        String name = "";
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        ProductContainer expResult = null;
+        ProductContainer result = instance.getProductContainer(name);
+        assertEquals(expResult, result);
+        // TODO review the generated test code and remove the default call to fail.
+        fail("The test case is a prototype.");
+    }
+
+    /**
+     * Test of getContainers method, of class ProductContainerImpl.
+     */
+    @Test
+    public void testGetContainers() {
+        System.out.println("getContainers");
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        Set expResult = null;
+        Set result = instance.getContainers();
+        assertEquals(expResult, result);
+        // TODO review the generated test code and remove the default call to fail.
+        fail("The test case is a prototype.");
+    }
+
+    /**
+     * Test of getProducts method, of class ProductContainerImpl.
+     */
+    @Test
+    public void testGetProducts() {
+        System.out.println("getProducts");
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        Set expResult = null;
+        Set result = instance.getProducts();
+        assertEquals(expResult, result);
+        // TODO review the generated test code and remove the default call to fail.
+        fail("The test case is a prototype.");
+    }
+
+    /**
+     * Test of removeProduct method, of class ProductContainerImpl.
+     */
+    @Test
+    public void testRemoveProduct() {
+        System.out.println("removeProduct");
+        ProductBarcode code = null;
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        instance.removeProduct(code);
+        // TODO review the generated test code and remove the default call to fail.
+        fail("The test case is a prototype.");
+    }
+
+    /**
+     * Test of addProduct method, of class ProductContainerImpl.
+     */
+    @Test
+    public void testAddProduct() {
+        System.out.println("addProduct");
+        ProductBarcode barcode = null;
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        instance.addProduct(barcode);
+        // TODO review the generated test code and remove the default call to fail.
+        fail("The test case is a prototype.");
+    }
+
+    /**
+     * Test of hasProduct method, of class ProductContainerImpl.
+     */
+    @Test
+    public void testHasProduct() {
+        System.out.println("hasProduct");
+        ProductBarcode code = null;
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        boolean expResult = false;
+        boolean result = instance.hasProduct(code);
+        assertEquals(expResult, result);
+        // TODO review the generated test code and remove the default call to fail.
+        fail("The test case is a prototype.");
+    }
+
+    /**
+     * Test of rename method, of class ProductContainerImpl.
+     * 
+     * Small intentionally, because there are few errors to test for. All error
+     * checking will occur in parent functions.
+     */
+    @Test
+    public void testRename() {
+        System.out.println("rename");
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        assertEquals("Breadbox", instance.getName());
+        instance.rename("Not a breadbox");
+        assertEquals("Not a breadbox", instance.getName());
+    }
+
+    /**
+     * Test of getProductContainer method, of class ProductContainerImpl.
+     */
+    @Test
+    public void testGetProductContainer_Product() {
+        System.out.println("getProductContainer");
+        Product p = null;
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        ProductContainer expResult = null;
+        ProductContainer result = instance.getProductContainer(p);
+        assertEquals(expResult, result);
+        // TODO review the generated test code and remove the default call to fail.
+        fail("The test case is a prototype.");
+    }
+
+    /**
+     * Test of getName method, of class ProductContainerImpl.
+     */
+    @Test
+    public void testGetName() 
+    {
+        System.out.println("getName");
+        ProductContainerImpl instance = new StorageUnitImpl("Breadbox");
+        assertEquals("Breadbox", instance.getName());
+        instance.rename("Not a breadbox");
+        assertEquals("Not a breadbox", instance.getName());
+    }
+
+}

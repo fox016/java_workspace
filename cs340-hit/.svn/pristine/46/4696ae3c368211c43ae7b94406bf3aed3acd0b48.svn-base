@@ -1,0 +1,51 @@
+
+package model.persistence;
+
+import model.*;
+import java.sql.*;
+
+/** This class is responsible for initializing the in memory Model from
+	the external database
+	@author Chris Tensmeyer
+	@version March 27 2013
+*/
+
+class DatabaseModelLoader
+{
+	private ResultSet items;
+	private ResultSet products;
+	private ResultSet groups;
+	private ResultSet units;
+	private ResultSet tree;
+	private ResultSet productAssignments;
+
+	/** Creates a new DatabaseModelLoader */
+	DatabaseModelLoader()
+	{ throw new UnsupportedOpeationException("Not Implemented"); }
+
+	/** This method defines the interface to this object.  Loads the Model into memory from the database */ 
+	void load() throws SQLException
+	{ throw new UnsupportedOpeationException("Not Implemented"); }
+
+	/** Loads all tables from the database */
+	private void getAllTables() throws SQLException
+	{ throw new UnsupportedOpeationException("Not Implemented"); }
+
+	/** Creates the SU and PG model object tree from the loaded tables */
+	private void constructTree()
+	{ throw new UnsupportedOpeationException("Not Implemented"); }
+
+	/** Creates all of the Product model obejcts */
+	private void constructProducts()
+	{ throw new UnsupportedOpeationException("Not Implemented"); }
+
+	/** Uses productAssignments to construct the mapping from PC to Products in the model objects */
+	private void assignProducts()
+	{ throw new UnsupportedOpeationException("Not Implemented"); }
+	
+	/** Populates the Model with all of the Items */
+	private void assignItems()
+	{ throw new UnsupportedOpeationException("Not Implemented"); }
+
+}
+

@@ -1,0 +1,20 @@
+
+package model;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+import java.util.ArrayList;
+import java.util.Calendar;
+import static java.util.Calendar.*;
+import java.util.GregorianCalendar;
+
+public class ItemTest extends TestBase 
+{
+
+	//@Before
+	//How do we use this tag?
+	public void setUpItems()
+	{
+		super.setUpModel();
+	}
+}

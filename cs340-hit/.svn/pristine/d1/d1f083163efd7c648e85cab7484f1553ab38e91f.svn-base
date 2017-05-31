@@ -1,0 +1,226 @@
+package gui.product;
+
+import java.util.Calendar;
+
+import model.FacadeImpl;
+import model.Product;
+import model.ProductBarcode;
+import model.ProductManager;
+import model.Size;
+import model.SupplyType;
+import gui.common.*;
+
+/**
+ * Controller class for the edit product view.
+ */
+public class EditProductController extends Controller 
+										implements IEditProductController {
+	
+	private ProductData target;
+	
+	private Product oldProduct;
+	/**
+	 * Constructor.
+	 * 
+	 * @param view Reference to the edit product view
+	 * @param target Product being edited
+	 */
+	public EditProductController(IView view, ProductData target) {
+		super(view);
+
+		construct();		
+		this.target = target;
+		oldProduct = Translator.instance().getProductFromData(target);
+		getView().setBarcode(target.getBarcode());
+		getView().setDescription(target.getDescription());
+		getView().setShelfLife(String.valueOf(oldProduct.getShelfLife()));
+		
+		double amount = oldProduct.getSize().getAmount();
+		String amountType = oldProduct.getSize().getType().name();
+		System.out.println("Amount type is " + amountType);
+		
+		if(amountType.equals("COUNT")){
+		getView().setSizeValue(String.valueOf( (int) amount));
+		getView().enableSizeValue(false);
+		}
+		else
+		getView().setSizeValue(String.valueOf(amount));
+		
+		SupplyType supplytype = oldProduct.getSize().getType();
+		SizeUnits sizeunits = Translator.instance().getSizeUnitFromSupplyType(supplytype);
+		
+		getView().setSizeUnit(sizeunits);
+		getView().setSupply(target.getSupply());
+		
+		
+	}
+	
+	public void setSize(Product product){
+		
+	}
+
+	//
+	// Controller overrides
+	//
+	
+	/**
+	 * Returns a reference to the view for this controller.
+	 * 
+	 * {@pre None}
+	 * 
+	 * {@post Returns a reference to the view for this controller.}
+	 */
+	@Override
+	protected IEditProductView getView() {
+		return (IEditProductView)super.getView();
+	}
+
+	/**
+	 * Sets the enable/disable state of all components in the controller's view.
+	 * A component should be enabled only if the user is currently
+	 * allowed to interact with that component.
+	 * 
+	 * {@pre None}
+	 * 
+	 * {@post The enable/disable state of all components in the controller's view
+	 * have been set appropriately.}
+	 */
+	@Override
+	protected void enableComponents() {
+		getView().enableBarcode(false);
+		boolean enableSizeValue = getView().getSizeUnit() != SizeUnits.Count;
+		getView().enableSizeValue(enableSizeValue);
+		if(!enableSizeValue)
+		{
+			getView().setSizeValue("1");
+		}
+	}
+
+	/**
+	 * Loads data into the controller's view.
+	 * 
+	 *  {@pre None}
+	 *  
+	 *  {@post The controller has loaded data into its view}
+	 */
+	@Override
+	protected void loadValues() {
+		
+		
+	}
+
+	//
+	// IEditProductController overrides
+	//
+
+	/**
+	 * This method is called when any of the fields in the
+	 * edit product view is changed by the user.
+	 */
+	@Override
+	public void valuesChanged() {
+		
+		enableComponents();
+		
+		boolean canAdd = false;
+		
+		// Get values from view to validate
+		String barcodeStr = getView().getBarcode();
+		String desc = getView().getDescription();
+		SizeUnits sizeUnit = getView().getSizeUnit();
+		String sizeValueStr = getView().getSizeValue();
+		String shelfStr = getView().getShelfLife();
+		String supplyStr = getView().getSupply();
+		
+		if(productValuesEmpty(barcodeStr, desc, sizeUnit, sizeValueStr, shelfStr, supplyStr))
+		{
+			this.getView().enableOK(canAdd);
+			return;
+		}
+		// Create Product Barcode
+				ProductBarcode barcode = new ProductBarcode(barcodeStr);
+				
+				// Create size
+				double amount = 0;
+				try {
+					amount = Double.parseDouble(sizeValueStr);
+				}catch(NumberFormatException e)
+				{
+					this.getView().enableOK(canAdd);
+					return;
+				}
+				SupplyType supplyType = Translator.instance().getSupplyTypeFromSizeUnit(sizeUnit);
+				Size size = new Size(amount, supplyType);
+				
+				// Parse shelf life and 3-month-supply
+				int shelfLife = 0;
+				int supply = 0;
+				try {
+					shelfLife = Integer.parseInt(shelfStr);
+					supply = Integer.parseInt(supplyStr);
+				}catch(NumberFormatException e)
+				{
+					this.getView().enableOK(canAdd);
+					return;
+				}
+				
+				// Create product and test validity
+				Product newProduct = new Product(Calendar.getInstance(), barcode,
+						desc, size, shelfLife, supply);
+				canAdd = FacadeImpl.instance().canUpdateProduct(newProduct);
+				this.getView().enableOK(canAdd);
+		
+	}
+	
+	private boolean productValuesEmpty(String barcodeStr, String desc, SizeUnits sizeUnit,
+			String sizeValueStr, String shelfStr, String supplyStr)
+	{
+		if(stringValueEmpty(barcodeStr) ||
+				stringValueEmpty(desc) ||
+				stringValueEmpty(sizeValueStr) ||
+				stringValueEmpty(shelfStr) ||
+				stringValueEmpty(supplyStr))
+			return true;
+		return sizeUnit == null;
+	}
+	
+	private boolean stringValueEmpty(String str)
+	{
+		return (str == null || str.isEmpty());
+	}
+	
+	/**
+	 * This method is called when the user clicks the "OK"
+	 * button in the edit product view.
+	 */
+	@Override
+	public void editProduct() {
+		String barcodeStr = getView().getBarcode();
+		String desc = getView().getDescription();
+		SizeUnits sizeUnit = getView().getSizeUnit();
+		String sizeValueStr = getView().getSizeValue();
+		String shelfStr = getView().getShelfLife();
+		String supplyStr = getView().getSupply();
+		
+		// Create Product Barcode
+		ProductBarcode barcode = new ProductBarcode(barcodeStr);
+		
+		// Create size
+		double amount = Double.parseDouble(sizeValueStr);
+		SupplyType supplyType = Translator.instance().getSupplyTypeFromSizeUnit(sizeUnit);
+		Size size = new Size(amount, supplyType);
+		
+		// Parse shelf life and 3-month-supply
+		int shelfLife = Integer.parseInt(shelfStr);
+		int supply = Integer.parseInt(supplyStr);
+		
+		// Create product and add to container
+		Product newProduct = new Product(Calendar.getInstance(), barcode,
+				desc, size, shelfLife, supply);
+		
+		Product oldProduct = ProductManager.instance().getProductByBarcode(barcode);
+		FacadeImpl.instance().updateProduct(oldProduct, newProduct);
+	}
+
+}
+

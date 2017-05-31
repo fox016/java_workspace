@@ -1,0 +1,187 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+
+/**
+ *
+ * @author chris
+ */
+public class FacadeAddImpl extends FacadeImpl implements FacadeAdd {
+	private static FacadeAdd _facade_add;
+	
+	private FacadeAddImpl()
+	{
+		super();
+	}
+	
+	/**
+	 * @return The single instance of Facade
+	 */
+	public static FacadeAdd instance()
+	{
+		if(_facade_add == null)
+			_facade_add = new FacadeAddImpl();
+		return _facade_add;
+	}
+	
+	/**
+	 * Resets instance
+	 */
+	public static void reset()
+	{
+		_facade_add = null;
+	}
+
+	public StorageUnit addStorageUnit(String name) throws IllegalArgumentException {
+		if (name == null || name.isEmpty()) {
+			throw new IllegalArgumentException("Invalid Storage Unit Name");
+		}
+		StorageUnit newUnit = new StorageUnitImpl(name);
+		House.instance().addStorageUnit(newUnit);
+		this.setChanged();
+		Notification n = new Notification(OperationType.CREATE, ObjectType.STORAGE_UNIT, newUnit);
+		notifyObservers(n);
+		return newUnit;
+	}
+
+	public ProductGroup addProductGroup(String name, Size supply, ProductContainer parent) throws IllegalArgumentException {
+		ProductGroup newPG = parent.addContainer(name);
+		newPG.setSupply(supply);
+		this.setChanged();
+		Notification n = new Notification(OperationType.CREATE, ObjectType.PRODUCT_CONTAINER, newPG);
+		notifyObservers(n);
+		return newPG;
+	}
+
+	public void addItem(Item item) throws IllegalArgumentException {
+		addItemNoNotify(item);
+		ArrayList<Item> itemList = new ArrayList<>(1);
+		itemList.add(item);
+		this.setChanged();
+		notifyObservers(new Notification(OperationType.CREATE, ObjectType.ITEM, itemList));
+	}
+
+	private void addItemNoNotify(Item item) throws IllegalArgumentException {
+		if (ItemManager.instance().canInsertItem(item)) {
+			ItemManager.instance().insert(item, new ItemBarcode());
+		} else {
+			throw new IllegalArgumentException("Invalid item");
+		}
+	}
+
+	public List<Item> addBatchItems(Product product, Calendar entry, StorageUnit unit, int count) throws IllegalArgumentException {
+		List<Item> addedItems = new ArrayList<Item>();
+		for (int i = 0; i < count; i++) {
+			Item item = new Item(product, unit, entry);
+			addItemNoNotify(item);
+			addedItems.add(item);
+		}
+		this.setChanged();
+		notifyObservers(new Notification(OperationType.CREATE, ObjectType.ITEM, addedItems));
+		return addedItems;
+	}
+
+	public void addProductToContainer(Product product, ProductContainer container) throws IllegalArgumentException {
+		if (product == null || container == null) {
+			throw new IllegalArgumentException("Cannot add product to container" + " unless both are not null");
+		}
+		if (!ProductManager.instance().containsProduct(product.getBarcode())) {
+			ProductManager.instance().addProduct(product);
+		}
+		StorageUnit unit = container.getRoot();
+		ProductContainer oldPC = getProductContainer(unit, product);
+		if (oldPC == null) {
+			ProductManager.instance().addContainer(product, container);
+			container.addProduct(product.getBarcode());
+		} else {
+			ProductManager.instance().removeProductFromContainer(product, oldPC);
+			oldPC.removeProduct(product.getBarcode());
+			container.addProduct(product.getBarcode());
+			ProductManager.instance().addContainer(product, container);
+			ItemManager.instance().addProduct(container, product);
+		}
+		this.setChanged();
+		Notification n = new Notification(OperationType.CREATE, ObjectType.PRODUCT, product);
+		notifyObservers(n);
+	}
+	
+		/**
+	 * @param unitName
+	 * @return
+	 */
+	public boolean canAddStorageUnit(String unitName)
+	{
+		// Case for null/empty handled by House's isValidName
+		assert(true);
+		
+		return House.instance().isValidName(unitName);
+	}
+	
+	/**
+	 * @param name
+	 * @param parent
+	 * @return
+	 */
+	public boolean canAddProductGroup(String name, ProductContainer parent)
+	{
+		assert(true);
+		
+		if(parent == null)
+			return false;
+		
+		return parent.isValidName(name);
+	}
+	
+	/**
+	 * @param item
+	 * @return
+	 */
+	public boolean canAddItem(Item item)
+	{
+		assert(true);
+		
+		if(item == null)
+			return false;
+		
+		return ItemManager.instance().canInsertItem(item);
+	}
+	
+
+	
+	/**
+	 * @param product
+	 * @param container
+	 * @return
+	 */
+	public boolean canAddProductToContainer(Product product, ProductContainer container)
+	{
+		assert(true);
+		
+		if(product == null || container == null)
+			return false;
+		
+		return true;
+	}
+	
+		/**
+	 * @param product
+	 * @return
+	 */
+	/*
+	public boolean canAddProductToSystem(Product product)
+	{
+		assert(true);
+		
+		if(product == null)
+			return false;
+		
+		return ProductManager.instance().canAddProduct(product);
+	}
+	*/
+}

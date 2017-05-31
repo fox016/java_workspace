@@ -1,0 +1,46 @@
+
+package model.persistence;
+
+import model.*;
+
+/** The factory class for serialization persistence
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+public class SerializationCreator implements PersistenceCreator
+{
+	/** Factory method to get a reference to the single PersistenceFacade
+		@return The singleton PersistenceFacade
+	*/
+	public PersistenceFacade getFacade()
+	{
+		return new SerializationFacade();
+	}
+
+	/** Factory method to create an ItemDataObejct
+		@param item The model object represented by the returned DataObject
+		@return Returns a new ItemDataObject representing item
+	*/
+	public ItemDataObject createItemDataObject(Item item) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Factory method to create a ProductDataObejct
+		@param product The model object represented by the returned DataObject
+		@return Returns a new ProductDataObject representing product
+	*/
+	public ProductDataObject createProductDataObject(Product product) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Factory method to create a GroupDataObejct
+		@param group The model object represented by the returned DataObject
+		@return Returns a new GroupDataObject representing product
+	*/
+	public GroupDataObject createGroupDataObject(ProductGroup group) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Factory method to create a UnitDataObject
+		@param unit The model object represented by the returned DataObject
+		@return Returns a new UnitDataObject representing unit
+	*/
+	public UnitDataObject createUnitDataObject(StorageUnit unit) { throw new UnsupportedOperationException("Not Implemented"); }
+
+}
+

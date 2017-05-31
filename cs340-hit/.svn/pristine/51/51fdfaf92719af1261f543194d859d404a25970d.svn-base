@@ -1,0 +1,26 @@
+package model;
+
+/** This interface is responsible for saving and retrieving 
+ *  data via Java serialization
+ * 
+ * @author Nathan Fox
+ *
+ */
+public interface DataSerializer
+{	
+	/** Saves all non-static data for the given house
+	 * 
+	 * @param house	The House to serialize
+	 * @param filename	The full class path to save the data to
+	 */
+	public void save(House house, String filename);
+	
+	/** Loads all non-static data from the given file and
+	 *  creates a House
+	 * 
+	 * @param filename	The full class path to load the data from
+	 * @return	The House created from the loaded data
+	 */
+	public House load(String filename);
+
+}

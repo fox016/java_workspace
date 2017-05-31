@@ -1,0 +1,313 @@
+
+package model;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.Calendar;
+import static java.util.Calendar.*;
+import java.util.GregorianCalendar;
+
+
+public class ItemManagerTest
+{
+	private static Product p1;
+	private static Product p2;
+	private static StorageUnit su1;
+	private static StorageUnit su2;
+	private static Item i1;
+	private static Item i2;
+	private static Item i3;
+	private static Item i4;
+	private static Calendar c1;
+	private static Calendar c2;
+	private static Calendar c3;
+	private static Calendar c4;
+
+	@Before
+	public void setUp()
+	{
+		c1 = new GregorianCalendar(2000, 0, 1);
+		c2 = new GregorianCalendar(2004, 8, 11);
+		c3 = new GregorianCalendar(2008, 7, 10);
+		c4 = new GregorianCalendar(2013, 1, 2);
+		p1 = new Product(c1, new ProductBarcode("1024"), "8oz Cans of Sprite", new Size(12, SupplyType.COUNT), 0, 5);
+		p2 = new Product(c1, new ProductBarcode("2048"), "8oz Cans of Fanta", new Size(12, SupplyType.COUNT), 10, 5);
+		su1 = new StorageUnitImpl("Kitchen");
+		su2 = new StorageUnitImpl("Basement");
+		i1 = new Item(p1, su1, c2);
+		i2 = new Item(p1, su1, c2);
+		i3 = new Item(p2, su1, c2);
+		i4 = new Item(p2, su2, c2);
+		ItemManager.reset();
+	}
+	
+	//Either there is a bug or I'm not understanding how removal works.  -Clint
+	@Test
+	public void removeLiveItemTest(){
+		ItemManager m = ItemManager.instance();
+		m.insert(i1, new ItemBarcode());
+			
+		Set<Item> itemsBeforeRemove = FacadeImpl.instance().getItemsByProduct(su1, p1);
+		assertFalse(itemsBeforeRemove.isEmpty());
+		
+		FacadeImpl.instance().removeItemFromStorage(i1);
+		
+		Set<Item> itemsAfterRemove = FacadeImpl.instance().getItemsByProduct(su1, p1);
+		System.out.println(itemsAfterRemove.toString());
+		assertTrue(itemsAfterRemove.isEmpty());	
+		
+	}
+	
+	@Test
+	public void constructorTest()
+	{
+		ItemManager m = ItemManager.instance();
+		ItemManager n = ItemManager.instance();
+		assertEquals(m, n);
+	}
+
+	@Test
+	public void insertTest()
+	{
+		ItemManager m = ItemManager.instance();
+		assertTrue(i1.isValidItem());
+		assertTrue(m.canInsertItem(i1));
+		assertNull(i1.getItemBarcode());
+		assertTrue(m.insert(i1, new ItemBarcode()));
+		assertNotNull(i1.getItemBarcode());
+		assertTrue(m.contains(i1));
+		assertTrue(m.isInSystem(i1.getItemBarcode()));
+		assertFalse(m.insert(i1, new ItemBarcode()));
+
+		assertTrue(i2.isValidItem());
+		assertNull(i2.getItemBarcode());
+		assertTrue(m.insert(i2, new ItemBarcode()));
+		assertNotNull(i2.getItemBarcode());
+		assertTrue(m.contains(i2));
+		assertTrue(m.isInSystem(i2.getItemBarcode()));
+
+		assertTrue(i3.isValidItem());
+		assertNull(i3.getItemBarcode());
+		assertTrue(m.insert(i3, new ItemBarcode()));
+		assertNotNull(i3.getItemBarcode());
+		assertTrue(m.contains(i3));
+		assertTrue(m.isInSystem(i3.getItemBarcode()));
+
+		m.insert(i4, new ItemBarcode());
+
+		assertTrue(m.totalItems() == 4);
+		assertTrue(m.numSystemItems() == 4);
+		assertTrue(m.numRemovedItems() == 0);
+		assertTrue(m.allItems().size() == 4);
+		assertTrue(m.allSystemItems().size() == 4);
+		assertTrue(m.allRemovedItems().size() == 0);
+		assertNotNull(m.getItem(i1.getItemBarcode()));
+
+		assertEquals(i1, m.getSystemItem(i1.getItemBarcode()));
+	}
+
+	@Test
+	public void testItemsByProduct()
+	{
+		ItemManager m = ItemManager.instance();
+		m.insert(i1, new ItemBarcode());
+		m.insert(i2, new ItemBarcode());
+		m.insert(i3, new ItemBarcode());
+		m.insert(i4, new ItemBarcode());
+
+		//Items by Product
+		Set<Item> itemsOfP1 = m.getItems(p1);
+		Set<Item> itemsOfP2 = m.getItems(p2);
+
+		assertTrue(itemsOfP1.contains(i1));
+		assertTrue(itemsOfP1.contains(i2));
+		assertFalse(itemsOfP1.contains(i3));
+		assertFalse(itemsOfP1.contains(i4));
+
+		assertFalse(itemsOfP2.contains(i1));
+		assertFalse(itemsOfP2.contains(i2));
+		assertTrue(itemsOfP2.contains(i3));
+		assertTrue(itemsOfP2.contains(i4));
+
+	}
+	
+	@Test
+	public void testItemsByStorageUnit()
+	{
+		ItemManager m = ItemManager.instance();
+		m.insert(i1, new ItemBarcode());
+		m.insert(i2, new ItemBarcode());
+		m.insert(i3, new ItemBarcode());
+		m.insert(i4, new ItemBarcode());
+
+		//Items by Storage Unit
+		Set<Item> itemsOfSu1 = m.getItems(su1);
+
+		/*System.out.println("itemsOfSu1");
+		for(Item item: itemsOfSu1)
+			System.out.println(item);
+		*/
+
+		assertTrue(itemsOfSu1.contains(i1));
+		assertTrue(itemsOfSu1.contains(i2));
+		assertTrue(itemsOfSu1.contains(i3));
+		assertFalse(itemsOfSu1.contains(i4));
+
+		Set<Item> itemsOfSu2 = m.getItems(su2);
+
+		assertFalse(itemsOfSu2.contains(i1));
+		assertFalse(itemsOfSu2.contains(i2));
+		assertFalse(itemsOfSu2.contains(i3));
+		assertTrue(itemsOfSu2.contains(i4));
+
+		assertNull(m.getRemovedItem(i1.getItemBarcode()));
+	}
+
+	@Test
+	public void simpleRemoveTest()
+	{
+		ItemManager m = ItemManager.instance();
+		m.insert(i1, new ItemBarcode());
+		assertTrue(i1.isInSystem());
+		assertTrue(0 == m.numRemovedItems());
+
+		//Items by Product
+		Set<Item> removedItems = m.getRemovedItems(p1);
+		assertFalse(removedItems.contains(i1));
+		Set<Item> liveItems = m.getSystemItems(p1);
+		assertTrue(liveItems.contains(i1));
+
+		m.removeItem(i1.getItemBarcode());
+
+		//System Items
+		assertFalse(i1.isInSystem());
+		assertEquals(su1, i1.getStorageUnit());
+		assertEquals(p1, i1.getProduct());
+		
+		//Removed Items
+		assertTrue(m.isRemoved(i1.getItemBarcode()));
+		assertTrue(1 == m.numRemovedItems());
+		assertTrue(1 == m.allRemovedItems().size());
+		assertFalse(m.isInSystem(i1.getItemBarcode()));
+		assertEquals(i1, m.getRemovedItem(i1.getItemBarcode()));
+
+		//Items by Product
+		removedItems = m.getRemovedItems(p1);
+		assertTrue(removedItems.contains(i1));
+
+		liveItems = m.getSystemItems(p1);
+		assertFalse(liveItems.contains(i1));
+
+		assertNull(m.getSystemItem(i1.getItemBarcode()));
+	}
+
+	@Test
+	public void simpleProductTest()
+	{
+		ItemManager m = ItemManager.instance();
+		m.insert(i1, new ItemBarcode());
+
+		assertTrue(1 == m.getItems(p1).size());
+		assertTrue(0 == m.getItems(p2).size());
+	}
+
+	@Test
+	public void simpleContainerTest()
+	{
+		ItemManager m = ItemManager.instance();
+		m.insert(i1, new ItemBarcode());
+		
+		assertTrue(m.getSystemItems(su1, false).contains(i1));
+		assertFalse(m.getSystemItems(su2, false).contains(i1));
+
+		m.insert(i4, new ItemBarcode());
+		assertTrue(m.getSystemItems(su1, false).contains(i1));
+		assertTrue(m.getSystemItems(su2, false).contains(i4));
+
+		//Cross between Product and SU
+		assertTrue(m.getSystemItems(su1, p1, false).contains(i1));
+		assertFalse(m.getSystemItems(su1, p2, false).contains(i1));
+		assertFalse(m.getSystemItems(su2, p1, false).contains(i4));
+		assertTrue(m.getSystemItems(su2, p2, false).contains(i4));
+	}
+
+	@Test
+	public void purgeTest()
+	{
+		ItemManager m = ItemManager.instance();
+
+		assertTrue(m.canPurge(p1));
+		m.insert(i1, new ItemBarcode());
+		assertFalse(m.canPurge(p1));
+
+		m.removeItem(i1.getItemBarcode());
+		assertTrue(m.canPurge(p1));
+		m.purgeProduct(p1);
+		assertFalse(m.isRemoved(i1.getItemBarcode()));
+		assertFalse(m.contains(i1));
+	}
+
+	@Test
+	public void insertItemToProductGroup()
+	{
+		ItemManager m = ItemManager.instance();
+		String name = "Cabinet";
+		su1.addContainer(name);
+		ProductContainer child = su1.getProductContainer(name);
+		assertNotNull(child);
+		Product p3 = new Product(c1, new ProductBarcode("1234"), "Crackers", new Size(6, SupplyType.COUNT), 0, 5); 
+		ProductManager.instance().addProduct(p3);
+		ProductManager.instance().addContainer(p3, child);
+		//m.addProduct(child, p3);
+		child.addProduct(p3.getBarcode());
+		assertTrue(child.hasProduct(p3.getBarcode()));
+
+		Item i5 = new Item(p3, su1, c2);
+
+		m.insert(i5, new ItemBarcode());
+		assertTrue(m.contains(i5));
+		Set<Item> recursive = m.getSystemItems(su1, true);
+		Set<Item> nonRecursive = m.getSystemItems(su1, false);
+		Set<Item> childItems = m.getSystemItems(child);
+
+		assertTrue(recursive.contains(i5));
+		assertFalse(nonRecursive.contains(i5));
+		assertTrue(childItems.contains(i5));
+
+		//Testing Removing the Product
+		m.removeProduct(child, p3);
+
+		recursive = m.getSystemItems(su1, true);
+		nonRecursive = m.getSystemItems(su1, false);
+		childItems = m.getSystemItems(child);
+		
+		assertTrue(recursive.contains(i5));
+		assertTrue(nonRecursive.contains(i5));
+		assertFalse(childItems.contains(i5));
+
+		//Readding it
+		m.addProduct(child, p3);
+		
+		recursive = m.getSystemItems(su1, true);
+		nonRecursive = m.getSystemItems(su1, false);
+		childItems = m.getSystemItems(child);
+	}
+
+	@Test
+	public void transferTest()
+	{
+		ItemManager m = ItemManager.instance();
+		assertFalse(m.canTransferItem(i1, su2));
+		m.insert(i1, new ItemBarcode());
+		assertTrue(m.canTransferItem(i1, su2));
+		assertTrue(m.getItems(su1).contains(i1));
+		m.transfer(i1, su2);
+		//this assert is failing.  Perhaps we ought to test it through Facade
+		assertTrue(m.getItems(su2).contains(i1));
+	}
+
+}

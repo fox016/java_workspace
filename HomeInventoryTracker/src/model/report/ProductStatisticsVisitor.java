@@ -1,0 +1,522 @@
+package model.report;
+
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.Calendar;
+import java.util.HashSet;
+import java.util.Set;
+
+import model.Item;
+import model.ItemManager;
+import model.StorageUnit;
+import model.ProductGroup;
+import model.Product;
+
+	/** 
+		This class extracts information needed for the Product Statistics Report
+		@author Nate Fox
+		@version March 16th, 2013
+	*/
+
+class ProductStatisticsVisitor implements Visitor
+{
+	private ReportBuilder builder;
+	private final int COLUMNS = 10;
+	
+	private Calendar startDate;
+	private Calendar endDate;
+
+	/** Constructs a ProductStatisticsVisitor
+		@param builder The builder that constructs the Report
+		@param numMonths The number of months to use in
+			constructing the Product Statistics Report
+		@throws IOException
+	*/
+	public ProductStatisticsVisitor(ReportBuilder builder, int numMonths)
+		throws IOException
+	{
+		this.builder = builder;
+		builder.writeTitle("Product Report (" + numMonths + " Months)");
+		builder.startTable(COLUMNS);	
+		builder.writeTableHeader(getColumnTitles());
+		calculateDateRange(numMonths);
+	}
+	
+	/**
+	 * Constructs a ProductStatisticsVisitor for a test report
+	 * 
+	 * @param builder
+	 * @param startDate
+	 * @param endDate
+	 * @throws IOException
+	 */
+	public ProductStatisticsVisitor(ReportBuilder builder,
+			Calendar startDate, Calendar endDate) throws IOException
+	{
+		this.builder = builder;
+		builder.writeTitle("");
+		builder.startTable(COLUMNS);
+		builder.writeTableHeader(getColumnTitles());
+		this.startDate = rewindToMidnight(startDate);
+		this.endDate = rewindToMidnight(endDate);
+	}
+
+	/**
+	 * Calculates range of dates to be used to build report
+	 * Sets class variables startDate and endDate
+	 * 
+	 * @param months Number of months to go back
+	 */
+	private void calculateDateRange(int months)
+	{
+		endDate = Calendar.getInstance();
+		endDate = rewindToMidnight(endDate);
+		startDate = (Calendar)endDate.clone();
+		startDate.add(Calendar.MONTH, months * -1);
+	}
+
+	/** Visits a StorageUnit
+		@param unit The StorageUnit to visit
+	*/
+	public void visit(StorageUnit unit)
+	{
+		throw new UnsupportedOperationException("Storage Unit Visit Not Implemented");
+	}
+
+	/** Visits a ProductGroup
+		@param group The ProductGroup to visit
+	*/
+	public void visit(ProductGroup group)
+	{
+		throw new UnsupportedOperationException("Product Group Visit Not Implemented");
+	}
+
+	/** Visits a Product
+		@param product The Product to visit
+	*/
+	public void visit(Product product)
+	{
+		// Get all items of product
+		Set<Item> allItems = ItemManager.instance().getItems(product);
+		
+		// Filer out products added after end date
+		Set<Item> itemsAddedAfter = new HashSet<>();
+		for(Item item : allItems)
+		{
+			if(rewindToMidnight(item.getEntryDate()).compareTo(endDate) > 0)
+			{
+				itemsAddedAfter.add(item);
+			}
+		}
+		allItems.removeAll(itemsAddedAfter);
+		
+		// Get used and current items
+		Set<Item> usedItems = getUsedItems(allItems);
+		Set<Item> currentItems = getCurrentItems(allItems);
+		
+		// Calculate supply at beginning of reporting period
+		int initialSupply = getInitialSupply(allItems);
+		int[] supplyList = getSupplyList(product, allItems, initialSupply);
+		
+		// Calculate necessary values
+		int currentSupply = currentItems.size();
+		String averageSupply = getAverage(supplyList);
+		int minSupply = getMin(supplyList);
+		int maxSupply = getMax(supplyList);
+		int usedSupply = usedItems.size();
+		int addedSupply = getAddedSupply(allItems);
+		String averageUsedAge = getAverageAge(usedItems);
+		long maxUsedAge = getMaxAge(usedItems);
+		String averageCurrentAge = getAverageAge(currentItems);
+		long maxCurrentAge = getMaxAge(currentItems);
+		
+		// Set row values
+		String[] row = new String[COLUMNS];
+		row[0] = product.getDescription();
+		row[1] = product.getBarcode().toString();
+		row[2] = product.getSize().toString();
+		row[3] = getThreeMonthSupplyString(product);
+		row[4] = currentSupply + " / " + averageSupply;
+		row[5] = minSupply + " / " + maxSupply;
+		row[6] = usedSupply + " / " + addedSupply;
+		row[7] = getShelfLifeString(product);
+		row[8] = averageUsedAge + " days / " + maxUsedAge + " days";
+		row[9] = averageCurrentAge + " days / " + maxCurrentAge + " days";
+		
+		// Write row to file
+		try {
+			builder.writeTableRow(row);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * @param product
+	 * @return String representation of product's shelf life.
+	 * Empty string returned if shelf life is 0
+	 */
+	private String getShelfLifeString(Product product)
+	{
+		if(product.getShelfLife() == 0)
+		{
+			return "";
+		}
+		return product.getShelfLife() + " months";
+	}
+	
+	/**
+	 * @param product
+	 * @return String representation of product's 3-month supply.
+	 * Emptry string returned if supply is 0
+	 */
+	private String getThreeMonthSupplyString(Product product)
+	{
+		if(product.getThreeMonthSupply() == 0)
+		{
+			return "";
+		}
+		return product.getThreeMonthSupply() + "";
+	}
+
+	/**
+	 * @param product
+	 * @param allItems A set of all items of a product
+	 * @param initialSupply How many items of a product were in the system
+	 * at the start of the report period
+	 * @return An array of item counts for each day of the reporting period
+	 */
+	private int[] getSupplyList(Product product, Set<Item> allItems, int initialSupply)
+	{
+		assert(allItems != null);
+		assert(initialSupply >= 0);
+		
+		/* 
+		 * If a Product was created during the reporting period,statistics
+		 * for that Product are calculated starting on its Creation Date. Days on
+		 * which the Product did not exist in the system are not counted.
+		 */
+		Calendar startTime = (Calendar) startDate.clone();
+		if(product.getCreationDate().compareTo(startTime) >= 0)
+		{
+			startTime = product.getCreationDate();
+		}
+		
+		// Calculate days in report (for array length)
+		long reportTimeMillis = endDate.getTimeInMillis() - startTime.getTimeInMillis();
+		int reportTimeDays = (int)Math.round(reportTimeMillis / (24.0 * 60.0 * 60.0 * 1000.0));
+		int[] supplyList = new int[reportTimeDays+1];
+		
+		// Case where there are no items
+		if(allItems.isEmpty())
+		{
+			for(int i = 0; i < supplyList.length; i++)
+				supplyList[i] = 0;
+			return supplyList;
+		}
+		
+		// Calculate supply for each day
+		int prevSupply = initialSupply;
+		Calendar currentDate = (Calendar)startTime.clone();
+		//System.out.println("------ " + product.getDescription());
+		for(int i = 0; i < supplyList.length; i++)
+		{
+			//System.out.println(DateUtils.formatDateTime(currentDate.getTime()));
+			supplyList[i] = prevSupply + getItemsAdded(currentDate, allItems) - 
+					getItemsRemoved(currentDate, allItems);
+			
+			prevSupply = supplyList[i]; // Update prev supply
+			currentDate.add(Calendar.HOUR, 26); // Update current date (remember DST)
+			currentDate = rewindToMidnight(currentDate);
+		}
+		//System.out.println();
+		
+		return supplyList;
+	}
+	
+	/**
+	 * @param currentDate
+	 * @param allItems
+	 * @return Count of all items that were removed on currentDate
+	 */
+	private int getItemsRemoved(Calendar currentDate, Set<Item> allItems)
+	{
+		assert(currentDate != null);
+		assert(currentDate.compareTo(startDate) >= 0);
+		assert(currentDate.compareTo(endDate) <= 0);
+		assert(allItems != null);
+		
+		int itemsRemoved = 0;
+		for(Item item : allItems)
+		{
+			if(!item.isInSystem() && rewindToMidnight(item.getExitTime()).equals(currentDate))
+				itemsRemoved++;
+		}
+		return itemsRemoved;
+	}
+
+	/**
+	 * @param currentDate
+	 * @param allItems
+	 * @return Count of all items that were added on currentDate
+	 */
+	private int getItemsAdded(Calendar currentDate, Set<Item> allItems)
+	{
+		assert(currentDate != null);
+		assert(currentDate.compareTo(startDate) >= 0);
+		assert(currentDate.compareTo(endDate) <= 0);
+		assert(allItems != null);
+		
+		int itemsAdded = 0;
+		for(Item item : allItems)
+		{
+			if(item.getEntryDate().equals(currentDate))
+				itemsAdded++;
+		}
+		return itemsAdded;
+	}
+
+	/**
+	 * @param list
+	 * @return Average of all values in int array
+	 */
+	private String getAverage(int[] list)
+	{
+		assert(list != null);
+		
+		double average = 0;
+		double total = 0.0;
+		for(int i = 0; i < list.length; i++)
+		{
+			total += list[i];
+		}
+		DecimalFormat df = new DecimalFormat("#0.0");
+		if(list.length != 0)
+			average = total / list.length;
+		return df.format(average);
+	}
+	
+	/**
+	 * @param list
+	 * @return Minimum value in an int array
+	 */
+	private int getMin(int[] list)
+	{
+		assert(list != null);
+		
+		if(list.length == 0) return 0;
+		
+		int min = Integer.MAX_VALUE;
+		for(int i = 0; i < list.length; i++)
+		{
+			if(list[i] < min)
+				min = list[i];
+		}
+		return min;
+	}
+	
+	/**
+	 * @param list
+	 * @return Maximum value in an int array
+	 */
+	private int getMax(int[] list)
+	{
+		assert(list != null);
+		
+		int max = 0;
+		for(int i = 0; i < list.length; i++)
+		{
+			if(list[i] > max)
+				max = list[i];
+		}
+		return max;
+	}
+
+	/**
+	 * @param allItems
+	 * @return Count of items in system when report started
+	 */
+	private int getInitialSupply(Set<Item> allItems) {
+		
+		assert(allItems != null);
+		
+		int initialSupply = 0;
+		for(Item item : allItems)
+		{
+			if(item.getEntryDate().compareTo(startDate) < 0)
+			{
+				if(item.getExitTime() == null || item.getExitTime().compareTo(startDate) >= 0)
+				{
+					initialSupply++;
+				}
+			}
+		}
+		return initialSupply;
+	}
+	
+	/**
+	 * @param items
+	 * @return The age of the oldest item in the set of items
+	 */
+	private long getMaxAge(Set<Item> items)
+	{
+		long maxAge = 0;
+		for(Item item : items)
+		{
+			Calendar endTime = item.getExitTime();
+			if(endTime == null)
+				endTime = endDate;
+			else if(endTime.compareTo(endDate) >= 0)
+				endTime = endDate;
+			else
+				endTime = rewindToMidnight(endTime);
+			long ageMillis = endTime.getTimeInMillis() - item.getEntryDate().getTimeInMillis();
+			long ageDays = Math.round(ageMillis / (24.0 * 60.0 * 60.0 * 1000.0));
+			if(ageDays > maxAge)
+				maxAge = ageDays;
+		}
+		return maxAge;
+	}
+
+	/**
+	 * @param items
+	 * @return The average age of all items in the set of items
+	 */
+	private String getAverageAge(Set<Item> items) {
+		
+		assert(items != null);
+		
+		double averageUsedAge = 0;
+		double totalAge = 0;
+		for(Item item : items)
+		{
+			Calendar endTime = item.getExitTime();
+			if(endTime == null)
+				endTime = endDate;
+			else if(endTime.compareTo(endDate) >= 0)
+				endTime = endDate;
+			else
+				endTime = rewindToMidnight(endTime);
+			long ageMillis = endTime.getTimeInMillis() - rewindToMidnight(item.getEntryDate()).getTimeInMillis();
+			double ageDays = ageMillis / (24.0 * 60.0 * 60.0 * 1000.0);
+			totalAge += ageDays;
+		}
+		if(items.size() != 0)
+			averageUsedAge = totalAge / items.size();
+		DecimalFormat df = new DecimalFormat("#0.0");
+		return df.format(averageUsedAge);
+	}
+
+	/**
+	 * @param allItems
+	 * @return All items that were removed after the report's start date
+	 */
+	private Set<Item> getUsedItems(Set<Item> allItems) {
+		
+		assert(allItems != null);
+		
+		Set<Item> usedItems = new HashSet<>();
+		for(Item item : allItems)
+		{
+			if(!item.isInSystem())
+			{
+				Calendar endTime = item.getExitTime();
+				endTime = rewindToMidnight(endTime);
+				if(endTime.compareTo(startDate) >= 0)
+				{
+					if(endTime.compareTo(endDate) <= 0)
+					{
+						usedItems.add(item);
+					}
+				}
+			}
+		}
+		return usedItems;
+	}
+	
+	/**
+	 * @param allItems
+	 * @return All items that have not been removed
+	 */
+	private Set<Item> getCurrentItems(Set<Item> allItems) {
+		
+		assert(allItems != null);
+		
+		Set<Item> currentItems = new HashSet<>();
+		for(Item item : allItems)
+		{
+			if(item.isInSystem() && item.getEntryDate().compareTo(endDate) <= 0)
+			{
+				currentItems.add(item);
+			}
+			else if(!item.isInSystem() && item.getExitTime().compareTo(endDate) > 0)
+			{
+				if(item.getEntryDate().compareTo(endDate) <= 0)
+					currentItems.add(item);
+			}
+		}
+		return currentItems;
+	}
+	
+	/**
+	 * @param allItems
+	 * @return Count of all items (live or dead) that were added to the system
+	 * after the report's start date
+	 */
+	private int getAddedSupply(Set<Item> allItems) {
+		
+		assert(allItems != null);
+		
+		int addedSupply = 0;
+		for(Item item : allItems)
+		{
+			if(item.getEntryDate().compareTo(startDate) >= 0)
+			{
+				addedSupply++;
+			}
+		}
+		return addedSupply;
+	}
+	
+	/**
+	 * @return Column titles for this report
+	 */
+	private String[] getColumnTitles(){
+		String[] columnTitles = {"Description","Barcode", "Size", "3-Month Supply",
+				"Supply: Cur/Avg", "Supply: Min/Max", "Supply: Used/Added", "Shelf Life",
+				"Used Age: Avg/Max", "Cur Age: Avg/Max"};
+		return columnTitles;
+	}
+	
+	/**
+	 * @param c A calendar object to rewind
+	 * @return The calendar object rewinded back to midnight
+	 */
+	private Calendar rewindToMidnight(Calendar c)
+	{
+		assert(c != null);
+		
+		c.set(Calendar.HOUR, 0);
+		c.set(Calendar.AM_PM, Calendar.AM);
+		c.set(Calendar.MINUTE, 0);
+		c.set(Calendar.SECOND, 0);
+		c.set(Calendar.MILLISECOND, 0);
+		
+		return c;
+	}
+
+	public void finish()
+	{
+		try
+		{
+			builder.endTable();
+			builder.close();
+		}
+		catch(IOException e)
+		{
+			e.printStackTrace();
+		}
+
+	}
+}
+

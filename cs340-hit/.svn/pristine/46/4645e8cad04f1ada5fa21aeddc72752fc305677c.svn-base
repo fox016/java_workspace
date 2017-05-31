@@ -1,0 +1,68 @@
+Last login: Fri Feb  1 11:22:46 on ttys000
+null-406c8f250b35:~ Admin$ ls
+Applications		Movies			config.cache
+Desktop			Music			config.log
+Documents		Pictures		fox016@blitzz.byu.edu
+Downloads		Public			jobq.dat
+Dropbox			Sites			jquery.simpledialog2.js
+Google Drive		adm.fox016@tabura1
+Library			android-sdks
+null-406c8f250b35:~ Admin$ cd Documents/HIT/
+null-406c8f250b35:HIT Admin$ ls
+cs340-hit
+null-406c8f250b35:HIT Admin$ cd cs340-hit/
+null-406c8f250b35:cs340-hit Admin$ ls
+branches	readme.textile	tags		trunk
+null-406c8f250b35:cs340-hit Admin$ cd trunk/
+null-406c8f250b35:trunk Admin$ ls
+inventory-tracker
+null-406c8f250b35:trunk Admin$ cd inventory-tracker/
+null-406c8f250b35:inventory-tracker Admin$ ls
+build			doc			style-reports
+build.xml		images			test-build
+checkstyle.xml		import.xml		test-reports
+coverage-build		lib			test-src
+coverage-reports	runant
+dist			src
+null-406c8f250b35:inventory-tracker Admin$ cd src/
+null-406c8f250b35:src Admin$ ls
+common	gui	model	tools
+null-406c8f250b35:src Admin$ cd model/
+null-406c8f250b35:model Admin$ ls
+Barcode.java				ItemManager.java
+BarcodeGenerator.java			ItemNotFoundException.java
+ChangableProductContainer.java		Product.java
+DataSerializer.java			ProductBarcode.java
+Facade.java				ProductContainer.java
+House.java				ProductGroup.java
+IllegalItemOperationException.java	ProductManager.java
+Item.java				Size.java
+ItemAlreadyRemovedException.java	StorageUnit.java
+ItemBarcode.java			SupplyType.java
+ItemException.java
+null-406c8f250b35:model Admin$ vim Item.java 
+
+
+package model;
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+/** This Class represents an Item entity
+ *
+ *      @author Christopher Tensmeyer
+ *      @version Phase 1.0 Jan 22, 2013
+ *
+ */
+public class Item implements Serializable
+{
+        private static final long serialVersionUID = 53758392747592847L;
+
+        private Product myProduct;
+        private ProductBarcode pBarcode;
+        private final ItemBarcode iBarcode;
+        private Calendar myEntryDate;
+        private Calendar myExitDate;
+        private StorageUnit myContainer;
+        private boolean isLive;
+"Item.java" 297L, 8159C

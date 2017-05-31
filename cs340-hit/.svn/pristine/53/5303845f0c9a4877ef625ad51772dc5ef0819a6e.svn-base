@@ -1,0 +1,118 @@
+package model;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+/** This class is responsible for saving and retrieving 
+ *  data via Java serialization
+ * 
+ * @author Nathan Fox
+ *
+ */
+public class DataSerializer
+{
+	private static DataSerializer _dataSerializer;
+
+	private DataSerializer()
+	{
+		assert(true);
+	}
+	
+	/** Returns the single instance of DataSerializer
+	 * 
+	 * @return	The single instance of DataSerializer
+	 */
+	public static DataSerializer instance()
+	{
+		assert(true);
+		
+		if(_dataSerializer == null)
+			_dataSerializer = new DataSerializer();
+		return _dataSerializer;
+	}
+	
+	/**
+	 * Resets instance
+	 */
+	public void reset()
+	{
+		_dataSerializer = null;
+	}
+	
+	/** Saves all non-static data for the given house
+	 * 
+	 * @param filename	The full class path to save the data to
+	 * @throws FileNotFoundException Informs caller that file is not found
+	 * @throws IOException Informs caller that write to file failed
+	 */
+	public void save(String filepath) throws FileNotFoundException, IOException
+	{
+		// Write House, ItemManager, ProductManager, BarcodeGenerator
+		FileOutputStream fos = new FileOutputStream(filepath + "house");
+		ObjectOutputStream out = new ObjectOutputStream(fos);
+		out.writeObject(House.instance());
+		out.close();
+		fos.close();
+		
+		fos = new FileOutputStream(filepath + "itemManager");
+		out = new ObjectOutputStream(fos);
+		out.writeObject(ItemManager.instance());
+		out.close();
+		fos.close();
+		
+		fos = new FileOutputStream(filepath + "productManager");
+		out = new ObjectOutputStream(fos);
+		out.writeObject(ProductManager.instance());
+		out.close();
+		fos.close();
+		
+		fos = new FileOutputStream(filepath + "barcodeGenerator");
+		out = new ObjectOutputStream(fos);
+		out.writeObject(BarcodeGenerator.instance());
+		out.close();
+		fos.close();
+
+		//System.out.println(ItemManager.instance().toString());
+	}
+	
+	/** Loads all non-static data from the given file and
+	 *  creates a House
+	 * 
+	 * @param filename The full class path to load the data from
+	 * @throws IOException Informs caller that read from file failed
+	 * @throws FileNotFoundException Informs caller that file wasn't found
+	 * @throws ClassNotFoundException Informs caller that house could not be read in
+	 */
+	public void load(String filepath) throws FileNotFoundException,
+		IOException, ClassNotFoundException
+	{
+		// Read House, ItemManager, ProductManager, BarcodeGenerator
+		FileInputStream fis = new FileInputStream(filepath + "house");
+		ObjectInputStream in = new ObjectInputStream(fis);
+		House.setInstance((House) in.readObject());
+		in.close();
+		fis.close();
+		
+		fis = new FileInputStream(filepath + "itemManager");
+		in = new ObjectInputStream(fis);
+		ItemManager.setInstance((ItemManager) in.readObject());
+		in.close();
+		fis.close();
+		
+		fis = new FileInputStream(filepath + "productManager");
+		in = new ObjectInputStream(fis);
+		ProductManager.setInstance((ProductManager) in.readObject());
+		in.close();
+		fis.close();
+		
+		fis = new FileInputStream(filepath + "barcodeGenerator");
+		in = new ObjectInputStream(fis);
+		BarcodeGenerator.setInstance((BarcodeGenerator) in.readObject());
+		in.close();
+		fis.close();
+	}
+}

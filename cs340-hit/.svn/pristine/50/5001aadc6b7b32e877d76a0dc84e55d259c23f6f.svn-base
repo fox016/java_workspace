@@ -1,0 +1,39 @@
+package model;
+
+/** This interface represents a House, a singleton object
+ *  that is responsible for holding Storage Units at the root
+ * 
+ * @author Nathan Fox
+ *
+ */
+public interface House
+{
+	/** Adds a Storage Unit to the root (house)
+	 * 
+	 * @param su	The Storage Unit to be added to the house
+	 */
+	public void addStorageUnit(StorageUnit su);
+
+	/** Removes a Storage Unit from the root (house) iff there exists
+	 *  a Storage Unit with the given name
+	 * 
+	 * @param name	The name of the Storage Unit to be removed from the house
+	 */
+	public void removeStorageUnit(String name);
+
+	/** Changes the name of the Storage Unit with name oldName to newName
+	 * 
+	 * @param oldName	The name of the Storage Unit to change
+	 * @param newName	The name to change to
+	 * @return	Returns true iff newName is valid and the change was successful
+	 */
+	public boolean setName(String oldName, String newName);
+	
+	/** Checks if the given name is both valid and available
+	 * 
+	 * @param name	The name to test
+	 * @return	Returns true iff name is both valid and available
+	 */
+	public boolean isValidName(String name);
+}
+

@@ -1,0 +1,201 @@
+package model;
+
+import java.io.Serializable;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.Set;
+import java.util.TreeSet;
+
+/** This class represents a House, a singleton class
+ *  that is responsible for holding Storage Units at the root
+ * 
+ * @author Nathan Fox
+ *
+ */
+public class House implements Serializable
+{
+	private static House _house;
+	
+	private static final long serialVersionUID = -8691851376543756581L;
+
+	private Set<StorageUnit> units;
+	private Map<String, StorageUnit> nameTable;
+	
+	private House()
+	{
+		assert(true);
+		
+		units = new TreeSet<StorageUnit>();
+		nameTable = new TreeMap<String, StorageUnit>();
+	}
+
+	/** Returns the single instance of House
+	 * 
+	 * @return	The single instance of House
+	 */
+	public static House instance()
+	{
+		assert(true);
+		
+		if(_house == null)
+			_house = new House();
+		return _house;
+	}
+	
+	public static void setInstance(House house)
+	{
+		_house = house;
+	}
+	
+	/**
+	 * Resets instance
+	 */
+	public static void reset()
+	{
+		_house = null;
+	}
+	
+	/** Adds a Storage Unit to the root (house)
+	 * 
+	 * @param unit The Storage Unit to be added to the house
+	 * @throws IllegalArgumentException
+	 */
+	public void addStorageUnit(StorageUnit unit) throws IllegalArgumentException
+	{
+		// Check validity
+		if(unit == null)
+		{
+			throw new IllegalArgumentException("You did not provide a name, " +
+					"or a Storage Unit with this name already exists");
+		}
+		if(!isValidName(unit.getName()))
+		{
+			throw new IllegalArgumentException("You did not provide a name, " +
+					"or a Storage Unit with this name already exists");
+		}
+		
+		// Add Storage Unit to house
+		units.add(unit);
+		nameTable.put(unit.getName(), unit);
+	}
+
+	/** Removes a Storage Unit from the root (house)
+	 * 
+	 * @throws IllegalArgumentException
+	 * @param unit The Storage Unit to be removed from the house
+	 */
+	public void removeStorageUnit(StorageUnit unit) throws IllegalArgumentException
+	{
+		if(unit == null)
+			throw new IllegalArgumentException("Cannot remove null unit");
+		
+		// Remove Storage Unit from house
+		nameTable.remove(unit.getName());
+		units.remove(unit);
+	}
+
+	/** Changes the name of the Storage Unit with name oldName to newName
+	 * 
+	 * @param unit The Storage Unit to change
+	 * @param newName The name to change to
+	 * @throws IllegalArgumentException
+	 */
+	public void setName(StorageUnit unit, String newName) throws IllegalArgumentException
+	{
+		// Check validity
+		if(!isValidName(newName))
+		{
+			throw new IllegalArgumentException("You did not provide a name, " +
+					"or a Storage Unit with this name already exists");
+		}
+		if(unit == null)
+		{
+			throw new IllegalArgumentException("Cannot change name of null Storage Unit");
+		}
+		if(!containsUnit(unit))
+		{
+			throw new IllegalArgumentException("Cannot change name of Storage Unit" +
+					" that is not in house");
+		}
+
+		// Update set and map
+		nameTable.remove(unit.getName());
+		units.remove(unit);
+		unit.setName(newName);
+		units.add(unit);
+		nameTable.put(newName,  unit);
+		
+		for(Item item : FacadeImpl.instance().getItemsByContainer(unit))
+		{
+			item.setStorageUnit(unit);
+		}
+	}
+	
+	/** Checks if the given name is both valid and available
+	 * 
+	 * @param name	The name to test
+	 * @return	Returns true iff name is both valid and available
+	 */
+	public boolean isValidName(String name)
+	{
+		assert(true);
+		
+		// Test for null
+		if(name == null) return false;
+		
+		// Test for empty
+		if(name.isEmpty()) return false;
+		
+		// Test for availability
+		if(nameTable.containsKey(name)) return false;
+		
+		return true;
+	}
+	
+	/**
+	 * Gets storage unit by provided name
+	 * 
+	 * @param name
+	 * @return Storage Unit with given name
+	 * @throws IllegalArgumentException name can't be null
+	 */
+	public StorageUnit getUnitByName(String name) throws IllegalArgumentException
+	{
+		if(name == null)
+			throw new IllegalArgumentException("Cannot get Unit with name null");
+		
+		return nameTable.get(name);
+	}
+	
+	/** Returns all Storage Units to caller
+	 * 
+	 * @return Set of all Storage Units
+	 */
+	public Set<StorageUnit> getAllUnits() throws IllegalStateException
+	{
+		if(units == null)
+			throw new IllegalStateException("Set of units should be created with House");
+		
+		return units;
+	}
+	
+	/**
+	 * Determines if this Storage Unit is in the House
+	 * 
+	 * @param unit
+	 * @return true iff House has this Storage Unit
+	 * @throws IllegalStateException
+	 * @throws IllegalArgumentException
+	 */
+	public boolean containsUnit(StorageUnit unit)
+		throws IllegalStateException, IllegalArgumentException
+	{
+		if(units == null)
+			throw new IllegalStateException("Set of units should be created with House");
+		if(unit == null)
+			throw new IllegalArgumentException("Cannot test for null unit");
+		
+		return units.contains(unit);
+	}
+}
+

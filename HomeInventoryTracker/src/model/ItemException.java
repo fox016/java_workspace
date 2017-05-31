@@ -1,0 +1,21 @@
+package model;
+
+public class ItemException extends RuntimeException
+{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4323908672407092189L;
+	
+	public ItemException()
+	{
+		super();
+	}
+
+	public ItemException(String m)
+	{
+		super(m);
+	}
+
+}

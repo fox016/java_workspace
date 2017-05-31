@@ -1,0 +1,710 @@
+package gui.inventory;
+
+import gui.common.*;
+import gui.item.*;
+import gui.product.*;
+
+import java.io.IOException;
+import java.util.*;
+
+import model.FacadeAddImpl;
+import model.FacadeEditImpl;
+import model.Item;
+import model.ItemManager;
+import model.Notification;
+import model.Product;
+import model.ProductBarcode;
+import model.ProductContainer;
+import model.ProductGroup;
+import model.ProductManager;
+import model.StorageUnit;
+import model.FacadeImpl;
+import model.FacadeDeleteImpl;
+import model.FacadeIOImpl;
+
+/**
+ * Controller class for inventory view.
+ */
+public class InventoryController extends Controller 
+        implements IInventoryController, Observer{
+	
+	private ProductContainerData root;
+	
+	private ProductContainerData selectWhenDoneData;
+
+	/**
+	 * Constructor.
+	 *  
+	 * @param view Reference to the inventory view
+	 */
+	public InventoryController(IInventoryView view) {
+		super(view);
+
+		construct();
+		FacadeImpl.instance().addAnObserver(this);
+		FacadeAddImpl.instance().addAnObserver(this);
+		FacadeDeleteImpl.instance().addAnObserver(this);
+		FacadeEditImpl.instance().addAnObserver(this);
+		
+		selectWhenDoneData = null;
+	}
+
+	/**
+	 * Returns a reference to the view for this controller.
+	 */
+	@Override
+	protected IInventoryView getView() {
+		return (IInventoryView)super.getView();
+	}
+
+	/**
+	 * Loads data into the controller's view.
+	 * 
+	 *  {@pre None}
+	 *  
+	 *  {@post The controller has loaded data into its view}
+	 */
+	@Override
+	protected void loadValues() {
+		
+		root = new ProductContainerData();
+		
+		getView().setProductContainers(root);
+		
+		try {
+			FacadeIOImpl.instance().loadHouse();
+		} catch (ClassNotFoundException | IOException e) {
+			getView().displayErrorMessage("No inventory records found. " +
+					"Creating a new inventory.");
+			return;
+		}
+		System.out.println("Inventory loaded");
+		
+		reloadTreeFromModel(null);
+	}
+
+	/**
+	 * Sets the enable/disable state of all components in the controller's view.
+	 * A component should be enabled only if the user is currently
+	 * allowed to interact with that component.
+	 * 
+	 * {@pre None}
+	 * 
+	 * {@post The enable/disable state of all components in the controller's view
+	 * have been set appropriately.}
+	 */
+	@Override
+	protected void enableComponents() {
+		return;
+	}
+	
+	//
+	// IInventoryController overrides
+	//
+
+	/**
+	 * Returns true if and only if the "Add Storage Unit" menu item should be enabled.
+	 */
+	@Override
+	public boolean canAddStorageUnit() 
+        {
+		return true; //No reason why it can be disabled.
+	}
+	
+	/**
+	 * Returns true if and only if the "Add Items" menu item should be enabled.
+	 */
+	@Override
+	public boolean canAddItems() 
+        {
+		return true; //No reason why this should ever be disabled.
+	}
+	
+	/**
+	 * Returns true if and only if the "Transfer Items" menu item should be enabled.
+	 */
+	@Override
+	public boolean canTransferItems() 
+        {
+		return true; //No reason why this should be disabled.
+	}
+	
+	/**
+	 * Returns true if and only if the "Remove Items" menu item should be enabled.
+	 */
+	@Override
+	public boolean canRemoveItems() 
+        {
+		return true; //No reason why this shoudl ever be disabled.
+	}
+
+	/**
+	 * Returns true if and only if the "Delete Storage Unit" menu item should be enabled.
+         * 
+         * @return Whether or not the container can be deleted.
+         */
+	@Override
+	public boolean canDeleteStorageUnit() 
+	{
+            //see page 15
+            return canDeleteProductContainer();
+	}
+	
+	/**
+	 * This method is called when the user selects the "Delete Storage Unit" menu item.
+	 */
+	@Override
+	public void deleteStorageUnit() 
+    {
+		if(!canDeleteStorageUnit())
+		{
+			getView().displayErrorMessage("Storage Units must be " +
+					"empty before being deleted");
+			return;
+		}
+		
+		ProductContainerData selectedData = getView().getSelectedProductContainer();
+		ProductContainer selectedContainer = (ProductContainer) selectedData.getTag();
+		
+		if(selectedContainer.beStorageUnit() == null)
+		{
+			getView().displayErrorMessage("Cannot call deleteStorageUnit" +
+					" on this Product Container");
+		}
+		
+		FacadeDeleteImpl.instance().deleteStorageUnit(selectedContainer.beStorageUnit());
+		
+		reloadTreeFromModel(null);
+	}
+
+	/**
+	 * Returns true if and only if the "Edit Storage Unit" menu item should be enabled.
+	 */
+	@Override
+	public boolean canEditStorageUnit() 
+        {
+		return true; //No reason to ever disable this.
+	}
+
+	/**
+	 * Returns true if and only if the "Add Product Group" menu item should be enabled.
+	 */
+	@Override
+	public boolean canAddProductGroup() 
+        {
+		return true; //No reason to ever disable this.
+	}
+
+	/**
+	 * Returns true if and only if the "Delete Product Group" menu item should be enabled.
+	 */
+	@Override
+	public boolean canDeleteProductGroup() 
+        {
+            //see page 17
+            return canDeleteProductContainer();
+	}
+
+	/**
+	 * Returns true if and only if the "Edit Product Group" menu item should be enabled.
+	 */
+	@Override
+	public boolean canEditProductGroup() 
+        {
+		return true; //No reason to ever disable this.
+	}
+	
+	/**
+	 * This method is called when the user selects the "Delete Product Group" menu item.
+	 */
+	@Override
+	public void deleteProductGroup() 
+        {
+	}
+
+	/**
+	 * This method is called when the selected item container changes.
+	 */
+	@Override
+	public void productContainerSelectionChanged() 
+        {
+		setProductContainerFields();
+		setProductTable();
+		productSelectionChanged(); // Update item table
+	}
+
+/**
+ * Set ProductTable based on selected ProductContainer. Query the model
+ * for a list of products.
+ * 
+ */
+private void setProductTable() 
+{
+	ProductContainerData selectedData = getView().getSelectedProductContainer();
+	
+	if(selectedData == null)
+	{
+		return;
+	}
+			
+	if(selectedData.equals(root))
+	{
+		Collection<Product> products = ProductManager.instance().getAllProducts();
+		Iterator<Product> prodIter = products.iterator();
+		ProductData[] table = new ProductData[products.size()];
+		int i = 0;
+		while(prodIter.hasNext())
+		{
+			Product next = prodIter.next();
+			table[i] = Translator.instance().getDataFromProduct(next);
+			Set<Item> itemsOfProduct = ItemManager.instance().getSystemItems(next);
+			table[i].setCount(itemsOfProduct.size() + "");
+			i++;
+		}
+		getView().setProducts(table);
+		getView().setItems(new ItemData[0]);
+		return;
+	}
+	
+	ProductData oldSelected = getView().getSelectedProduct();
+	ProductData newSelected = null;
+	
+	ProductContainer selectedContainer =
+			Translator.instance().getProductContainerFromData(selectedData);
+	Set<ProductBarcode> barcodes = 
+			FacadeImpl.instance().getProductsByContainer(selectedContainer);
+	ProductData[] table = Translator.instance().getDataFromProductBarcodes(barcodes);
+	
+	for(int i = 0; i < table.length; i++)
+	{
+		if(oldSelected != null && oldSelected.getBarcode().equals(table[i].getBarcode()))
+			newSelected = table[i];
+		table[i].setCount("" +
+				FacadeImpl.instance().getItemsByProduct(selectedContainer.getRoot(),
+						(Product) table[i].getTag()).size());
+	}
+	
+	getView().setProducts(table);
+	
+	// Reset selected product
+	getView().selectProduct(newSelected);
+}
+
+/**
+ * Sets UNIT, GROUP, and SUPPLY fields based on selected product container
+ * 
+ */
+private void setProductContainerFields()
+{
+	ProductContainerData selectedContainer = getView().getSelectedProductContainer();
+	
+	// If root is selected
+	if(selectedContainer.equals(root))
+	{
+		getView().setContextUnit("All");
+		getView().setContextGroup("");
+		getView().setContextSupply("");
+	}
+	
+	// If ProductContainer is selected
+	else
+	{
+		ProductContainer pc = (ProductContainer) selectedContainer.getTag();
+		if(pc == null) 
+		{
+			getView().displayErrorMessage("Could not set UNIT, GROUP, and SUPPLY fields");
+			return;
+		}
+		
+		// If Unit is selected
+		if(pc.beStorageUnit() != null)
+		{
+			getView().setContextUnit(selectedContainer.getName());
+			getView().setContextGroup("");
+			getView().setContextSupply("");
+		}
+		
+		// If ProductGroup is selected
+		else
+		{
+			getView().setContextUnit(pc.getRoot().getName());
+			getView().setContextGroup(selectedContainer.getName());
+			getView().setContextSupply(pc.beProductGroup().getSupply().toString());
+		}
+	}
+}
+
+	/**
+	 * This method is called when the selected product changes.
+	 */
+	@Override
+	public void productSelectionChanged() {
+		
+		ProductData selectedData = getView().getSelectedProduct();
+		ProductContainerData containerData = getView().getSelectedProductContainer();
+		
+		if(containerData == null)
+		{
+			getView().setProducts(new ProductData[0]);
+			getView().setItems(new ItemData[0]);
+			return;
+		}
+		if(selectedData == null)
+		{
+			getView().setItems(new ItemData[0]);
+			return;
+		}
+		
+		Product selectedProduct =
+				Translator.instance().getProductFromData(selectedData);
+		Set<Item> items = null;
+		
+		if(containerData.equals(root))
+		{
+			// Show all items of selected product
+			items = ItemManager.instance().getSystemItems(selectedProduct);
+		}
+		else {
+			StorageUnit unit =
+				Translator.instance().getProductContainerFromData(containerData).getRoot();
+			items = FacadeImpl.instance().getItemsByProduct(unit, selectedProduct);
+		}
+		System.out.println("Size of returned Item Set: " + items.size());
+		
+		ItemData[] table = Translator.instance().getDataFromItems(items);
+		getView().setItems(table);
+	}
+
+	/**
+	 * This method is called when the selected item changes.
+	 */
+	@Override
+	public void itemSelectionChanged() {
+		// I don't think anything happens
+		return;
+	}
+
+	/**
+	 * Returns true if and only if the "Delete Product" menu item should be enabled.
+	 */
+	@Override
+	public boolean canDeleteProduct() {
+		if(getView().getSelectedProductContainer() == null)
+			return false;
+		ProductData pData = getView().getSelectedProduct();
+		int pDataCount = Integer.valueOf(pData.getCount());
+		return (pDataCount == 0);
+	}
+	
+
+	/**
+	 * This method is called when the user selects the "Delete Product" menu item.
+	 */
+	@Override
+	public void deleteProduct() {
+		ProductData prodToDeleteData = getView().getSelectedProduct();
+		Product prodToDelete = Translator.instance().getProductFromData(prodToDeleteData);
+		FacadeDeleteImpl.instance().deleteProduct(prodToDelete);
+		
+		setProductTable();
+	}
+
+	/**
+	 * Returns true if and only if the "Edit Item" menu item should be enabled.
+	 */
+	@Override
+	public boolean canEditItem() {
+		return true;
+	}
+
+	/**
+	 * This method is called when the user selects the "Edit Item" menu item.
+	 */
+	@Override
+	public void editItem() {
+		getView().displayEditItemView();
+	}
+
+	/**
+	 * Returns true if and only if the "Remove Item" menu item should be enabled.
+	 */
+	@Override
+	public boolean canRemoveItem() {
+		return true;
+	}
+
+	/**
+	 * This method is called when the user selects the "Remove Item" menu item.
+	 */
+	@Override
+	public void removeItem() {
+		getView().displayErrorMessage("Nate is implementing");
+		
+		ItemData selected = getView().getSelectedItem();
+		Item item = Translator.instance().getItemFromData(selected);
+		
+		FacadeDeleteImpl.instance().removeItemFromStorage(item);
+		productSelectionChanged();
+	}
+
+	/**
+	 * Returns true if and only if the "Edit Product" menu item should be enabled.
+	 */
+	@Override
+	public boolean canEditProduct() {
+		return true;
+	}
+
+	/**
+	 * This method is called when the user selects the "Add Product Group" menu item.
+	 */
+	@Override
+	public void addProductGroup() {
+		getView().displayAddProductGroupView();
+	}
+	
+	/**
+	 * This method is called when the user selects the "Add Items" menu item.
+	 */
+	@Override
+	public void addItems() {
+		getView().displayAddItemBatchView();
+	}
+	
+	/**
+	 * This method is called when the user selects the "Transfer Items" menu item.
+	 */
+	@Override
+	public void transferItems() {
+		getView().displayTransferItemBatchView();
+	}
+	
+	/**
+	 * This method is called when the user selects the "Remove Items" menu item.
+	 */
+	@Override
+	public void removeItems() {
+		getView().displayRemoveItemBatchView();
+	}
+
+	/**
+	 * This method is called when the user selects the "Add Storage Unit" menu item.
+	 */
+	@Override
+	public void addStorageUnit() {
+		getView().displayAddStorageUnitView();
+	}
+
+	/**
+	 * This method is called when the user selects the "Edit Product Group" menu item.
+	 */
+	@Override
+	public void editProductGroup() {
+		getView().displayEditProductGroupView();
+	}
+
+	/**
+	 * This method is called when the user selects the "Edit Storage Unit" menu item.
+	 */
+	@Override
+	public void editStorageUnit() {
+		getView().displayEditStorageUnitView();
+	}
+
+	/**
+	 * This method is called when the user selects the "Edit Product" menu item.
+	 */
+	@Override
+	public void editProduct() {
+		getView().displayEditProductView();
+	}
+	
+	/**
+	 * This method is called when the user drags a product into a
+	 * product container.
+	 * 
+	 * @param productData Product dragged into the target product container
+	 * @param containerData Target product container
+	 */
+	@Override
+	public void addProductToContainer(ProductData productData, 
+                                        ProductContainerData containerData) {		
+		Product product = Translator.instance().getProductFromData(productData);
+		ProductContainer container = Translator.instance().
+                        getProductContainerFromData(containerData);
+		FacadeAddImpl.instance().addProductToContainer(product, container);
+	}
+
+	/**
+	 * This method is called when the user drags an item into
+	 * a product container.
+	 * 
+	 * @param itemData Item dragged into the target product container
+	 * @param containerData Target product container
+	 */
+	@Override
+	public void moveItemToContainer(ItemData itemData, ProductContainerData containerData) {
+	}
+
+	@Override
+	public void update(Observable o, Object arg)
+	{
+		Notification n = (Notification)arg;
+		
+		switch(n.getObjectType())
+		{
+			case STORAGE_UNIT:
+				switch(n.getOperationType())
+				{
+				case CREATE:
+					addStorageUnitUpdate((StorageUnit)n.getObject());
+					break;
+				case UPDATE:
+					reloadTreeFromModel((StorageUnit)n.getObject());
+					break;
+				}
+				break;
+			case PRODUCT_CONTAINER:
+				switch(n.getOperationType())
+				{
+				case CREATE:
+					addProductGroupUpdate((ProductGroup)n.getObject());
+					break;
+				case UPDATE:
+					updateProductGroupUpdate((ProductGroup)n.getObject());
+					break;
+				}
+				break;
+			case PRODUCT:
+				switch(n.getOperationType())
+				{
+				case CREATE:
+					setProductTable(); // Update product table
+					productSelectionChanged(); // Update item table
+					break;
+				case UPDATE:
+					setProductTable();  //Update product table
+				}
+				break;
+			case ITEM:
+				switch(n.getOperationType())
+				{
+				case CREATE:
+					setProductTable(); // Update product table (for counts)
+					productSelectionChanged(); // Update item table
+					break;
+				case DELETE:
+					productSelectionChanged();
+					//System.out.println("delete item update called");
+					break;
+				case UPDATE:
+					productSelectionChanged(); // Update item table
+				}
+				break;
+		}
+	}
+	
+	private void addStorageUnitUpdate(StorageUnit newUnit)
+	{
+		// Set the tree
+		reloadTreeFromModel(newUnit);
+	}
+	
+	private void addProductGroupUpdate(ProductGroup newGroup)
+	{	
+		// Set the tree
+		reloadTreeFromModel(newGroup);
+	}
+	
+	private void updateProductGroupUpdate(ProductGroup updatedGroup)
+	{
+		// Modify the tree and set the new tag
+		ProductContainerData updatedData = getView().getSelectedProductContainer();
+		updatedData.setName(updatedGroup.getName());
+		updatedData.setTag(updatedGroup);
+		
+		// Set the tree
+		reloadTreeFromModel(updatedGroup);
+	}
+
+    private boolean canDeleteProductContainer() 
+    {
+            //see page 15 and 17
+            ProductContainer p = Translator.instance().getProductContainerFromData(
+                    getView().getSelectedProductContainer());
+            if (FacadeImpl.instance().getItemsByContainer(p).isEmpty())
+            {
+                return true;
+            }
+            return false;
+    }
+    
+    /**
+     * Reloads the entire tree structure from the model
+     * 
+     * @param selectWhenDone The ProductContainer to select after the tree
+     * is reloaded from the model.  If this param is null, the root is selected.
+     */
+    private void reloadTreeFromModel(ProductContainer selectWhenDone)
+    {
+    	root = null;
+		root = new ProductContainerData();
+		
+		selectWhenDoneData = null;
+		
+    	Set<StorageUnit> units = FacadeImpl.instance().getStorageUnits();
+    	
+    	Iterator<StorageUnit> unitIter = units.iterator();
+		while(unitIter.hasNext())
+		{
+			StorageUnit nextUnit = unitIter.next();
+			ProductContainerData nextData =
+					Translator.instance().getDataFromProductContainer(nextUnit);
+			if(((ProductContainer)nextData.getTag()).equals(selectWhenDone))
+				selectWhenDoneData = nextData;
+			root.addChild(nextData);
+			
+			// Recurse down through all children
+			addAllChildren(nextData, nextUnit, selectWhenDone);
+		}
+		
+		// Set tree
+		getView().setProductContainers(root);
+		
+		// Set selected Product Container
+		if(selectWhenDoneData != null)
+		{
+			getView().selectProductContainer(selectWhenDoneData);
+			selectWhenDoneData = null;
+		}
+    }
+    
+    /**
+     * Should be called only by reloadTreeFromModel
+     * Used to recursively add nested ProductGroups to view
+     * 
+     * @param data ProductContainerData to add child nodes to
+     * @param pc ProductContainer to get child nodes from
+     * @param selectWhenDone ProductContainer to select when done
+     */
+    private void addAllChildren(ProductContainerData data, ProductContainer pc,
+    		ProductContainer selectWhenDone)
+    {
+		Set<String> childNames = FacadeImpl.instance().getChildContainers(pc);
+		Iterator<String> nameIter = childNames.iterator();
+		while(nameIter.hasNext())
+		{
+			String childName = nameIter.next();
+			ProductContainer child = pc.getProductContainer(childName);
+			ProductContainerData childData =
+					Translator.instance().getDataFromProductContainer(child);
+			data.addChild(childData);
+			if(((ProductContainer)childData.getTag()).equals(selectWhenDone))
+				selectWhenDoneData = childData;
+			
+			// Recursively call on all children
+			addAllChildren(childData, child, selectWhenDone); 
+		}
+    }
+}
+

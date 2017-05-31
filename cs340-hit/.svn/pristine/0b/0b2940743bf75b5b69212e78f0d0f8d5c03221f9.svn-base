@@ -1,0 +1,280 @@
+
+package model.persistence;
+
+import model.*;
+import java.sql.*;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.Calendar;
+import java.util.Date;
+
+/** This class is responsible for initializing the in memory Model from
+	the external database
+	@author Chris Tensmeyer
+	@version March 27 2013
+*/
+
+class DatabaseModelLoader
+{
+	private Map<String, Item> items;
+	private Map<String, Product> products;
+	private Map<Integer, ProductGroup> groups;
+	private Map<Integer, StorageUnit> units;
+
+	private String message;
+	private String logFile = "database.log";
+	/** Creates a new DatabaseModelLoader */
+	DatabaseModelLoader()
+	{
+		message = "";
+//		System.out.println(Calendar.getInstance());
+	}
+
+	/** This method defines the interface to this object.  Loads the Model into memory from the database */ 
+	void load() throws SQLException
+	{ 
+		getAllTables();
+		constructTree();
+		assignProducts();
+		singleValues();
+		DatabaseFacade.instance().end();
+	}
+
+	/** Loads all tables from the database */
+	private void getAllTables() throws SQLException
+	{ 
+		//getItems() depends on getUnits()
+		getUnits();
+		getGroups();
+		getProducts();
+		getItems();
+	}
+
+	private ResultSet executeQuery(String sql) throws SQLException
+	{
+		Connection connection = null;
+		connection = DatabaseFacade.instance().connection();
+		if(connection == null)
+		{
+			throw new IllegalStateException("Connection should not be null");
+		}
+
+		PreparedStatement stmt = connection.prepareStatement(sql);
+		ResultSet rs = stmt.executeQuery();
+		return rs;
+	}
+
+	//assumes that units Map is populated by calling getUnits()
+	private void getItems() throws SQLException
+	{
+		String sql = "SELECT itemBarcode, alive, entryDate, " + 
+							" exitTime, productBarcode, unitID FROM Item";
+		ResultSet rs = executeQuery(sql);
+		items = new TreeMap<String, Item>();
+		while(rs.next())
+		{
+			//item Fields
+			ItemBarcode ib = new ItemBarcode(rs.getString(1));
+			boolean alive = rs.getInt(2) == 1;
+			Calendar entry = Calendar.getInstance();
+			entry.setTime(new Date(rs.getLong(3)));
+
+			long exitTime = rs.getLong(4);
+			Calendar exit = Calendar.getInstance();
+			if(exitTime == DatabaseItemDataObject.NO_EXIT)
+				exit = null;
+			else
+				exit.setTime(new Date(rs.getLong(4)));
+
+			ProductBarcode pb = new ProductBarcode(rs.getString(5));
+			StorageUnit unit = units.get(rs.getInt(6));
+
+			//create and configure Item
+			Item item = new Item(pb, unit, entry);
+			item.setItemBarcode(ib);
+			if(!alive)
+				item.remove();
+			item.setExitDate(exit);
+			System.out.println("Adding Item: " + item);
+
+			//index item
+			items.put(rs.getString(1), item);
+			ItemManager.instance().unAnnihilateItem(item);
+		}
+
+	}
+
+	private void getProducts() throws SQLException
+	{
+		String sql = "SELECT productBarcode, creationDate, description, amount, " + 
+							" measurement, shelfLife, threeMonthSupply FROM Product";
+		ResultSet rs = executeQuery(sql);
+		products = new TreeMap<String, Product>();
+		while(rs.next())
+		{
+			//create fields
+			ProductBarcode pb = new ProductBarcode(rs.getString(1));
+			Calendar creation = Calendar.getInstance();
+			creation.setTime(new Date(rs.getLong(2)));
+			String desc = rs.getString(3);
+			double amount = rs.getFloat(4);
+			SupplyType type = SupplyType.parse(rs.getString(5));
+			int shelf = rs.getInt(6);
+			int three = rs.getInt(7);
+
+			Product product = new Product(creation, pb, desc, new Size(amount, type), shelf, three);
+			System.out.println("Adding Product: " + product);
+
+			//index Product
+			ProductManager.instance().addProduct(product);
+			products.put(rs.getString(1), product);
+		}
+	}
+
+	private void getGroups() throws SQLException
+	{
+		String sql = "SELECT groupID, name, amount, measurement FROM ProductGroup";
+		ResultSet rs = executeQuery(sql);
+		groups = new TreeMap<Integer, ProductGroup>();
+		while(rs.next())
+		{
+			//create fields
+			int id = Integer.parseInt(rs.getString(1));
+			String name = rs.getString(2);
+			double amount = rs.getFloat(3);
+			SupplyType type = SupplyType.parse(rs.getString(4));
+
+			ProductGroup group = new ProductGroupImpl(name);
+			group.setSupply(new Size(amount, type));
+			group.setContainerID(id);
+			System.out.println("Adding Group: " + group);
+
+			//index group
+			groups.put(id, group);
+		}
+	}
+
+	private void getUnits() throws SQLException
+	{
+		String sql = "SELECT unitID, name FROM StorageUnit";
+		ResultSet rs = executeQuery(sql);
+		units = new TreeMap<Integer, StorageUnit>();
+		while(rs.next())
+		{
+			//create fields
+			int id = Integer.parseInt(rs.getString(1));
+			String name = rs.getString(2);
+
+			StorageUnit unit = new StorageUnitImpl(name);
+			unit.setContainerID(id);
+			System.out.println("Adding Unit: " + unit);
+
+			//index unit
+			units.put(id, unit);
+		}
+
+	}
+
+	/** Creates the SU and PG model object tree from the loaded tables */
+	private void constructTree() throws SQLException
+	{
+		setUpContainers();
+		initHouse();
+	}
+
+	private void initHouse()
+	{
+		for(StorageUnit unit : units.values())
+			House.instance().addStorageUnit(unit);
+	}
+
+	private void setUpContainers() throws SQLException
+	{
+		String sql = "SELECT parentID, childID FROM containerToChild";
+		ResultSet rs = executeQuery(sql);
+		while(rs.next())
+		{
+			int parentId = rs.getInt(1);
+			int childId = rs.getInt(2);
+
+			ProductContainer parent = getContainer(parentId);
+			ProductContainer child = getContainer(childId);
+
+			if(parent == null)
+				System.out.println("Invalid productContainerId: " + parentId);
+			if(child == null)
+				System.out.println("Invalid productContainerId: " + childId);
+
+			if(parent != null && child != null)
+			{
+				ProductGroup childGroup = child.beProductGroup();
+				if(childGroup != null)
+				{
+					parent.addContainer(childGroup);
+					childGroup.setParent(parent);
+				}
+			}
+		}
+	}
+
+	private ProductContainer getContainer(int id)
+	{
+		ProductContainer container = null;
+		if(groups.containsKey(id))
+			container = groups.get(id);
+		else if(units.containsKey(id))
+			container = units.get(id);
+		return container;
+	}
+
+	/** Uses productAssignments to construct the mapping from PC to Products in the model objects */
+	private void assignProducts() throws SQLException
+	{ 
+		String sql = "SELECT containerID, productBarcode FROM containerToProduct";
+		ResultSet rs = executeQuery(sql);
+		while(rs.next())
+		{
+			int containerId = rs.getInt(1);
+			ProductBarcode barcode = new ProductBarcode(rs.getString(2));
+			Product product = ProductManager.instance().getProductByBarcode(barcode);
+
+			ProductContainer container = getContainer(containerId);
+			if(container == null)
+			{
+				System.out.println("Error Product: " + product +
+									 	" assigned to invalid container: " + containerId);
+			}
+			else
+			{
+				container.addProduct(barcode);
+				ProductManager.instance().addContainer(product, container);
+			}
+		}
+	}
+
+	private void singleValues() throws SQLException
+	{
+		String sql = "SELECT itemBarcode, prodContainerID, expiredReport FROM LastID";
+		ResultSet rs = executeQuery(sql);
+		rs.next();
+
+		String lastBarcode = rs.getString(1);
+		int lastPCID = Integer.parseInt(rs.getString(2));
+		Calendar expiredReport = Calendar.getInstance();
+		expiredReport.setTime(new Date(rs.getInt(3)));
+
+		if(lastBarcode.length() != BarcodeGenerator.BARCODE_SIZE)
+			throw new RuntimeException("Stored last item barcode is wrong");
+		int[] lastCodes = new int[BarcodeGenerator.BARCODE_SIZE];
+		for(int k = 0; k < lastCodes.length; k++)
+		{
+			lastCodes[k] = Integer.parseInt(lastBarcode.substring(k, k+1));
+		}
+
+		BarcodeGenerator.instance().setLastCode(lastCodes);
+		BarcodeGenerator.instance().setLastID(lastPCID);
+		House.instance().setRemovedReportLastTime(expiredReport);
+	}
+	
+}
+

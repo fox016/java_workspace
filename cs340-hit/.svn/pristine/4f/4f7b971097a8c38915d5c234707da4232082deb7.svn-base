@@ -1,0 +1,65 @@
+package model;
+
+import static org.junit.Assert.*;
+
+import java.util.GregorianCalendar;
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class ProductTest {
+
+	private static ProductManager pm;
+	private static Product p1;
+	private static Product p2;
+
+
+	@Test
+	public void canAddProductTest()
+	{
+		pm = ProductManager.instance();
+		
+		p1 = new Product(new GregorianCalendar(2001,0,1), new ProductBarcode("333"),
+				"Crest", new Size(12, SupplyType.COUNT), 0, 0);
+		
+		assertTrue(pm.canAddProduct(p1));
+		
+		//Validate Barcode
+		p1.setBarcode(null);
+		assertFalse(pm.canAddProduct(p1));
+		p1.setBarcode(new ProductBarcode("333"));
+		assertTrue(pm.canAddProduct(p1));
+		
+		//Validate Calendar
+		
+		//Validate Description
+		p1.setDescription("");
+		assertFalse(pm.canAddProduct(p1));
+		p1.setDescription("Something nice");
+		assertTrue(pm.canAddProduct(p1));
+		
+		//Validate Size
+		//p1.getSize().setAmount(-1);
+		//assertFalse(pm.canAddProduct(p1));
+		//p1.getSize().setAmount(30);
+		//assertTrue(pm.canAddProduct(p1));
+		//p1.getSize().setAmount(4.4);
+		//assertFalse(pm.canAddProduct(p1));
+		//p1.getSize().setType(SupplyType.GALLONS);
+		//assertTrue(pm.canAddProduct(p1));
+		
+		//Valdiate shelfLife
+		p1.setShelfLife(-1);
+		assertFalse(pm.canAddProduct(p1));
+		p1.setShelfLife(5);
+		assertTrue(pm.canAddProduct(p1));
+		
+		//Validate ThreeMonthSupply
+		p1.setThreeMonthSupply(-1);
+		assertFalse(pm.canAddProduct(p1));
+		p1.setThreeMonthSupply(4);
+		assertTrue(pm.canAddProduct(p1));
+		
+	}
+
+}

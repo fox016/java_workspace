@@ -1,0 +1,163 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.util.NoSuchElementException;
+import java.util.Set;
+
+/**
+ *
+ * @author Talonos
+ */
+public interface ProductContainer extends Comparable
+{
+    /**
+     * Renames a child product container stored within this product container.
+     * Handles error checking for valid names, etc.
+     * @param oldName The name of the product container whose name will change.
+     * @param newName The new name to give the product container.
+     * @throws NoSuchElementException if there is no product by the name of
+     * "oldName"
+     * @throws IllegalArgumentException if the name is already taken or is 
+     * otherwise invalid.
+     */
+    public void renameContainer(String oldName, String newName)
+    		throws NoSuchElementException, IllegalArgumentException;
+    
+    /**
+     * Adds a product group to this product container. Handles error checking.
+     * Because storage units cannot contain other storage units, the container
+     * added, by default, is a product group. The top level container (the house)
+     * has its own interface for adding storage units.
+     * @param name The name of the product group to add.
+     * @return the new ProductGroup just returned.
+     * @throws IllegalArgumentException if the name is already taken or is 
+     * otherwise invalid.
+     */
+    public ProductGroup addContainer(String name) throws IllegalArgumentException;
+    
+    /**
+     * Deletes a product container from this product container. This method will
+     * only work if the product container to be deleted exists and is empty.
+     * @param name the name of the product to delete.
+     * @throws NoSuchElementException if the named product container doesn't exist.
+     * @throws IllegalArgumentException if the product container cannot be deleted. 
+     * (Because it is, for example, not empty.)
+     */
+    public void deleteContainer(String name)
+    		throws NoSuchElementException, IllegalArgumentException;
+    
+    /**
+     * Checks to see if this container is a product group. If it is, then it
+     * returns itself, as a product group instead of as a productContainer. 
+     * Otherwise, it returns null. This can be used either to check the type of 
+     * this ProductContainer or as an alternative to an unsafe typecasting of 
+     * "ProductGroup" from "ProductContainer."
+     * @return the ProductGroup if this is a product group, null otherwise.
+     */
+    public ProductGroup beProductGroup();
+    
+    /**
+     * Checks to see if this container is a Storage Unit. If it is, then it
+     * returns itself, as a StorageUnit instead of as a productContainer. 
+     * Otherwise, it returns null. This can be used either to check the type of 
+     * this ProductContainer or as an alternative to an unsafe typecasting of 
+     * "StorageUnit" from "ProductContainer."
+     * @return the ProductGroup if this is a product group, null otherwise.
+     */
+    public StorageUnit beStorageUnit();
+    
+    /**
+     * Checks to see if the proposed name is valid in this product group. 
+     * It is valid if it meets the criteria for a valid name and if the name is 
+     * not already taken in this group.
+     * @param proposedName
+     * @return true iff given name meets criteria and is not taken
+     */
+    public boolean isValidName(String proposedName);
+    
+    /**
+     * Returns the product container specified by the string Name, or null if no
+     * product container by that name exists as a child node to this container.
+     * 
+     * Note that this is a ProductContainer object, not a 
+     * ChangableProductContainer object, so you cannot simply call a rename 
+     * method on it.
+     * @param name the name of the product container to return
+     * @return the named container.
+     */
+    public ProductContainer getProductContainer(String name);
+    
+    /**
+     * Returns a set of strings containing the names of all child product
+     * containers.
+     * @return The set of strings of the names of all child product containers.
+     */
+    public Set<String> getContainers();
+    
+    /**
+     * Returns a set of strings containing the names of all products within this
+     * product group. 
+     * @return a set containing the barcodes of all the products.
+     */
+    public Set<ProductBarcode> getProducts();
+    
+    /**
+     * Removes a product from the Product Group.
+     * @param code the barcode of the product to remove
+     * @throws NoSuchElementException if the named product doesn't exist.
+     */
+    public void removeProduct(ProductBarcode code) throws NoSuchElementException;
+    
+    /**
+     * Adds a specified product to this productContainer. Not that this assumes
+     * a pre-existing product from the product database: This methods looks up
+     * that function using the name parameter and then adds that product to 
+     * this product group.
+     * @param barcode The name of the product to add.
+     * @throws IllegalArgumentException if the barcode is invalid or the
+     * product already exists in this storage unit.
+     */
+    public void addProduct(ProductBarcode barcode) throws IllegalArgumentException;
+    
+    /**
+     * Checks to see whether this product container has a given product.
+     * The search for this product is recursive, affecting all sub-product 
+     * containers.
+     * 
+     * @param code the barcode of the product to check for
+     * @return whether or not the product is in this container. 
+     */
+    public boolean hasProduct(ProductBarcode code);
+
+     /**
+      * Gets the parent StorageUnit of this productContainer. 
+      * If this ProductContainer is already a storageUnit, it returns 
+      * itself.
+      * @return 
+      */
+     public StorageUnit getRoot();
+	
+     /**
+      * Gets the productContainer the target product is located in.
+      * @param p the Product to search for.
+      * @return the productContainer this product is located in.
+      */
+     public ProductContainer getProductContainer(Product p);
+     
+     /**
+      * Gets the name of this ProductContainer
+      * @return the name of the product container.
+      */
+     public String getName();
+     
+     /**
+      * Returns the parent of this product container, or null if this product
+      * container is actually a StorageUnit (Whose parent is, therefore, the house).
+      * @return 
+      */
+     public ProductContainer getParent();
+
+}

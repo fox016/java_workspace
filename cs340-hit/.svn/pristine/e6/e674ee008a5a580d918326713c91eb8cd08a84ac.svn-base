@@ -1,0 +1,40 @@
+package model;
+
+/** A singleton class implementing the DataSerializer interface
+ * 
+ * @author Nathan Fox
+ *
+ */
+public class DataSerializerImpl implements DataSerializer {
+	
+	/** The single instance of DataSerializer
+	 * 
+	 */
+	private static DataSerializer _dataSerializer;
+
+	
+	private DataSerializerImpl()
+	{
+	}
+	
+	/** Returns the single instance of DataSerializer
+	 * 
+	 * @return	The single instance of DataSerializer
+	 */
+	public static DataSerializer instance()
+	{
+		if(_dataSerializer == null)
+			_dataSerializer = new DataSerializerImpl();
+		return _dataSerializer;
+	}
+
+	public void save(House house, String filename)
+	{
+	}
+
+	public House load(String filename)
+	{
+		return null;
+	}
+
+}

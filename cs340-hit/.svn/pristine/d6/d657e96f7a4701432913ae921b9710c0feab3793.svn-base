@@ -1,0 +1,64 @@
+package model;
+
+import static org.junit.Assert.*;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+public class TreeTest {
+	
+	private static Facade f;
+	
+	@Before
+	public void initTreeTest()
+	{
+		f = FacadeImpl.instance();
+		
+		f.addStorageUnit("Kitchen");
+		f.addStorageUnit("Bathroom");
+		f.addStorageUnit("Garage");
+		
+		assertTrue(House.instance().containsUnit(House.instance().getUnitByName("Kitchen")));
+		assertTrue(House.instance().containsUnit(House.instance().getUnitByName("Bathroom")));
+		assertTrue(House.instance().containsUnit(House.instance().getUnitByName("Garage")));
+		
+		StorageUnit temp = new StorageUnitImpl("Random");
+		assertFalse(House.instance().containsUnit(temp));
+	}
+	
+	@Test
+	public void testDeleteUnit()
+	{
+		f.deleteStorageUnit(House.instance().getUnitByName("Bathroom"));
+		assertFalse(House.instance().containsUnit(House.instance().getUnitByName("Bathroom")));
+		
+		assertNull(House.instance().getUnitByName("SqueedalySpooch"));
+		
+		f.deleteStorageUnit(new StorageUnitImpl("The Best"));
+	}
+	
+	@Test
+	public void testAddGroup()
+	{
+		ProductGroup[] testGroups = new ProductGroup[10];
+		
+		testGroups[0] = f.addProductGroup("K1", House.instance().getUnitByName("Kitchen"));
+		testGroups[1] = f.addProductGroup("K2", House.instance().getUnitByName("Kitchen"));
+		testGroups[2] = f.addProductGroup("K3", House.instance().getUnitByName("Kitchen"));
+		
+		testGroups[3] = f.addProductGroup("B1", House.instance().getUnitByName("Bathroom"));
+		
+		assertTrue(f.getChildContainers(House.instance().getUnitByName("Kitchen")).size() == 3);
+		assertTrue(f.getChildContainers(House.instance().getUnitByName("Bathroom")).size() == 1);
+		assertTrue(f.getChildContainers(House.instance().getUnitByName("Garage")).size() == 0);
+	}
+	
+	@After
+	public void cleanTreeTest()
+	{
+		f.deleteStorageUnit(House.instance().getUnitByName("Kitchen"));
+		f.deleteStorageUnit(House.instance().getUnitByName("Bathroom"));
+		f.deleteStorageUnit(House.instance().getUnitByName("Garage"));
+	}
+}

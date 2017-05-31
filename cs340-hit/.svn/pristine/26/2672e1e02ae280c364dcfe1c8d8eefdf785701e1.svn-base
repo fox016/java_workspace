@@ -1,0 +1,245 @@
+
+package model;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+//import java.util.Map.Entry;
+import java.io.Serializable;
+
+/**
+ * This Singleton Class represents a Lookup Table
+ * 	for Items based on their barcodes and if they are currently
+ * 	in the Tracking System.
+ * Impelemented with HashMaps and HashSets
+ * @author Christopher Tensmeyer
+ * @version Phase 1.0 Jan 26, 2013
+*/
+public class ItemManager implements Serializable
+{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2560037083665187901L;
+	
+	private static ItemManager _manager;
+	private Map<ItemBarcode,Item> liveTable;
+	private Map<ItemBarcode,Item> deadTable;
+
+	private ItemManager()
+	{
+		liveTable = new HashMap<ItemBarcode,Item>();
+		deadTable = new HashMap<ItemBarcode,Item>();
+	}
+
+	/** Returns the single instance of ItemManager
+	 * 
+	 * @return	The single instance of ItemManager
+	 */
+	public static ItemManager instance()
+	{
+		if(_manager == null)
+			_manager = new ItemManager();
+		return _manager;
+	}
+
+	/** Stores an Item in the ItemManager.  Items are never overridden.  If an Item with that
+			Barcode already exists, item is not added to the table.
+		@param item The Item to be stored.
+		@return Returns true if item was added to the ItemManager.
+	*/
+
+	public boolean store(Item item)
+	{
+		if(item.isInSystem())
+			return storeHelper(item, liveTable);
+		else
+			return storeHelper(item, deadTable);
+	}
+
+	//Utility for storing an Item in a specific table
+	private boolean storeHelper(Item item, Map<ItemBarcode, Item> map)
+	{
+		ItemBarcode barcode = item.getItemBarcode();
+		boolean isNewItem = !map.containsKey(barcode);
+		if(isNewItem)
+			map.put(barcode, item);
+		return isNewItem;
+	}
+
+	/** Test for membership of an Item
+		@param barcode The Barcode of the Item we are looking for
+		@return Returns true if the ItemManager contains an Item with ItemBarcode barcode
+	*/
+	public boolean contains(ItemBarcode barcode)
+	{
+		return liveTable.containsKey(barcode) || deadTable.containsKey(barcode);
+	}
+
+	/** Test for membership of an Item
+		@param item The Item we are looking for
+		@return Returns true if the ItemManager contains the Item
+	*/
+	public boolean contains(Item item)
+	{
+		return this.contains(item.getItemBarcode());
+	}
+
+	/** The number of Items contained
+		@return the number of Items both in Storage and Removed
+	*/
+	public int totalItems()
+	{
+		return liveTable.size() + deadTable.size();
+	}
+
+	/** The number of Items in the Tracking System
+		@return Returns the number of Items currenly in Storage
+	*/
+	public int systemItems()
+	{
+		return liveTable.size();
+	}
+
+	/** The number of Removed Items
+		@return Returns the number of Items that have been removed from Storage
+	*/
+	public int removedItems()
+	{
+		return deadTable.size();
+	}
+
+	/** Ask if the Item is currenly in the System
+		@param barcode The ItemBarcode of the Item in question
+		@return Returns true if the Item is in Storage
+	*/
+	public boolean isInSystem(ItemBarcode barcode)
+	{
+		return liveTable.containsKey(barcode);
+	}
+
+	/** Ask if the Item has been removed from the System
+		@param barcode The ItemBarcode of the Item in question
+		@return Returns true if the Item has been removed
+	*/
+	public boolean isRemoved(ItemBarcode barcode)
+	{
+		return deadTable.containsKey(barcode);
+	}
+
+	/** Removes an Item from the System
+		@param barcode The ItemBarcode of the Item in question
+		@throws ItemNotFoundException If the Item is not recognized
+		@throws ItemAlreadyRemovedException If the Item has already been removed
+	*/
+	public void removeItem(ItemBarcode barcode) throws ItemNotFoundException, ItemAlreadyRemovedException
+	{
+		if(!this.contains(barcode))
+			throw new ItemNotFoundException(barcode);
+		if(deadTable.containsKey(barcode))
+			throw new ItemAlreadyRemovedException(barcode);
+		Item item = liveTable.get(barcode);
+		item.removeItem();
+		liveTable.remove(barcode);
+		deadTable.put(barcode,item);
+	}
+
+	/** Finds the Item
+		@param barcode The ItemBarcode of the Item
+		@return Returns - The Item if it is found, otherwise returns null
+	*/
+	public Item find(ItemBarcode barcode)
+	{
+		if(liveTable.containsKey(barcode))
+			return liveTable.get(barcode);
+		else if(deadTable.containsKey(barcode))
+			return deadTable.get(barcode);
+		else
+			return null;
+	}
+
+	/** Finds the Item if it is in the System
+		@param barcode The ItemBarcode of the Item
+		@return Returns - The Item if it is found in the System, otherwise returns null
+	*/
+	public Item findInSystem(ItemBarcode barcode)
+	{
+		if(liveTable.containsKey(barcode))
+			return liveTable.get(barcode);
+		else
+			return null;
+	}
+
+	/** Finds the Item if it has been removed from the System
+		@param barcode The ItemBarcode of the Item
+		@return Returns - The Item if it has been removed from the system, otherwise null
+	*/
+	public Item findRemoved(ItemBarcode barcode)
+	{
+		if(deadTable.containsKey(barcode))
+			return deadTable.get(barcode);
+		else
+			return null;
+	}
+
+	/** Returns a set of all Items
+		@return Returns a set of all Items
+	*/
+	public Set<Item> allItems()
+	{
+		Set<Item> items = new HashSet<Item>();
+		for(Map.Entry<ItemBarcode,Item> entry: liveTable.entrySet())
+			items.add(entry.getValue());
+		for(Map.Entry<ItemBarcode,Item> entry: deadTable.entrySet())
+			items.add(entry.getValue());
+		return items;
+	}
+
+	/** Returns a set of all Items in the System
+		@return Returns a set of all Items in the System
+	*/
+	public Set<Item> allSystemItems()
+	{
+		Set<Item> items = new HashSet<Item>();
+		for(Map.Entry<ItemBarcode,Item> entry: liveTable.entrySet())
+			items.add(entry.getValue());
+		return items;
+	}
+
+	/** Returns a set of all Removed Items
+		@return Returns a set of all Removed Items
+	*/
+	public Set<Item> allRemovedItems()
+	{
+		Set<Item> items = new HashSet<Item>();
+		for(Map.Entry<ItemBarcode,Item> entry: deadTable.entrySet())
+			items.add(entry.getValue());
+		return items;
+	}
+
+	/** Precondition: !hasSystemItem(product)
+		Postcondition: All Items in the Removed Table are purged (permanently deleted)
+		@param product The product we wish to purge
+		@throws IllegalItemOperationException If the precondition is violated
+	*/
+	public void purgeItems(Product product) throws IllegalItemOperationException
+	{
+		if(hasSystemItem(product))
+			throw new IllegalItemOperationException();
+		//...
+	
+	}
+
+	/** Check the System for an Item of that Product 
+		@param product The product we are searching for
+		@return Returns true if there is an Item in the system that is an instance
+			of product
+	*/
+	public boolean hasSystemItem(Product product)
+	{
+		return false;
+	}
+
+}
+

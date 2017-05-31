@@ -1,0 +1,276 @@
+package model;
+
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+/** This Class represents an Item entity
+ * 
+ *	@author Christopher Tensmeyer
+ *	@version Phase 1.0 Jan 22, 2013
+ *
+ */
+public class Item implements Serializable
+{
+	private static final long serialVersionUID = 53758392747592847L;
+	
+	private Product myProduct;
+	private ItemBarcode iBarcode;
+	private Calendar myEntryDate;
+	private Calendar myExitDate;
+	private StorageUnit myContainer;
+	private boolean isLive;
+	//Entry Dates are not valid if they are after Jan 1, 2000
+	private static final Calendar FirstValidEntryDate = new GregorianCalendar(2000, 0, 1);
+
+	/* Constructors */
+
+	/** Construct a new Item as it enters the System
+		An Item can be constructed at anytime with any parameters.  However,
+		only an valid Item (verified by this.isValidItem()) can be inserted into
+		the ItemManager and into the system.
+	*/
+	public Item(Product p, StorageUnit container, Calendar entry)
+	{
+		assert(true);
+
+		myEntryDate = entry;
+		myProduct = p; //what do we do to validate the Product?
+		isLive = true; //only construct live items
+		myExitDate = null;
+
+		myContainer = container; //where the item lives
+	}
+
+	/** Construct a new Item as it enters the system with the current time
+		as the entry time.
+		An Item can be constructed at anytime with any parameters.  However,
+		only an valid Item (verified by this.isValidItem()) can be inserted into
+		the ItemManager and into the system.
+	*/
+	public Item(Product p, StorageUnit container)
+	{
+		this(p, container, Calendar.getInstance());
+	}
+
+	/* Start Accessor Methods */
+	
+	/** @return Returns the Product this Item is an instance of. */
+	public Product getProduct()
+	{ 
+		assert(true);
+		return myProduct; 
+	}
+
+	/** @return Returns the barcode of the Item's Product.  Returns null
+		if the Item has a null Product */
+	public ProductBarcode getProductBarcode()
+	{
+		assert(true);
+		if(myProduct == null)
+			return null;
+		return myProduct.getBarcode();	
+	}
+
+	/**
+		@return Returns the unique barcode given to the Item when it was
+		added to the Home Inventory Tracker.  This is not the Product Barcode.
+	*/
+	public ItemBarcode getItemBarcode()
+	{
+		assert(true);
+		return iBarcode;
+	}
+
+	/** @return Returns the date this Item was entered in the Home Inventory
+		Tracker.
+	*/
+	public Calendar getEntryDate()
+	{
+		assert(true);	
+		return myEntryDate; 
+	}
+
+	/** @return Returns the date and time this Item was removed from the Home
+		Inventory Tracker.  Returns null if the Item has not been removed.
+	*/
+	public Calendar getExitTime()
+	{
+		assert(true);
+		return myExitDate; 
+	}
+
+	/** @return Returns the Expiration Date of the Item if the Shelf Life
+		property of the Item's Product has been specified.  Otherwise returns
+		null*/
+	public Calendar getExpirationDate()
+	{
+		assert(true);
+		if(!this.hasExpirationDate())
+			return null;
+		Calendar copy = (Calendar) myEntryDate.clone();
+		int shelfLife = myProduct.getShelfLife();
+		copy.add(Calendar.MONTH, shelfLife);
+		return copy;
+	}
+
+	/** @return Returns the Product Container holding this Item */
+	public StorageUnit getStorageUnit()
+	{
+		assert(true);
+		return myContainer;
+	}
+
+	/** @return Returns true if the Item is in the system or false if
+		the Item has been removed from the system */
+	public boolean isInSystem()
+	{
+		assert(true);
+		return isLive; 
+	}
+
+	/* End Accessor Methods */
+
+
+	/* Start Modifier Methods */
+
+	/** Sets the ItemBarcode. This should only be called by the Item manager
+		@param newBarcode The new Barcode 
+		@throws NullPointerException If newBarcode is null */
+	void setItemBarcode(ItemBarcode newBarcode)
+	{
+		if(newBarcode == null)
+			throw new NullPointerException();
+		if(iBarcode != null)
+			throw new ItemException("Attempting to reset an Item's barcode");
+		iBarcode = newBarcode;
+	}
+
+	/** 
+		@param newDate The new Entry Date. It must be a Date on or
+			after Jan 1, 2000
+		@throws IllegalArgumentException - If newDate is before Jan 1, 2000*/
+	public void setEntryDate(Calendar newDate)
+	{
+		if(!Item.isValidEntryDate(newDate))
+			throw new IllegalArgumentException();
+		myEntryDate = newDate;
+	}
+
+	/** Sets the ProductContainer
+		@param newProductContainer The new ProductContainer*/
+		//@throws IllegalArgumentException If container is not a valid ProductContainer
+	//TODO Implement validation.  Change to StorageUnit?
+	void setStorageUnit(StorageUnit container)
+	{
+		//if(!isValidProductContainer(container))
+		//	throw new IllegalArgumentException();
+		myContainer = container;
+	}
+
+
+	/** Removes the Item from the System. Should be called through the Item Manager
+		@throws ItemAlreadyRemovedException if isInSystem() is false */
+	public void remove()
+	{
+		if(!isLive)
+			throw new ItemAlreadyRemovedException();
+		isLive = false;
+	}
+
+
+	/* End Modifier Methods */
+
+
+	/* Start Utility Methods */
+
+	/** @return Returns true iff date is not null and is after Item.FirstValidEntryDate */
+	public static boolean isValidEntryDate(Calendar date)
+	{
+		if(date == null)
+			return false;
+		return date.after(FirstValidEntryDate) || date.equals(FirstValidEntryDate);
+	}
+
+	/** @return Returns true if the Item's Product has a specified Shelf Life
+		otherwise false */
+	public boolean hasExpirationDate()
+	{
+		assert(true);
+		if(myProduct == null)
+			return false;
+		return myProduct.getShelfLife() != 0;
+	}
+
+	/** @return Returns true if the two Items have equivilent Barcodes.  Returns false
+			if other is not an instance of Item or is null.  Returns false if either
+			this or other has a null ItemBarcode, but true if this == other.
+	*/
+	public boolean equals(Object other)
+	{
+		assert(true);
+		if(this == other)
+			return true;
+		if(other == null)
+			return false;
+		if(! (other instanceof Item))
+			return false;
+		Item tmp = (Item) other;
+		if(this.iBarcode == null || tmp.iBarcode == null)
+			return false;
+		return this.iBarcode.equals(tmp.iBarcode);
+	}
+
+	/** @return Returns the hashcode of the Item's Barcode */
+	public int hashCode()
+	{
+		assert(true);
+		if(iBarcode == null)
+			return super.hashCode();
+		else
+			return iBarcode.hashCode();
+	}
+
+	/** Finds our if the Item expires by a certain date.  If the shelf life
+			of the product is not specified, returns true
+		@param date Tests if the time expires before the specified date.
+		@throws NullPointerException If date is null
+		@return Returns true if the Item expires previous to date If
+		the Item does not expire by that date, or does not have an expiration
+		date, returns false. */
+	public boolean isExpiredBy(Calendar date)
+	{
+		if(date == null)
+			throw new NullPointerException();
+		Calendar expireDate = this.getExpirationDate();
+		if(expireDate == null)
+			return false;
+		return date.after(expireDate) || date.equals(expireDate);
+	}
+
+
+	/** @param product
+		@return Returns true if the Item is an instance of product
+	*/
+	public boolean isProduct(Product product)
+	{
+		assert(true);
+		return myProduct.equals(product);
+	}
+
+	/** @return Returns true if the Item is valid */
+	public boolean isValidItem()
+	{
+		assert(true);
+		if(myProduct == null || myContainer == null || !isValidEntryDate(myEntryDate))
+			return false;
+		return true;
+
+	}
+
+	/* End Utility Methods */
+
+
+}
+
+

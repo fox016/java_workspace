@@ -1,0 +1,36 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.util.Calendar;
+import java.util.List;
+
+/**
+ *
+ * @author chris
+ */
+public interface FacadeAdd extends Facade {
+
+	List<Item> addBatchItems(Product product, Calendar entry, StorageUnit unit, int count);
+
+	void addItem(Item item);
+
+	ProductGroup addProductGroup(String name, Size size, ProductContainer parent);
+
+	void addProductToContainer(Product product, ProductContainer container);
+
+	// ----------------------------------- Create
+	StorageUnit addStorageUnit(String name) throws IllegalArgumentException;
+
+	boolean canAddItem(Item item);
+
+	boolean canAddProductGroup(String name, ProductContainer parent);
+
+	//public boolean canAddProductToSystem(Product product);
+	boolean canAddProductToContainer(Product product, ProductContainer container);
+
+	boolean canAddStorageUnit(String unitName);
+	
+}

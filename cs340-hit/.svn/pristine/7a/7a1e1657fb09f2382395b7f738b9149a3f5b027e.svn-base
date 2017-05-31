@@ -1,0 +1,115 @@
+package model;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Observer;
+import java.util.Set;
+
+/**
+ * The Facade interface provides a simple list of functions
+ * that can be called from the GUI.  It is implemented only
+ * by FacadeImpl.  See FacadeImpl class for more details
+ * 
+ * @author Nate Fox
+ *
+ */
+public interface Facade
+{
+	// ----------------------------------- Create
+	
+	public StorageUnit addStorageUnit(String name)
+			throws IllegalArgumentException;
+	
+	public ProductGroup addProductGroup(String name, ProductContainer parent);
+	
+	public void addItem(Item item);
+	
+	public List<Item> addBatchItems(Product product, Calendar entry, StorageUnit unit, int count);
+	
+	public void addProductToContainer(Product product, ProductContainer container);
+	
+	// ----------------------------------- Read
+	
+	public Set<StorageUnit> getStorageUnits();
+	
+	public Set<String> getChildContainers(ProductContainer parent);
+	
+	public Set<ProductBarcode> getProductsByContainer(ProductContainer container);
+	
+	public Set<Item> getItemsByContainer(ProductContainer container);
+	
+	public Set<Item> getItemsByProduct(StorageUnit unit, Product product);
+	
+	public ProductContainer getProductContainer(StorageUnit unit, Product product);
+	
+	// ----------------------------------- Update
+	
+	public void setStorageUnitName(StorageUnit unit, String newName)
+			throws IllegalArgumentException;
+	
+	public void updateProductGroup(ProductGroup group, String newName, Size newSupply);
+	
+	public void updateItem(Item item, Calendar newEntryDate);
+	
+	public void updateProduct(Product product, String description, Size size,
+			int shelfLife, int threeMonthSupply);
+	
+	public void transferItem(Item item, StorageUnit newUnit);
+	
+	public void removeItemFromStorage(Item item);
+	
+	// ----------------------------------- Delete
+	
+	public void deleteStorageUnit(StorageUnit unit);
+	
+	public void deleteProductGroup(ProductGroup group);
+	
+	public void deleteProduct(Product product);
+	
+	// ----------------------------------- Validation
+	
+	public boolean canAddStorageUnit(String unitName);
+	
+	public boolean canAddProductGroup(String name, ProductContainer parent);
+	
+	public boolean canAddItem(Item item);
+	
+	public boolean canAddProductToSystem(Product product);
+	
+	public boolean canAddProductToContainer(Product product, ProductContainer container);
+	
+	public boolean canSetStorageUnitName(StorageUnit unit, String newName);
+	
+	public boolean canUpdateProductGroup(ProductGroup group, String newName, Size newSupply);
+	
+	public boolean canUpdateItem(Item item, Calendar newEntryDate);
+	
+	public boolean canUpdateProduct(Product product, String description, Size size,
+			int shelfLife, int threeMonthSupply);
+	
+	public boolean canTransferItem(Item item, StorageUnit newUnit);
+	
+	public boolean canRemoveItemFromStorage(Item item);
+	
+	public boolean canDeleteStorageUnit(StorageUnit unit);
+	
+	public boolean canDeleteProductGroup(ProductGroup group);
+	
+	public boolean canDeleteProduct(Product product);
+	
+	// ----------------------------------- Data Persistence
+	
+	public void loadHouse() throws FileNotFoundException, IOException, ClassNotFoundException;
+	
+	public void saveHouse() throws FileNotFoundException, IOException, ClassNotFoundException;
+	
+	// Observers
+	
+	public void addAnObserver(Observer o);
+}
+
+
+
+

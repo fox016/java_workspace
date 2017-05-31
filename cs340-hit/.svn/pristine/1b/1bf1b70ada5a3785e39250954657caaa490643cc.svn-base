@@ -1,0 +1,119 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.List;
+
+import org.junit.*;
+
+import static org.junit.Assert.*;
+
+/**
+ * 
+ * @author Talonos
+ */
+public class ProductManagerTest {
+	private static ProductManager pm = ProductManager.instance();
+	private static Product p1;
+	private static Product p2;
+
+	@Test
+	public void addProductTest() {
+		Product before = new Product(Calendar.getInstance(), new ProductBarcode(
+				"12345"), "Bagels", new Size(1, SupplyType.COUNT), 2, 2);
+		pm.addProduct(before);
+		Product after = pm.getProductByBarcode(
+				new ProductBarcode("12345"));
+		assertNotNull(after);
+		assertEquals(before, after);
+	}
+
+	@Test
+	public void removeProductTest() {
+		pm.addProduct(new Product(Calendar.getInstance(), new ProductBarcode(
+				"12345"), "Bagels", new Size(1, SupplyType.COUNT), 2, 2));
+		Product p1 = ProductManager.instance().getProductByBarcode(
+				new ProductBarcode("12345"));
+		assertTrue(pm.getProductByBarcode(p1.getBarcode()) != null);
+		pm.removeProduct(p1);
+		assertTrue(pm.getProductByBarcode(p1.getBarcode()) == null);
+	}
+
+	@Test
+	public void addContainerTest() {
+		ProductGroup pg = new ProductGroupImpl("Meat");
+		Product p1 = new Product(new GregorianCalendar(2000, 3, 4),
+				new ProductBarcode("345"), "Chicken", new Size(2,
+						SupplyType.COUNT), 3, 4);
+		pm.addContainer(p1, pg);
+		List<ProductContainer> container = pm.getContainers(p1);
+		// System.out.println("NAME IS " + container.get(0).getName());
+		assertTrue(container.get(0).getName().equals("Meat"));
+	}
+
+	@Test
+	public void removeProductFromContainerTest() {
+		ProductGroup pg = new ProductGroupImpl("Meat");
+		Product p1 = new Product(new GregorianCalendar(2000, 3, 4),
+				new ProductBarcode("345"), "Chicken", new Size(2,
+						SupplyType.COUNT), 3, 4);
+		pm.addContainer(p1, pg);
+		pm.removeProductFromContainer(p1, pg);
+		List<ProductContainer> container = pm.getContainers(p1);
+		assertTrue(container.isEmpty());
+	}
+
+	@Test
+	public void canAddProductTest() {
+		pm = ProductManager.instance();
+
+		p1 = new Product(new GregorianCalendar(2001, 0, 1), new ProductBarcode(
+				"333"), "Crest", new Size(12, SupplyType.COUNT), 0, 0);
+
+		assertTrue(pm.canAddProduct(p1));
+
+		// Note that nearly all of the parameters are checked within the product
+		// itself
+	}
+
+	@Test
+	public void canUpdateProductTest() {
+		pm = ProductManager.instance();
+
+		p1 = new Product(new GregorianCalendar(2001, 0, 1), new ProductBarcode(
+				"333"), "Crest", new Size(12, SupplyType.COUNT), 0, 0);
+
+		p2 = new Product(new GregorianCalendar(2002, 2, 12),
+				new ProductBarcode("333"), "Jelly Beans", new Size(13,
+						SupplyType.OUNCES), 4, 4);
+
+		assertTrue(pm.canUpdateProduct(p1, p2));
+
+		// Note that nearly all of the parameters are checked within the product
+		// itself
+	}
+
+	@Test
+	public void updateProductTest() {
+		pm = ProductManager.instance();
+
+		p1 = new Product(new GregorianCalendar(2001, 0, 1), new ProductBarcode(
+				"333"), "Crest", new Size(12, SupplyType.COUNT), 0, 0);
+
+		p2 = new Product(new GregorianCalendar(2002, 2, 12),
+				new ProductBarcode("333"), "Jelly Beans", new Size(13,
+						SupplyType.OUNCES), 4, 4);
+
+		pm.updateProduct(p1, p2);
+
+		assertTrue(p1.getCreationDate().equals(
+				new GregorianCalendar(2002, 2, 12)));
+		assertTrue(p1.getShelfLife() == 4);
+		assertTrue(p1.getThreeMonthSupply() == 4);
+		assertTrue(p1.getDescription() == "Jelly Beans");
+	}
+}

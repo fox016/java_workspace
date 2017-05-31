@@ -1,0 +1,314 @@
+package model;
+
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 
+ * This class manages actions that are to be performed on a product, including
+ * accessing, adding, deleting and editing products.
+ */
+
+public class ProductManager implements Serializable {
+
+	private static final long serialVersionUID = -2063247830932189426L;
+	private static ProductManager _productManager;
+
+	/**
+	 * A map that allows us to access Products through their unique barcode.
+	 */
+	private Map<ProductBarcode, Product> products;
+	private Map<Product, List<ProductContainer>> containers;
+
+	/**
+	 * Costructor for product manager. We initialize a map that inputs a barcode
+	 * and outputs a product. We also initialize a map that takes a Product and
+	 * gives its product containers.
+	 */
+	private ProductManager() {
+		products = new HashMap<ProductBarcode, Product>();
+		containers = new HashMap<Product, List<ProductContainer>>();
+	}
+
+	public static void setInstance(ProductManager productManager){
+		_productManager = productManager;
+	}
+	
+	/**
+	 * creates an instance of Product Manager. If one has alreay been created,
+	 * it returns the manager that has already been created so as to preserve
+	 * Singleton properties.
+	 * 
+	 * @return the instance of ProductManager
+	 */
+	public static ProductManager instance() {
+		if (_productManager == null)
+			_productManager = new ProductManager();
+		return _productManager;
+	}
+	
+	/**
+	 * Resets instance
+	 */
+	public static void reset()
+	{
+		_productManager = null;
+	}
+
+	/**
+	 * Adds a new ProductContainer to a Product
+	 * 
+	 * @param product
+	 *            the product that will receive a new container
+	 * @param container
+	 *            the container to be added to the product
+	 */
+	public void addContainer(Product product, ProductContainer container) {
+		assert (container != null);
+		assert (product != null);
+		if (containers.containsKey(product)) {
+			List<ProductContainer> curProdContainers = containers.get(product);
+			curProdContainers.add(container);
+		} else {
+			List<ProductContainer> newCurProdContainer = new LinkedList<ProductContainer>();
+			newCurProdContainer.add(container);
+			containers.put(product, newCurProdContainer);
+		}
+	}
+
+	/**
+	 * Removes a container from the provided product.
+	 * 
+	 * @param product
+	 *            the product that has a container we wish to remove
+	 * @param container
+	 *            the container we wish to remove.
+	 */
+	public void removeProductFromContainer(Product product,
+			ProductContainer container) {
+		assert (container != null);
+		assert (product != null);
+		List<ProductContainer> productContainers = containers.get(product);
+		productContainers.remove(container);
+	}
+
+	/**
+	 * Checks to see of a product has a particular container
+	 * @param product the product we are checking
+	 * @param container We want to kow if product is contained in container
+	 * @return whether or not the product is contained in the given container
+	 */
+	public boolean hasContainer(Product product, ProductContainer container){
+		List<ProductContainer> pContainer = containers.get(product);
+		return pContainer.contains(container);
+	}
+	
+	/**
+	 * retrieves the list of ProductContainers a particular product contains
+	 * 
+	 * @param product
+	 *            We want to find the containers of this product
+	 * @return the List containing the product containers
+	 */
+
+	public List<ProductContainer> getContainers(Product product) {
+		return containers.get(product);
+	}
+
+	/**
+	 * Checks to see if the oldProduct can be updated with the properties of the
+	 * new product.
+	 * 
+	 * @param oldProduct
+	 *            the old product
+	 * @param newProduct
+	 *            the new product containing new properties that are to replace
+	 *            those of the old product
+	 * @return boolean telling us whether a product can be updated.
+	 */
+	public boolean canUpdateProduct(Product oldProduct, Product newProduct) {
+		assert (newProduct.getSize().getAmount() > 0);
+		if (newProduct.getSize().getType() == SupplyType.COUNT) {
+			assert (Math.floor(newProduct.getSize().getAmount())
+					- newProduct.getSize().getAmount() == 0);
+		}
+		if (newProduct.getBarcode() == null)
+			return false;
+		// Check date after 1/1/2000 and before future
+		if (newProduct.getDescription() == null
+				|| newProduct.getDescription() == "") {
+			return false;
+		}
+		if (newProduct.getShelfLife() < 0)
+			return false;
+
+		return true;
+	}
+
+	/**
+	 * After confirming that a product can be added using the canUpdateProduct()
+	 * method, we update the product.
+	 * 
+	 * @param oldProduct
+	 *            the old product
+	 * @param newProduct
+	 *            the new product containing new properties that are to replace
+	 *            those of the old product
+	 */
+	public void updateProduct(Product oldProduct, Product newProduct) {
+		assert (newProduct != null);
+		assert (oldProduct.getBarcode().equals(newProduct.getBarcode()));
+		oldProduct.setCreationDate(newProduct.getCreationDate());
+		oldProduct.setDescription(newProduct.getDescription());
+		oldProduct.setShelfLife(newProduct.getShelfLife());
+		oldProduct.setSize(newProduct.getSize());
+		oldProduct.setThreeMonthSupply(newProduct.getThreeMonthSupply());
+	}
+
+	/**
+	 * NOTE: ThIS METHOD MAY BE OBSOLETE (see the next canAddProduct method)
+	 * Checks all parameter constraints to determine if a product can be added.
+	 * Individual parameters are specified under each variable declaration of
+	 * the Product class.
+	 * 
+	 * @return the truth value that determines whether or not a product can be
+	 *         added.
+	 */
+	// public boolean canAddProduct(Calendar creationDate, ProductBarcode
+	// barcode,
+	// String description, Size size, int shelfLife){
+	// if(barcode == null)
+	// return false;
+	// //Check date after 1/1/2000 and before future
+	// if(description == null || description == "")
+	// return false;
+	// if(size.getAmount() <= 0)
+	// return false;
+	// if(size.getType() == SupplyType.COUNT){
+	// if(!(Math.floor(size.getAmount()) - size.getAmount() == 0))
+	// return false;
+	// }
+	// if(shelfLife < 0)
+	// return false;
+	//
+	// return true;
+	// }
+
+	/**
+	 * Checks all parameter constraints to determine if a product can be added.
+	 * 
+	 * @param prodToAdd
+	 *            product we are considering adding to the product set
+	 * @return truth value of whether or not it is valid to add a product
+	 */
+
+	public boolean canAddProduct(Product prodToAdd) {
+		if (prodToAdd.getBarcode() == null)
+			return false;
+		if (products.containsKey(prodToAdd.getBarcode()))
+			return false;
+		// Check date after 1/1/2000 and before future
+		if (prodToAdd.getDescription() == null
+				|| prodToAdd.getDescription() == "")
+			return false;
+		if (prodToAdd.getSize().getAmount() <= 0)
+			return false;
+		if (prodToAdd.getSize().getType() == SupplyType.COUNT) {
+			if (!(Math.floor(prodToAdd.getSize().getAmount())
+					- prodToAdd.getSize().getAmount() == 0))
+				return false;
+		}
+		if (prodToAdd.getShelfLife() < 0)
+			return false;
+
+		return true;
+	}
+
+	/**
+	 * NOTE: THIS METHOD MAY BE OBSELETE (see the next addProduct method) Adds a
+	 * product to the products map. Individual parameters are specified under
+	 * each variable declaration of the Product class. The method canAddProduct
+	 * should have been called, thus eliminating the need to check constraints
+	 * on the variables. We therefore assert that they are valid.
+	 */
+
+	// public void addProduct(Calendar creationDate, ProductBarcode barcode,
+	// String description, Size size, int shelfLife, int threeMonthSupply)
+	// {
+	// //Assert creationDate is after 1/1/2000 and before future -- How do I
+	// work with a calender?
+	// assert(barcode != null);
+	// assert(description != null && description != "");
+	// assert(!(size.getAmount() <= 0));
+	// //make sure we have an integer if type is count;
+	// if(size.getType() == SupplyType.COUNT){
+	// assert(Math.floor(size.getAmount()) - size.getAmount() == 0);
+	// }
+	// assert(shelfLife >= 0);
+	//
+	// Product prodToAdd = new
+	// Product(creationDate, barcode, description, size, shelfLife,
+	// threeMonthSupply);
+	// products.put(barcode, prodToAdd);
+	// }
+
+	// public void canUpdateProduct()
+	/**
+	 * Adds a product to the products map. The method canAddProduct should have
+	 * been called, thus eliminating the need to check constraints on the
+	 * variables. We therefore assert that they are valid.
+	 */
+	// method stub for test class. I think we are moving towards this kind of
+	// construction
+	public void addProduct(Product product) {
+		// Assert creationDate is after 1/1/2000 and before future -- How do I
+		// work with a calender?
+		assert (product.getBarcode() != null);
+		assert (product.getDescription() != null && product.getDescription() != "");
+		assert (!(product.getSize().getAmount() <= 0));
+		// make sure we have an integer if type is count;
+		if (product.getSize().getType() == SupplyType.COUNT) {
+			assert (Math.floor(product.getSize().getAmount())
+					- product.getSize().getAmount() == 0);
+		}
+		assert (product.getShelfLife() >= 0);
+
+		products.put(product.getBarcode(), product);
+	}
+
+	/**
+	 * Deletes a product using the given barcode
+	 * 
+	 * @param productToRemove
+	 *            The product we want to delete The canRemoveProduct method
+	 *            should have been called, so we assert that we comply with the
+	 *            constraints.
+	 */
+
+	public void removeProduct(Product productToRemove) {
+		assert (products.containsKey(productToRemove.getBarcode()));
+		products.remove(productToRemove.getBarcode());
+		containers.remove(productToRemove);
+	};
+
+	/**
+	 * Returns the product given its barcode
+	 * 
+	 * @param barcode
+	 *            the barcode of the product we want
+	 * @return the Product with the given barcode. If the product does not exist
+	 *         then return null.
+	 */
+	public Product getProductByBarcode(ProductBarcode barcode) {
+		if (products.containsKey(barcode)) {
+			return products.get(barcode);
+		} else {
+			return null;
+		}
+	}
+
+}

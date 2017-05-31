@@ -1,0 +1,60 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+import org.junit.*;
+
+import static org.junit.Assert.*;
+
+/**
+ *
+ * @author Talonos
+ */
+public class ProductManagerTest 
+{
+	private static ProductManager pm;
+	private static Product p1;
+	private static Product p2;
+	
+    @Test
+    public void addProductTest() 
+    {
+        pm.instance().addProduct(new Product(Calendar.getInstance(), 
+                new ProductBarcode("12345"), "Bagels", new Size(1, SupplyType.COUNT), 
+                2, 2));
+        Product test = ProductManager.instance().getProductByBarcode(new ProductBarcode("12345"));
+        assertNotNull(test);
+    }
+    
+   @Test
+   public void addContainerTest()
+   {
+	   
+   }
+
+
+	@Test
+	public void canAddProductTest()
+	{
+		pm = ProductManager.instance();
+		
+		p1 = new Product(new GregorianCalendar(2001,0,1), new ProductBarcode("333"),
+				"Crest", new Size(12, SupplyType.COUNT), 0, 0);
+		
+		assertTrue(pm.canAddProduct(p1));
+		
+		//Note that nearly all of the parameters are checked within the product itself
+		
+	}
+	
+	@Test
+	public void addOrRemoveProductContainer(){
+		
+		
+	}
+}

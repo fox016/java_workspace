@@ -1,0 +1,237 @@
+package model;
+
+import java.util.Observable;
+import java.util.Observer;
+import java.util.Set;
+import java.util.List;
+import java.util.Calendar;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+/**
+ * The Facade interface provides a simple list of functions
+ * that can be called from the GUI.  It is implemented only
+ * by FacadeImpl.  See FacadeImpl class for more details
+ * 
+ * @author Nate Fox
+ *
+ */
+public class Facade extends Observable
+{
+	private static Facade _facade;
+	
+	protected Facade() {
+		super();
+	}
+	
+	/**
+	 * @return The single instance of Facade
+	 */
+	static Facade instance() {
+		if(_facade == null)
+			_facade = new Facade();
+		return _facade;
+	}
+	
+	/**
+	 * Resets instance
+	 */
+	public static void reset() {
+		_facade = null;
+	}
+
+	//------------------------------Get-----------------------------------
+
+	public static Set<String> getChildContainers(ProductContainer parent) {
+		return FacadeGet.getChildContainers(parent);
+	}
+
+	public static Set<Item> getItemsByContainer(ProductContainer container) {
+		return FacadeGet.getItemsByContainer(container);
+	}
+
+	public static Set<Item> getItemsByProduct(StorageUnit unit, Product product) {
+		return FacadeGet.getItemsByProduct(unit, product);
+	}
+
+	public static ProductContainer getProductContainer(StorageUnit unit, Product product) {
+		return FacadeGet.getProductContainer(unit, product);
+	}
+
+	public static Set<ProductBarcode> getProductsByContainer(ProductContainer container) {
+		return FacadeGet.getProductsByContainer(container);
+	}
+
+	public static Set<StorageUnit> getStorageUnits() {
+		return FacadeGet.getStorageUnits();
+	}
+
+	//--------------------------------Add------------------------------------
+
+	public static List<Item> addBatchItems(Product product, Calendar entry, 
+                                               StorageUnit unit, int count) {
+		return FacadeAdd.addBatchItems(product, entry, unit, count);
+	}
+
+	public static void addItem(Item item) {
+		FacadeAdd.addItem(item);
+	}
+
+	public static ProductGroup addProductGroup(String name, Size size, ProductContainer parent) {
+		return FacadeAdd.addProductGroup(name, size, parent);
+	}
+
+	public static void addProductToContainer(Product product, ProductContainer container) {
+		FacadeAdd.addProductToContainer(product, container);
+	}
+        
+        public static void addProductToStorageUnitByBarcode(ProductBarcode product, 
+                                                          StorageUnit container) {
+		FacadeAdd.addProductToStorageUnitByBarcode(product, container);
+	}
+        
+        public static void removeProductFromStorageUnitByBarcode(ProductBarcode product, 
+                                                          StorageUnit container) {
+		FacadeAdd.removeProductFromStorageUnitByBarcode(product, container);
+	}
+
+	public static StorageUnit addStorageUnit(String name) throws IllegalArgumentException {
+		return FacadeAdd.addStorageUnit(name);
+	}
+
+	public static boolean canAddItem(Item item) {
+		return FacadeAdd.canAddItem(item);
+	}
+
+	public static boolean canAddProductGroup(String name, ProductContainer parent) {
+		return FacadeAdd.canAddProductGroup(name, parent);
+	}
+
+	public static boolean canAddProductToContainer(Product product, ProductContainer container) {
+		return FacadeAdd.canAddProductToContainer(product, container);
+	}
+
+	public static boolean canAddStorageUnit(String unitName) {
+		return FacadeAdd.canAddStorageUnit(unitName);
+	}
+
+	//--------------------------------------------Edit--------------------------------------
+	public static boolean canSetStorageUnitName(StorageUnit unit, String newName) {
+		return FacadeEdit.canSetStorageUnitName(unit, newName);
+	}
+
+	public static boolean canTransferItem(Item item, StorageUnit newUnit) {
+		return FacadeEdit.canTransferItem(item, newUnit);
+	}
+
+	public static boolean canUpdateItem(Item item, Calendar newEntryDate) {
+		return FacadeEdit.canUpdateItem(item, newEntryDate);
+	}
+
+	public static boolean canUpdateProductGroup(ProductGroup group, String newName,
+			Size newSupply) {
+		return FacadeEdit.canUpdateProductGroup(group, newName, newSupply);
+	}
+
+	public static void setStorageUnitName(StorageUnit unit, String newName)
+			throws IllegalArgumentException {
+		FacadeEdit.setStorageUnitName(unit, newName);
+	}
+
+	public static void transferItem(Item item, StorageUnit newUnit) {
+		FacadeEdit.transferItem(item, newUnit);
+	}
+
+	public static void updateItem(Item item, Calendar newEntryDate) {
+		FacadeEdit.updateItem(item, newEntryDate);
+	}
+
+	public static void updateProduct(Product oldProduct, Product newProduct) {
+		FacadeEdit.updateProduct(oldProduct, newProduct);
+	}
+
+	public static void updateProductGroup(ProductGroup group, String newName, Size newSupply) {
+		FacadeEdit.updateProductGroup(group, newName, newSupply);
+	}
+
+	//--------------------------------------------Delete-----------------------------------
+
+	public static void deleteProduct(Product product) {
+		FacadeDelete.deleteProduct(product);
+	}
+
+	public static void deleteProductFromContainer(Product product, ProductContainer container) {
+		FacadeDelete.deleteProductFromContainer(product,container);
+	}
+
+	public static void deleteProductGroup(ProductGroup group) {
+		FacadeDelete.deleteProductGroup(group);
+	}
+
+	public static void deleteStorageUnit(StorageUnit unit) {
+		FacadeDelete.deleteStorageUnit(unit);
+	}
+
+	public static void removeItemFromStorage(Item item) {
+		FacadeDelete.removeItemFromStorage(item);
+	}
+        //Inverse of above. Put here because it's used to undelete, as opposed to create.
+        public static void resurrectItemToStorage(Item item) {
+		FacadeDelete.resurrectItemToStorage(item);
+	}
+	
+	public static boolean canRemoveItemFromStorage(Item item) {
+		return FacadeDelete.canRemoveItemFromStorage(item);
+	}
+	
+	public static boolean canDeleteStorageUnit(StorageUnit unit) {
+		return FacadeDelete.canDeleteStorageUnit(unit);
+	}
+	
+	public static boolean canDeleteProductGroup(ProductGroup group) {
+		return FacadeDelete.canDeleteProductGroup(group);
+	}
+	
+	public static boolean canDeleteProduct(Product product) {
+		return FacadeDelete.canDeleteProduct(product);
+	}
+
+	public static boolean canDeleteProductFromContainer(Product product,
+			ProductContainer container) {
+		return FacadeDelete.canDeleteProductFromContainer(product, container);
+	}
+
+	//----------------------------------------------IO--------------------------------------
+
+	public static void loadHouse()
+			throws FileNotFoundException, IOException, ClassNotFoundException {
+		FacadeIO.loadHouse();
+	}
+
+	public static void saveHouse()
+			throws FileNotFoundException, IOException, ClassNotFoundException {
+		FacadeIO.saveHouse();
+	}
+
+	//--------------------------------------------Observer----------------------------------
+
+	static void notifyAllObservers(Notification n) {
+		instance().notifyObservers((Object)n);
+	}
+
+	static void setChangedFlag() {
+		instance().setChanged();
+	}
+	
+	public static void addAnObserver(Observer o) {
+		instance().addObserver(o);
+	}
+        
+	public static void deleteAnObserver(Observer o) {
+		instance().deleteObserver(o);
+	}
+}
+
+
+
+

@@ -1,0 +1,169 @@
+package gui.item;
+
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import model.Item;
+import model.Product;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.File;
+import model.Barcode;
+//What are the correct imports for this?
+//import com.itext.text.*;
+//import com.itext.text.pdf.*;
+
+public class BarcodePrinter
+{
+	private static String defaultFilename = "<filepath>";
+	private String filename;
+	private Map<String,String> codeMap;
+
+	//for testing purposes
+	Map<String, String> getCodeMap() { return codeMap; }
+	
+	public BarcodePrinter()
+	{
+		this(defaultFilename);
+	}
+
+	public BarcodePrinter(String fn)
+	{
+		filename = fn;
+		generateCodeMap();
+	}
+
+	/** Writes a pdf containing barcodes.
+		@param items The list of Items for which we wish to print the barcodes for	
+		@param filename The location where the pdf is to be written
+		@throws IOException If the file cannot be written
+		@return The File object associated with the newly created pdf
+	*/
+	public File writeBarcodesToPdf(List<Item> items) throws IOException
+	{
+		File file = new File(this.filename);
+		if(file == null)
+			throw new IOException("Unable to create File");
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+
+	/**
+		@return A String of the form "((b|s)+)+" encoding bars and spaces of the barcode
+		public for testing purposes
+	*/
+	String getBarcodeSequence(Barcode barcode)
+	{
+		String digits = barcode.toString();
+		assert(digits.length() == 12);
+		
+		String sequence;
+		sequence = getStartSequence();
+
+		for(int k = 0; k < digits.length() / 2; k++)
+			sequence += codeMap.get(digits.substring(k, k+1));
+
+		sequence += getMiddleSequence();
+
+		for(int k = digits.length() / 2; k < digits.length(); k++)
+			sequence += invert(codeMap.get(digits.substring(k, k+1)));
+
+		sequence += getEndSequence();
+
+		return sequence;
+	}
+
+	private String getStartSequence()
+	{
+		return barString + spaceString + barString;
+	}
+
+	private String getMiddleSequence()
+	{
+		return spaceString + barString + spaceString + barString + spaceString;
+	}
+
+	private String getEndSequence()
+	{
+		return barString + spaceString + barString;
+
+	}
+
+	/**
+		Takes a String and replaces all the barStrings with spaceStrings
+		and viceversa.  Note that barSpace must be a string of only barString
+		and spaceString chars
+		@return The inverse String
+	*/
+	private String invert(String str)
+	{
+		String rtrn = "";
+		for(int k = 0; k < str.length(); k++)
+			rtrn += getChar(!isBarString(str.substring(k, k+1)));
+		
+		return rtrn;
+	}
+
+	////////////////////////Generating the Code Map////////////////////////
+
+	private String codes =
+	  "3211 " + //0
+	  "2221 " + //1
+	  "2122 " + //2
+	  "1411 " + //3
+	  "1132 " + //4
+	  "1231 " + //5
+	  "1114 " + //6
+	  "1312 " + //7
+	  "1213 " + //8
+	  "3112";   //9
+	private String barString = "b";
+	private String spaceString = "s";
+
+	//hard coded values in codes
+	private void generateCodeMap()
+	{
+		codeMap = new TreeMap<String, String>();
+
+		String[] tokens = codes.split("\\s+");
+		assert(tokens.length == 10);
+		for(int k = 0; k < tokens.length; k++)
+		{
+			addMapping(String.valueOf(k), tokens[k]);
+		}
+	}
+
+	private void addMapping(String key, String sequence)
+	{
+		boolean addBar = false;
+		assert(sequence.length() == 4);
+		String value = "";
+		for(int j = 0; j < sequence.length(); j++)
+		{
+			int width = Integer.parseInt(sequence.substring(j, j+1));
+			for(int i = 0; i < width; i++)
+				value = value.concat(getChar(addBar));
+			addBar = !addBar;
+		}
+
+		assert(value.length() == 7);
+		codeMap.put(key, value);
+	}
+
+	private String getChar(boolean isBar)
+	{
+		if(isBar)
+			return barString;
+		else
+			return spaceString;
+	}
+
+	private boolean isBarString(String str)
+	{
+		return str.equals(barString);
+	}
+
+	private boolean isSpaceString(String str)
+	{
+		return str.equals(spaceString);
+	}
+}

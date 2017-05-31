@@ -1,0 +1,59 @@
+package gui.common;
+
+import gui.item.ItemData;
+import gui.product.ProductData;
+import gui.inventory.ProductContainerData;
+import model.Item;
+import model.Product;
+import model.ProductContainer;
+
+/**
+ *
+ * @author Talonos
+ */
+public class Translator 
+{
+    private static Translator _translator;
+    
+    public static Translator instance()
+    {
+    	if(_translator == null)
+    		_translator = new Translator();
+    	return _translator;
+    }
+    
+    private Translator()
+    {
+    }
+    
+    public ItemData getDataFromItem(Item i)
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+    
+    public Item getItemFromData(ItemData i)
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+    
+    public ProductData getDataFromProduct(Product p)
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+    
+    public Product getProductFromData(ProductData p)
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+    
+    public ProductContainerData getDataFromProductContainer(ProductContainer pc)
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+    
+    public ProductContainer getProductContainerFromData(ProductContainerData pc)
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+    
+}

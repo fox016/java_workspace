@@ -1,0 +1,223 @@
+package model;
+
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 
+ * This class manages actions that are to be performed on a product, including
+ * accessing, adding, deleting and editing products.
+ */
+
+public class ProductManager implements Serializable {
+
+	private static final long serialVersionUID = -2063247830932189426L;
+	private static ProductManager _productManager;
+
+	/**
+	 * A map that allows us to access Products through their unique barcode.
+	 */
+	private Map<ProductBarcode, Product> products;
+	private Map<Product, List<ProductContainer>> containers;
+
+	/**
+	 * Costructor for product manager. We initialize a map that inputs a barcode
+	 * and outputs a product. We also initialize a map that takes a Product and
+	 * gives its product containers.
+	 */
+	
+	private ProductManager() {
+		products = new HashMap<ProductBarcode, Product>();
+		containers = new HashMap<Product, List<ProductContainer>>();
+	}
+
+	public static void setInstance(ProductManager productManager){
+		_productManager = productManager;
+	}
+	
+	/**
+	 * Returns all products in system
+	 * 
+	 * @return all products in system
+	 */
+	public Collection<Product> getAllProducts()
+	{
+		return products.values();
+	}
+	
+	/**
+	 * creates an instance of Product Manager. If one has already been created,
+	 * it returns the manager that has already been created so as to preserve
+	 * Singleton properties.
+	 * 
+	 * @return the instance of ProductManager
+	 */
+	public static ProductManager instance() {
+		if (_productManager == null)
+			_productManager = new ProductManager();
+		return _productManager;
+	}
+	
+	/**
+	 * Resets instance
+	 */
+	public static void reset()
+	{
+		_productManager = null;
+	}
+
+	/**
+	 * Adds a new ProductContainer to a Product
+	 * 
+	 * @param product
+	 *            the product that will receive a new container
+	 * @param container
+	 *            the container to be added to the product
+	 */
+	public void addContainer(Product product, ProductContainer container) {
+		assert (container != null);
+		assert (product != null);
+		assert (products.containsKey(product.getBarcode()));
+		if (containers.containsKey(product)) {
+			List<ProductContainer> curProdContainers = containers.get(product);
+			curProdContainers.add(container);
+		} else {
+			List<ProductContainer> newCurProdContainer = new LinkedList<ProductContainer>();
+			newCurProdContainer.add(container);
+			containers.put(product, newCurProdContainer);
+		}
+	}
+
+	/**
+	 * Removes a container from the provided product.
+	 * 
+	 * @param product
+	 *            the product that has a container we wish to remove
+	 * @param container
+	 *            the container we wish to remove.
+	 */
+	public void removeProductFromContainer(Product product,
+			ProductContainer container) {
+		assert (container != null);
+		assert (product != null);
+		//assert (container.hasProduct(product.getBarcode()));
+		List<ProductContainer> productContainers = containers.get(product);
+		productContainers.remove(container);
+	}
+
+	/**
+	 * Checks to see of a product has a particular container
+	 * @param product the product we are checking
+	 * @param container We want to know if product is contained in container
+	 * @return whether or not the product is contained in the given container
+	 */
+	public boolean hasContainer(Product product, ProductContainer container){
+		assert(product != null);
+		assert(container != null);
+		List<ProductContainer> pContainer = containers.get(product);
+		return pContainer.contains(container);
+	}
+	
+	/**
+	 * retrieves the list of ProductContainers a particular product contains
+	 * 
+	 * @param product
+	 *            We want to find the containers of this product
+	 * @return the List containing the product containers
+	 */
+
+	public List<ProductContainer> getContainers(Product product) {
+		assert(product != null);
+		return containers.get(product);
+	}
+
+	/**
+	 * Updates the Date of the product if itemCal occurs before the calendar of product
+	 * @param product the product for which we wish to update its creation date
+	 *	 @param itemCal the calendar we are checking 
+	 */
+
+	public void updateProductDate(Product product, Calendar itemCal){
+				Calendar productEntry = product.getCreationDate();
+				if(productEntry.compareTo(itemCal) > 0)
+					product.setCreationDate(itemCal);
+	}
+
+	/**
+	 * Checks all parameter constraints to determine if a product can be added.
+	 * 
+	 * @param prodToAdd
+	 *            product we are considering adding to the product set
+	 * @return truth value of whether or not it is valid to add a product
+	 */
+
+	public boolean canAddProduct(Product prodToAdd) {
+
+		if (products.containsKey(prodToAdd.getBarcode()))
+			return false;
+		
+		return prodToAdd.isValidProduct();
+	}
+
+	/**
+	 * Adds a product to the products map. The method canAddProduct should have
+	 * been called, thus eliminating the need to check constraints on the
+	 * variables. We therefore assert that they are valid.
+	 */
+	public void addProduct(Product product) {
+		//assert (Item.isValidEntryDate(product.getCreationDate()));
+		assert (product.getBarcode() != null);
+		assert (product.getDescription() != null && product.getDescription() != "");
+		assert (!(product.getSize().getAmount() <= 0));
+		// make sure we have an integer if type is count;
+		if (product.getSize().getType() == SupplyType.COUNT) {
+			assert (Math.floor(product.getSize().getAmount())
+					- product.getSize().getAmount() == 0);
+		}
+		assert (product.getShelfLife() >= 0);
+
+		products.put(product.getBarcode(), product);
+	}
+
+	/**
+	 * Deletes a product using the given barcode
+	 * 
+	 * @param productToRemove
+	 *            The product we want to delete The canRemoveProduct method
+	 *            should have been called, so we assert that we comply with the
+	 *            constraints.
+	 */
+
+	public void removeProduct(Product productToRemove) {
+		assert (products.containsKey(productToRemove.getBarcode()));
+		products.remove(productToRemove.getBarcode());
+		containers.remove(productToRemove);
+	};
+
+	/**
+	 * Returns the product given its barcode
+	 * 
+	 * @param barcode
+	 *            the barcode of the product we want
+	 * @return the Product with the given barcode. If the product does not exist
+	 *         then return null.
+	 */
+	public Product getProductByBarcode(ProductBarcode barcode) {
+		if (products.containsKey(barcode)) {
+			return products.get(barcode);
+		} else {
+			return null;
+		}
+	}
+
+	public boolean containsProduct(ProductBarcode barcode) {
+		assert(true);
+		return products.containsKey(barcode);
+	}
+
+}

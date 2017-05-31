@@ -1,0 +1,35 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.util.Calendar;
+
+/**
+ *
+ * @author chris
+ */
+public interface FacadeEdit extends Facade {
+
+	boolean canSetStorageUnitName(StorageUnit unit, String newName);
+
+	boolean canTransferItem(Item item, StorageUnit newUnit);
+
+	boolean canUpdateItem(Item item, Calendar newEntryDate);
+
+	boolean canUpdateProduct(Product product);
+
+	boolean canUpdateProductGroup(ProductGroup group, String newName, Size newSupply);
+
+	void setStorageUnitName(StorageUnit unit, String newName) throws IllegalArgumentException;
+
+	void transferItem(Item item, StorageUnit newUnit);
+
+	void updateItem(Item item, Calendar newEntryDate);
+
+	void updateProduct(Product oldProduct, Product newProduct);
+
+	void updateProductGroup(ProductGroup group, String newName, Size newSupply);
+	
+}

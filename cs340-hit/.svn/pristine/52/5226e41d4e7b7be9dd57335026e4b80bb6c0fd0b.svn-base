@@ -1,0 +1,27 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.util.Calendar;
+import org.junit.*;
+import static org.junit.Assert.*;
+
+/**
+ *
+ * @author Talonos
+ */
+public class ProductManagerTest 
+{
+    @Test
+    public void testAddProduct() 
+    {
+        System.out.println("getProductContainer");
+        ProductManager.instance().addProduct(new Product(Calendar.getInstance(), 
+                new ProductBarcode("12345"), "Bagels", new Size(1, SupplyType.COUNT), 
+                2, 2));
+        Product test = ProductManager.instance().getProductByBarcode(new ProductBarcode("12345"));
+        assertNotNull(test);
+    }
+}

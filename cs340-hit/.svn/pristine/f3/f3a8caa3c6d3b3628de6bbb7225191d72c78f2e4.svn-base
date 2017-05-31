@@ -1,0 +1,15 @@
+
+package model.persistence;
+
+import model.ProductGroup;
+
+/** The interface for the ProductGroupDataObjects 
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+public interface ProductGroupDataObject extends DataObject
+{
+	ProductGroup getGroup();
+}
+

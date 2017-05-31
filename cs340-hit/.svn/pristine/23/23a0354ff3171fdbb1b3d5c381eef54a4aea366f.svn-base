@@ -1,0 +1,123 @@
+package model;
+
+import java.io.Serializable;
+import java.util.Date;
+import java.util.Set;
+
+/**
+ * The class implements the Product interface
+ * @author Clint Rollins
+ */
+
+
+public class Product implements Serializable, Comparable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -6744337854867882901L;
+
+	/**The date on which this product was created*/
+	Date creationDate;
+	
+	/**The manufacturer's barcode of this product*/
+	Barcode barcode;
+	
+	/**A description of this product*/
+	String description;
+	
+	/**The size of the product.*/
+	Size size;
+
+	/**The Product's shelf life, measured in months.*/
+	int shelfLife;
+	
+	/**The number of this product required for a 3-month supply.
+	 * A value of zero means "unspecified." */
+	int threeMonthSupply;
+	
+	/**Product containers that contain this product.*/
+	Set<ProductContainer> productContainers;
+	
+	/**
+	 * 
+	 * Creates a product.  Shelf life is included. 
+	 */
+	
+	public Product(Date creationDate, Barcode barcode, String description, Size size, int shelfLife){};
+	
+	/**
+	 * Creates a product.  Shelf life not included.
+	 */
+	
+	public Product(Date creationDate, Barcode barcode, String description, Size size){};
+	
+	/**
+	 * Compares two products
+         * @param other Product to compare with.
+         * @return	0 if equal, non-zero integer otherwise
+	 */
+	public int compareTo(Product other)
+        {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+	
+	/**
+	 * A hash code for a hash map of products
+	 */
+        @Override
+	public int hashCode()
+        {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+		
+	
+	private Date getCreationDate() {
+		return creationDate;
+	}
+
+	private void setCreationDate(Date creationDate) {
+		this.creationDate = creationDate;
+	}
+
+	private Barcode getBarcode() {
+		return barcode;
+	}
+
+	private void setBarcode(Barcode barcode) {
+		this.barcode = barcode;
+	}
+
+	private String getDescription() {
+		return description;
+	}
+
+	private void setDescription(String description) {
+		this.description = description;
+	}
+
+	private Size getSize() {
+		return size;
+	}
+
+	private void setSize(Size size) {
+		this.size = size;
+	}
+
+	private int getShelfLife() {
+		return shelfLife;
+	}
+
+	private void setShelfLife(int shelfLife) {
+		this.shelfLife = shelfLife;
+	}
+
+	private int getThreeMonthSupply() {
+		return threeMonthSupply;
+	}
+
+	private void setThreeMonthSupply(int threeMonthSupply) {
+		this.threeMonthSupply = threeMonthSupply;
+	}
+
+}

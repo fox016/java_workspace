@@ -1,0 +1,314 @@
+package model;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.NoSuchElementException;
+import java.util.Set;
+
+public class FacadeImpl implements Facade
+{
+	private static final String FILEPATH = "./saveFile.txt";
+	
+	// ----------------------------------- Create
+	
+	public StorageUnit addStorageUnit(String name) throws IllegalArgumentException
+	{
+		if(name == null || name.length() < 1)
+			throw new IllegalArgumentException("Invalid Storage Unit Name");
+		
+		StorageUnit newUnit = new StorageUnitImpl(name);
+		House.instance().addStorageUnit(newUnit);
+		
+		return newUnit;
+	}
+	
+	public ProductGroup addProductGroup(String name, ProductContainer parent)
+			throws IllegalArgumentException
+	{
+		ProductGroup newPG = parent.addContainer(name);
+		return newPG;
+	}
+	
+	public void addItem(Item item) throws IllegalArgumentException
+	{
+		if(ItemManager.instance().canInsertItem(item))
+			ItemManager.instance().insert(item,  new ItemBarcode());
+		else
+			throw new IllegalArgumentException("Invalid item");
+	}
+	
+	public void addProductToSystem(Product product)
+			throws IllegalArgumentException
+	{
+		if(ProductManager.instance().canAddProduct(product))
+			ProductManager.instance().addProduct(product);
+		else throw new IllegalArgumentException("Invalid product");
+	}
+	
+	public void addProductToContainer(Product product, ProductContainer container)
+		throws IllegalArgumentException
+	{
+		if(product == null || container == null)
+			throw new IllegalArgumentException("Canot add product to container" +
+					" unless both are not null");
+		
+		// Clint TODO I think we need some checks here
+		ProductManager.instance().addContainer(product, container);
+	}
+	
+	// ----------------------------------- Read
+	
+	public Set<StorageUnit> getStorageUnits() 
+	{
+		return House.instance().getAllUnits();
+	}
+	
+	public Set<String> getChildContainers(ProductContainer parent)
+			throws IllegalArgumentException
+	{
+		if(parent == null)
+			throw new IllegalArgumentException("Cannot get children of null" +
+					" product container");
+		
+		return parent.getContainers();
+	}
+	
+	public Set<ProductBarcode> getProductsByContainer(ProductContainer container)
+			throws IllegalArgumentException
+	{
+		if(container == null)
+			throw new IllegalArgumentException("Cannot get products of null" +
+					" product container");
+		
+		return container.getProducts();
+	}
+	
+	public Set<Item> getItemsByContainer(ProductContainer container)
+		throws NullPointerException
+	{
+		return ItemManager.instance().getItems(container, false);
+	}
+	
+	public Set<Item> getItemsByProduct(StorageUnit unit, Product product)
+			throws IllegalArgumentException
+	{
+		if(unit == null || product == null)
+			throw new IllegalArgumentException("Cannot get items of null " +
+					"storage unit or null product");
+		
+		return ItemManager.instance().getItems(unit, product, true);
+	}
+	
+	public ProductContainer getProductContainer(StorageUnit unit, Product product)
+		throws IllegalArgumentException
+	{
+		if(unit == null || product == null)
+			throw new IllegalArgumentException("Cannot get container of null " +
+					"storage unit or null product");
+		
+		return unit.getProductContainer(product);
+	}
+	
+	public Product getProductByBarcode(ProductBarcode barcode)
+	{
+		if(barcode == null)
+			throw new IllegalArgumentException("Cannot get product by null barcode");
+		
+		return ProductManager.instance().getProductByBarcode(barcode);
+	}
+	
+	// ----------------------------------- Update
+	
+	public void setStorageUnitName(StorageUnit unit, String newName)
+		throws IllegalArgumentException
+	{
+		if(unit == null || newName == null)
+			throw new IllegalArgumentException("Must provide valid unit and " +
+					"new name to rename storage unit");
+		
+		House.instance().setName(unit, newName);
+	}
+	
+	public void updateProductGroup(ProductGroup group, String newName, Size newSupply)
+			throws IllegalArgumentException, NoSuchElementException
+	{
+		group.getParent().renameContainer(group.getName(), newName);
+		group.setSupply(newSupply);
+	}
+	
+	public void updateItem(Item item, Calendar newEntryDate)
+		throws IllegalArgumentException
+	{
+		item.setEntryDate(newEntryDate);
+	}
+	
+	public void updateProduct(Product product, String description, Size size,
+			int shelfLife, int threeMonthSupply)
+	{
+		// Clint TODO throw exceptions for these methods?
+		product.setDescription(description);
+		product.setSize(size);
+		product.setShelfLife(shelfLife);
+		product.setThreeMonthSupply(threeMonthSupply);
+	}
+	
+	public void transferItem(Item item, StorageUnit newUnit)
+		throws NullPointerException
+	{
+		// Chris TODO need some checks here
+		ItemManager.instance().transfer(item, newUnit);
+	}
+	
+	public void removeItemFromStorage(Item item)
+		throws ItemAlreadyRemovedException, NoSuchElementException
+	{
+		ItemManager.instance().removeItem(item.getItemBarcode());
+	}
+	
+	// ----------------------------------- Delete
+	
+	public void deleteStorageUnit(StorageUnit unit)
+		throws IllegalArgumentException, IllegalStateException,
+		NullPointerException
+	{
+		if(unit == null)
+			throw new IllegalArgumentException("Cannot delete null unit");
+		
+		// Unit cannot hold items
+		Set<Item> items = ItemManager.instance().getItems(unit, true);
+		if(!items.isEmpty())
+			throw new IllegalStateException("Cannot delete storage unit until you " +
+					"remove all items");
+		
+		House.instance().removeStorageUnit(unit);
+	}
+	
+	public void deleteProductGroup(ProductGroup group)
+			throws IllegalArgumentException, IllegalStateException,
+			NullPointerException, NoSuchElementException
+	{
+		if(group == null)
+			throw new IllegalArgumentException("Cannot delete null product group");
+		
+		// Unit cannot hold items
+		Set<Item> items = ItemManager.instance().getItems(group, true);
+		if(!items.isEmpty())
+			throw new IllegalStateException("Cannot delete product group until you " +
+					"remove all items");
+		
+		group.getParent().deleteContainer(group.getName());
+	}
+	
+	public void deleteProduct(Product product)
+		throws NullPointerException, IllegalItemOperationException
+	{
+		if(ItemManager.instance().canPurge(product))
+			ItemManager.instance().purgeProduct(product);
+	}
+	
+	// ----------------------------------- Validation
+	
+	public boolean canAddStorageUnit(String unitName) {
+		return House.instance().isValidName(unitName);
+	}
+	
+	public boolean canAddProductGroup(String name, ProductContainer parent)
+	{
+		return parent.isValidName(name);
+	}
+	
+	public boolean canAddItem(Item item)
+	{
+		return ItemManager.instance().canInsertItem(item);
+	}
+	
+	public boolean canAddProductToSystem(Product product)
+	{
+		return ProductManager.instance().canAddProduct(product);
+	}
+	
+	public boolean canAddProductToContainer(Product product, ProductContainer container)
+	{
+		// Clint TODO We need to figure this out
+		return true;
+	}
+	
+	public boolean canSetStorageUnitName(StorageUnit unit, String name)
+	{
+		return House.instance().isValidName(name);
+	}
+	
+	public boolean canUpdateProductGroup(ProductGroup group, String newName, Size newSupply)
+	{
+		return group.getParent().isValidName(newName);
+	}
+	
+	public boolean canUpdateItem(Item item, Calendar newEntryDate)
+	{
+		// Chris TODO need to validate new entry date
+		return true;
+	}
+	
+	public boolean canUpdateProduct(Product product, String description, Size size,
+			int shelfLife, int threeMonthSupply)
+	{
+		// Clint TODO we need ways to validate these
+		return true;
+	}
+	
+	public boolean canTransferItem(Item item, StorageUnit newUnit)
+	{
+		// Chris TODO need to check if:
+		// item is already in newUnit
+		// item is in system
+		return true;
+	}
+	
+	public boolean canRemoveItemFromStorage(Item item)
+	{
+		return ItemManager.instance().isInSystem(item.getItemBarcode());
+	}
+	
+	public boolean canDeleteStorageUnit(StorageUnit unit)
+	{
+		Set<Item> items = ItemManager.instance().getItems(unit, true);
+		return items.size() == 0;
+	}
+	
+	public boolean canDeleteProductGroup(ProductGroup group)
+	{
+		// TODO
+		return true;
+	}
+	
+	public boolean canDeleteItem(Item item)
+	{
+		// TODO
+		return true;
+	}
+	
+	public boolean canDeleteProduct(Product product)
+	{
+		// TODO
+		return true;
+	}
+	
+	// ----------------------------------- Data Persistence
+	
+	public void loadHouse()
+			throws FileNotFoundException, IOException, ClassNotFoundException
+	{
+		House.instance().load(FILEPATH);
+	}
+	
+	public void saveHouse() throws FileNotFoundException, IOException
+	{
+		House.instance().save(FILEPATH);
+	}
+}
+
+
+
+
+

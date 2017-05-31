@@ -1,0 +1,354 @@
+package gui.batches;
+
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.Set;
+
+import gui.common.*;
+import gui.inventory.*;
+import gui.item.ItemData;
+import gui.product.ProductData;
+
+import model.FacadeImpl;
+import model.Item;
+import model.Notification;
+import model.Product;
+import model.ProductBarcode;
+import model.ProductContainer;
+import model.ProductManager;
+
+/**
+ * Controller class for the add item batch view.
+ * 
+ * @author Nate Fox
+ */
+public class AddItemBatchController extends Controller implements
+		IAddItemBatchController, Observer {
+	
+	private boolean useScanner;
+	
+	// Set of all items added during the lifetime of this controller and their products
+	private Map<ProductBarcode, Set<Item>> allBatchItems;
+	
+	 /*
+	  * Boolean that tells the controller whether or not to add the batch
+	  * items as soon as it gets the new Product back from the Facade
+	  * through the Notification passed to the update method
+	  */
+	private boolean addNow;
+	
+	private ProductContainerData targetData;
+	private ProductContainer targetContainer;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param view Reference to the add item batch view.
+	 * @param target Reference to the storage unit to which items are being added.
+	 */
+	public AddItemBatchController(IView view, ProductContainerData target) {
+		super(view);
+		
+		construct();
+		
+		targetData = target;
+		targetContainer = Translator.instance().getProductContainerFromData(targetData);
+		
+		useScanner = true;
+		allBatchItems = new HashMap<>();
+		addNow = false;
+		
+		getView().setUseScanner(useScanner);
+		
+		FacadeImpl.instance().addAnObserver(this);
+	}
+
+	/**
+	 * Returns a reference to the view for this controller.
+	 */
+	@Override
+	protected IAddItemBatchView getView() {
+		return (IAddItemBatchView) super.getView();
+	}
+
+	/**
+	 * Loads data into the controller's view.
+	 * 
+	 *  {@pre None}
+	 *  
+	 *  {@post The controller has loaded data into its view}
+	 */
+	@Override
+	protected void loadValues() {
+	}
+
+	/**
+	 * Sets the enable/disable state of all components in the controller's view.
+	 * A component should be enabled only if the user is currently
+	 * allowed to interact with that component.
+	 * 
+	 * {@pre None}
+	 * 
+	 * {@post The enable/disable state of all components in the controller's view
+	 * have been set appropriately.}
+	 */
+	@Override
+	protected void enableComponents() {
+		getView().enableItemAction(false);
+		getView().enableRedo(false);
+		getView().enableUndo(false);
+	}
+
+	/**
+	 * This method is called when the "Entry Date" field in the
+	 * add item batch view is changed by the user.
+	 * 
+	 * Note from Nate: no action is required because date
+	 * field ensures correct date range
+	 */
+	@Override
+	public void entryDateChanged() {
+		// See Note from Nate
+		//getView().enableItemAction(isValidItemBatch());
+	}
+
+	/**
+	 * This method is called when the "Count" field in the
+	 * add item batch view is changed by the user.
+	 */
+	@Override
+	public void countChanged() {
+		getView().enableItemAction(isValidItemBatch());
+	}
+
+	/**
+	 * This method is called when the "Product Barcode" field in the
+	 * add item batch view is changed by the user.
+	 */
+	@Override
+	public void barcodeChanged() {
+		getView().enableItemAction(isValidItemBatch());
+	}
+
+	/**
+	 * This method is called when the "Use Barcode Scanner" setting in the
+	 * add item batch view is changed by the user.
+	 */
+	@Override
+	public void useScannerChanged() {
+		useScanner = getView().getUseScanner();
+	}
+
+	/**
+	 * This method is called when the selected product changes
+	 * in the add item batch view.
+	 */
+	@Override
+	public void selectedProductChanged() {
+		setItemList();
+	}
+
+	/**
+	 * This method is called when the user clicks the "Add Item" button
+	 * in the add item batch view.
+	 */
+	@Override
+	public void addItem() {
+		
+		// Get product
+		String barcodeStr = getView().getBarcode();
+		ProductBarcode barcode = new ProductBarcode(barcodeStr);
+		Product product = ProductManager.instance().getProductByBarcode(barcode);
+		
+		// If product doesn't yet exist, launch addProductView
+		if(product == null)
+		{
+			addNow = true;
+			getView().displayAddProductView(targetContainer);
+			return;
+		}
+		
+		// Else
+		if(allBatchItems.get(product.getBarcode()) == null)
+			allBatchItems.put(product.getBarcode(), new HashSet<Item>());
+		addItems(product);
+	}
+	
+	/**
+	 * Adds items of given product.  Gets other necessary data from view.
+	 * 
+	 * @param product
+	 */
+	private void addItems(Product product)
+	{
+		// Get fields
+		Date entryDate = getView().getEntryDate();
+		String countStr = getView().getCount();
+		
+		int count = Integer.parseInt(countStr);
+		
+		// Translate Date to Calendar
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(entryDate);
+		
+		// Facade adds batch items
+		addNow = false;
+		List<Item> addedItems = FacadeImpl.instance().addBatchItems(product, cal,
+										targetContainer.getRoot(), count);
+		if(allBatchItems.get(product.getBarcode()) == null)
+			allBatchItems.put(product.getBarcode(), new HashSet<Item>());
+		allBatchItems.get(product.getBarcode()).addAll(addedItems);
+		
+		// Update product list
+		setProductTable();
+		
+		// Update item list if new product is selected product
+		if(getView().getSelectedProduct() != null &&
+				Translator.instance().getProductFromData(
+						getView().getSelectedProduct()).equals(product))
+		{
+			setItemList();
+		}
+	}
+	
+	private void setItemList()
+	{
+		ProductData selectedData = getView().getSelectedProduct();
+		
+		if(selectedData == null)
+			return;
+		
+		Product selectedProduct = Translator.instance().getProductFromData(selectedData);
+		
+		if(allBatchItems.get(selectedProduct.getBarcode()) == null)
+			allBatchItems.put(selectedProduct.getBarcode(), new HashSet<Item>());
+		
+		ItemData[] data =
+				Translator.instance().getDataFromItems(
+						allBatchItems.get(selectedProduct.getBarcode()));
+		getView().setItems(data);
+	}
+	
+	/**
+	 * This method is called when the user clicks the "Redo" button
+	 * in the add item batch view.
+	 */
+	@Override
+	public void redo() {
+	}
+
+	/**
+	 * This method is called when the user clicks the "Undo" button
+	 * in the add item batch view.
+	 */
+	@Override
+	public void undo() {
+	}
+
+	/**
+	 * This method is called when the user clicks the "Done" button
+	 * in the add item batch view.
+	 */
+	@Override
+	public void done() {
+		
+		// Clean up
+		useScanner = true;
+		targetData = null;
+		targetContainer = null;
+		
+		// Print barcodes TODO
+		
+		// Close view
+		getView().close();
+	}
+
+	@Override
+	public void update(Observable o, Object arg) {
+		
+		Notification n = (Notification)arg;
+		
+		switch(n.getObjectType())
+		{
+			case PRODUCT:
+				switch(n.getOperationType())
+				{
+					case CREATE:
+						addProductUpdate((Product)n.getObject());
+						break;
+				}
+				break;
+		}
+	}
+	
+	public void addProductUpdate(Product product)
+	{
+		if(allBatchItems.get(product.getBarcode()) == null)
+			allBatchItems.put(product.getBarcode(), new HashSet<Item>());
+		
+		setProductTable();
+		
+		// If addNow is true, call addItems and pass in product
+		if(addNow)
+		{
+			addItems(product);
+		}
+	}
+
+	/**
+	 * Sets product table using allBatchItems key set
+	 * 
+	 */
+	private void setProductTable() {
+		
+		// Save selection
+		ProductData selectedData = getView().getSelectedProduct();
+		
+		// Update table
+		ProductData[] products =
+				Translator.instance().getDataFromProductBarcodes(allBatchItems.keySet());
+		getView().setProducts(products);
+		
+		// Restore selection
+		if(selectedData != null)
+		{
+			for(int i = 0; i < products.length; i++)
+			{
+				if(products[i].getBarcode().equals(selectedData.getBarcode()))
+				{
+					getView().selectProduct(products[i]);
+					break;
+				}
+			}
+		}
+	}
+	
+	@SuppressWarnings("unused")
+	private boolean isValidItemBatch()
+	{
+		String barcodeStr = getView().getBarcode();
+		String countStr = getView().getCount();
+		
+		if(barcodeStr == null || barcodeStr.isEmpty())
+			return false;
+
+		// Ensure count is numeric
+		int count = 0;
+		try
+		{
+			count = Integer.parseInt(countStr);
+		}catch(NumberFormatException e)
+		{
+			return false;
+		}
+		
+		return true;
+	}
+}
+

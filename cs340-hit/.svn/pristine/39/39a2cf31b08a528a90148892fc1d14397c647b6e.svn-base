@@ -1,0 +1,96 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+/**
+ *
+ * @author Talonos
+ */
+ //change by Chris to extend PC
+public interface StorageUnit extends ProductContainer, Comparable {
+
+    /**
+     * Adds item to this Storage unit. If the item is of a product type that
+     * does not currently exist anywhere within this storage unit, then this
+     * method adds the product to the top level of this Storage Unit
+     * automatically. <br><br>
+     *
+     * This method cannot be used to add an item to a storage unit if it is
+     * already in the house. For that, use transferItem. <br><br>
+     *
+     * This method registers the item with the item manager, puts it in the
+     * appropriate storage unit, and updates the pointer in the item to point
+     * to this storage unit.
+     *
+     * @throws IllegalArgumentException if the item is null or if the item is
+     * already in the house.
+     * @param item The Item to add
+     */
+    //void addItem(Item item) throws IllegalArgumentException;
+
+    /**
+     * Returns true if and only if the item is in this Storage Unit
+     *
+     * @param item The item to check
+     * @throws IllegalArgumentException item cannot be null
+     * @return true if and only if the item is in this Storage Unit
+     */
+    boolean containsItem(Item item) throws IllegalArgumentException;
+
+    /**
+     * Tests the quality between two storageUnits.
+     * @param other the other storage unit to compare to.
+     * @return true if the two storage units are equals, false otherwise.
+     */
+    boolean equals(Object other);
+
+    /**
+     * Returns the name of the Storage Unit
+     *
+     * @throws IllegalStateException Storage Unit should have name upon construction
+     * @return name of Storage Unit
+     */
+    String getName() throws IllegalStateException;
+
+    /**
+     * Removes an item from this storage unit. By default, this item does not go
+     * anywhere else. To transfer items from one Storage Unit to another, use
+     * TransferItems.
+     * <br><br>
+     * This method calls the item manager to notify that the item was removed,
+     * and then sets the items "removed" flag to true.
+     *
+     * @throws IllegalArgumentException if item is not in this Storage Unit
+     *
+     * @param item The item to remove
+     */
+    void removeItem(Item item) throws IllegalArgumentException;
+
+    /**
+     * This method should be called from the House, which
+     * checks to make sure that the new name is valid
+     *
+     * @Deprecated Not needed and unsafe. House should contain a list of
+     * "ChangableProductContainer", which has a rename method. If you make the
+     * rename method public, then anybody can call it! Also, by putting it in
+     * storage unit, you cannot polymorphically inherit it from the base class
+     * "ProductContainer," weakening the composite design.
+     * @throws IllegalArgumentException if name is not valid
+     * @param newName
+     */
+    void setName(String newName) throws IllegalArgumentException;
+
+    /**
+     * Transfers items from the calling storage unit to the storage unit
+     * specified by "Destination".
+     * <br><br>
+     *
+     * @throws IllegalArgumentException item must be in unit, destination must be valid Storage Unit
+     * @param item the barcodes of the items to transfer.
+     * @param destination the storage unit to transfer them to.
+     */
+    void transferItem(Item item, StorageUnit destination) throws IllegalArgumentException;
+    
+}

@@ -1,0 +1,140 @@
+package gui.item;
+
+import java.util.Calendar;
+
+import model.Facade;
+import model.Item;
+import gui.common.*;
+
+/**
+ * Controller class for the edit item view.
+ */
+public class EditItemController extends Controller 
+										implements IEditItemController {
+	
+	private ItemData targetData;
+	
+	private Translator translator;
+	
+	/**
+	 * Constructor.
+	 * 
+	 * @param view Reference to edit item view
+	 * @param target Item that is being edited
+	 */
+	public EditItemController(IView view, ItemData target) {
+		super(view);
+		
+		translator = new Translator();
+		targetData = target;
+
+		construct();
+	}
+
+	//
+	// Controller overrides
+	//
+	
+	/**
+	 * Returns a reference to the view for this controller.
+	 * 
+	 * {@pre None}
+	 * 
+	 * {@post Returns a reference to the view for this controller.}
+	 */
+	@Override
+	protected IEditItemView getView() {
+		return (IEditItemView)super.getView();
+	}
+
+	/**
+	 * Sets the enable/disable state of all components in the controller's view.
+	 * A component should be enabled only if the user is currently
+	 * allowed to interact with that component.
+	 * 
+	 * {@pre None}
+	 * 
+	 * {@post The enable/disable state of all components in the controller's view
+	 * have been set appropriately.}
+	 */
+	@Override
+	protected void enableComponents() {
+		getView().enableBarcode(false);
+		getView().enableDescription(false);
+		getView().enableEntryDate(true);
+		getView().enableOK(isValidDate());
+	}
+	
+	/**
+	 * @return True iff entry date in view is valid
+	 */
+	private boolean isValidDate()
+	{
+		if(getView().getEntryDate() == null)
+			return false;
+		
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(getView().getEntryDate());
+		
+		return Item.isValidEntryDate(cal);
+	}
+
+	/**
+	 * Loads data into the controller's view.
+	 * 
+	 *  {@pre None}
+	 *  
+	 *  {@post The controller has loaded data into its view}
+	 */
+	@Override
+	protected void loadValues() {
+		
+		if(targetData == null)
+			return;
+		
+		Item oldItem = translator.getItemFromData(targetData);
+		
+		getView().setBarcode(oldItem.getItemBarcode().toString());
+		getView().setDescription(oldItem.getDescription());
+		getView().setEntryDate(oldItem.getEntryDate().getTime());
+	}
+
+	//
+	// IEditItemController overrides
+	//
+
+	/**
+	 * This method is called when any of the fields in the
+	 * edit item view is changed by the user.
+	 */
+	@Override
+	public void valuesChanged() {
+		this.enableComponents();
+	}
+	
+	/**
+	 * This method is called when the user clicks the "OK"
+	 * button in the edit item view.
+	 */
+	@Override
+	public void editItem() {
+		
+		if(targetData == null)
+			return;
+		
+		if(!isValidDate())
+		{
+			getView().displayErrorMessage("Invalid entry date");
+			return;
+		}
+		
+		Item oldItem = translator.getItemFromData(targetData);
+		
+		getView().getEntryDate();
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(getView().getEntryDate());
+		
+		Facade.updateItem(oldItem, cal);
+	}
+}
+

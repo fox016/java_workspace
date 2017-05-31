@@ -1,0 +1,114 @@
+
+package model.persistence;
+
+/** 
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+public interface PersistenceFacade
+{
+
+	/*
+		After thinking I don't think that we need to have the read operations
+			because we never need to dynamically load model objects.  All of that
+			is done at the beginnning in the load method.
+	*/
+
+	/** Gets an Item 
+		@param id Specifies which Item to get
+		@return Returns the ItemDataObject for the Item of id
+	*/
+	ItemDataObject getItem(int id);
+
+	/** Stores a newly created Item in the data persistence model.
+		@param ido The ItemDataObject representing the Item
+	*/
+	void createItem(ItemDataObject ido);
+
+	/** Updates an existing Item in the data persistence model.
+		@param ido The ItemDataObject representing the Item
+	*/
+	void updateItem(ItemDataObject ido);
+
+	/** Removes an Item from the data persistence model.
+		@param ido The ItemDataObject representing the Item
+	*/
+	void deleteItem(ItemDataObject ido);
+
+	/** Gets a Product
+		@param id Specifies which Product to get
+		@return Returns the ProductDataObject for the Product of id
+	*/
+	ProductDataObject getProduct(int id);
+
+	/** Stores a newly created Product in the data persistence model.
+		@param pdo The ProductDataObject representing the Item
+	*/
+	void createProduct(ProductDataObject pdo);
+	
+	/** Updates an existing Product in the data persistence model.
+		@param pdo The ProductDataObject representing the Item
+	*/
+	void updateProduct(ProductDataObject pdo);
+
+	/** Removes a Product from the data persistence model.
+		@param pdo The ProductDataObject representing the Item
+	*/
+	void deleteProduct(ProductDataObject pdo);
+
+	/** Gets a ProductGroup
+		@param id Specifies which ProductGroup to get
+		@return Returns the ProductGroupDataObject for the ProductGroup of id
+	*/
+	ProductGroupDataObject getProductGroup(int id);
+
+	/** Stores a newly created ProductGroup in the data persistence model.
+		@param pgdo The ProductGroupDataObject representing the Item
+	*/
+	void createProductGroup(ProductGroupDataObject pgdo);
+
+	/** Updates an existing ProductGroup in the data persistence model.
+		@param pgdo The ProductGroupDataObject representing the Item
+	*/
+	void updateProductGroup(ProductGroupDataObject pgdo);
+
+	/** Removes a ProductGroup from the data persistence model.
+		@param pgdo The ProductGroupDataObject representing the Item
+	*/
+	void deleteProductGroup(ProductGroupDataObject pgdo);
+
+	/** Gets a StorageUnit
+		@param id Specifies which StorageUnit to get
+		@return Returns the UnitDataObject for the StorageUnit of id
+	*/
+	UnitDataObject getUnit(int id);
+
+	/** Stores a newly created StorageUnit in the data persistence model.
+		@param udo The UnitDataObject representing the Item
+	*/
+	void createUnit(UnitDataObject udo);
+
+	/** Updates an existing StorageUnit in the data persistence model.
+		@param udo The UnitDataObject representing the Item
+	*/
+	void updateUnit(UnitDataObject udo);
+
+	/** Removes a StorageUnit from the data persistence model.
+		@param udo The UnitDataObject representing the Item
+	*/
+	void deleteUnit(UnitDataObject udo);
+
+	/** Loads the persisted model into memory at application start */
+	void loadAll();
+
+	/** Saves the memory model into persisted memory at application close */
+	void saveAll();
+
+	/** Begins a transaction */
+	void begin();
+
+	/** Commits a transaction */
+	void end();
+}
+

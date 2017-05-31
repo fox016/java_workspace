@@ -1,0 +1,576 @@
+package model.report;
+
+import static org.junit.Assert.*;
+
+import java.util.Calendar;
+import java.util.HashSet;
+import java.util.Set;
+
+import model.Facade;
+import model.House;
+import model.Item;
+import model.ItemManager;
+import model.Product;
+import model.ProductBarcode;
+import model.ProductManager;
+import model.Size;
+import model.SupplyType;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+public class ProductStatisticsReportTest
+{
+	private static House house = House.instance();
+	private static ItemManager im = ItemManager.instance();
+	private static ProductManager pm = ProductManager.instance();
+	
+	@Before
+	public void initTest()
+	{
+		Facade.reset();
+		House.reset();
+		ItemManager.reset();
+		ProductManager.reset();
+	}
+
+	private TestReportStructure getTestReport(Product p, Calendar startDate, Calendar endDate, boolean original)
+	{
+		try
+		{
+			TestReportBuilder builder = new TestReportBuilder();
+
+			Visitor visitor = (original) ?
+				new ProductStatisticsVisitor(builder, startDate, endDate) :
+				new ChrisPSVisitor(builder, startDate, endDate);
+			p.accept(visitor);
+			visitor.finish();
+			
+			return builder.getTestStructure();
+		}
+		catch(Exception e)
+		{
+			return null;
+		}
+	}
+	
+	private Product addBacon(Calendar entry)
+	{
+		if(house.isValidName("Kitchen"))
+			Facade.addStorageUnit("Kitchen");
+		
+		Product p = new Product(
+							entry,
+							new ProductBarcode("111"),
+							"Bacon",
+							new Size(1, SupplyType.POUNDS),
+							12,
+							5);
+		
+		Facade.createProduct(p);
+		Facade.addBatchItems(p, entry, house.getUnitByName("Kitchen"), 10);
+		
+		return p;
+	}
+	
+	private Set<Item> addItems(Calendar entry)
+	{
+		if(house.isValidName("Kitchen"))
+			Facade.addStorageUnit("Kitchen");
+		
+		Product p = new Product(
+							entry,
+							new ProductBarcode("222"),
+							"Ham",
+							new Size(1, SupplyType.POUNDS),
+							0,
+							0);
+		
+		Set<Item> items = new HashSet<Item>();
+		Facade.createProduct(p);
+		for(int i = 0; i < 500; i++)
+		{
+			Item newItem = Facade.createItem(p,  entry, house.getUnitByName("Kitchen"));
+			Facade.addItem(newItem,  house.getUnitByName("Kitchen"));
+			items.add(newItem);
+		}
+		
+		return items;
+	}
+	
+	@Test
+	public void toDaylightSavingsTestMiddle()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.JANUARY);
+		Product bacon = addBacon(entry);
+		Calendar startDate = Calendar.getInstance();
+		Calendar endDate = Calendar.getInstance();
+		startDate.set(Calendar.MONTH, Calendar.FEBRUARY);
+		startDate.set(Calendar.DAY_OF_MONTH, 1);
+		endDate.set(Calendar.MONTH, Calendar.MAY);
+		endDate.set(Calendar.DAY_OF_MONTH, 1);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(bacon, startDate, endDate, true);
+		result2 = getTestReport(bacon, startDate, endDate, false);
+		System.out.println("First result toDaylightSavingsTestMiddle:");
+		System.out.println(result1.toString());
+		System.out.println("Second result toDaylightSavingsTestMiddle:");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+		
+	@Test
+	public void toDaylightSavingsTestBegin()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.FEBRUARY);
+		Product bacon = addBacon(entry);
+		Calendar startDate = Calendar.getInstance();
+		Calendar endDate = Calendar.getInstance();
+		startDate.set(Calendar.MONTH, Calendar.MARCH);
+		startDate.set(Calendar.DAY_OF_MONTH, 10);
+		endDate.set(Calendar.MONTH, Calendar.MAY);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(bacon, startDate, endDate, true);
+		result2 = getTestReport(bacon, startDate, endDate, false);
+		System.out.println("First result: toDaylightSavingsTestBegin");
+		System.out.println(result1.toString());
+		System.out.println("Second result: toDaylightSavingsTestBegin");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void toDaylightSavingsTestEnd()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.FEBRUARY);
+		Product bacon = addBacon(entry);
+		Calendar startDate = Calendar.getInstance();
+		Calendar endDate = Calendar.getInstance();
+		startDate.set(Calendar.MONTH, Calendar.JANUARY);
+		endDate.set(Calendar.MONTH, Calendar.MARCH);
+		endDate.set(Calendar.DAY_OF_MONTH, 10);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(bacon, startDate, endDate, true);
+		result2 = getTestReport(bacon, startDate, endDate, false);
+		System.out.println("First result: toDaylightSavingsTestEnd");
+		System.out.println(result1.toString());
+		System.out.println("Second result: toDaylightSavingsTestEnd");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void fromDaylightSavingsTestMiddle()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.JANUARY);
+		Product bacon = addBacon(entry);
+		Calendar startDate = Calendar.getInstance();
+		Calendar endDate = Calendar.getInstance();
+		startDate.set(Calendar.MONTH, Calendar.SEPTEMBER);
+		startDate.set(Calendar.DAY_OF_MONTH, 1);
+		endDate.set(Calendar.MONTH, Calendar.DECEMBER);
+		endDate.set(Calendar.DAY_OF_MONTH, 1);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(bacon, startDate, endDate, true);
+		result2 = getTestReport(bacon, startDate, endDate, false);
+		System.out.println("First result: fromDaylightSavingsTestMiddle");
+		System.out.println(result1.toString());
+		System.out.println("Second result: fromDaylightSavingsTestMiddle");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void fromDaylightSavingsTestBegin()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.FEBRUARY);
+		Product bacon = addBacon(entry);
+		Calendar startDate = Calendar.getInstance();
+		Calendar endDate = Calendar.getInstance();
+		startDate.set(Calendar.MONTH, Calendar.NOVEMBER);
+		startDate.set(Calendar.DAY_OF_MONTH, 3);
+		endDate.set(Calendar.MONTH, Calendar.DECEMBER);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(bacon, startDate, endDate, true);
+		result2 = getTestReport(bacon, startDate, endDate, false);
+		System.out.println("First result fromDaylightSavingsTestBegin:");
+		System.out.println(result1.toString());
+		System.out.println("Second result fromDaylightSavingsTestBegin:");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void fromDaylightSavingsTestEnd()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.FEBRUARY);
+		Product bacon = addBacon(entry);
+		Calendar startDate = Calendar.getInstance();
+		Calendar endDate = Calendar.getInstance();
+		startDate.set(Calendar.MONTH, Calendar.AUGUST);
+		endDate.set(Calendar.MONTH, Calendar.NOVEMBER);
+		endDate.set(Calendar.DAY_OF_MONTH, 3);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(bacon, startDate, endDate, true);
+		result2 = getTestReport(bacon, startDate, endDate, false);
+		System.out.println("First result fromDaylightSavingsTestEnd:");
+		System.out.println(result1.toString());
+		System.out.println("Second result fromDaylightSavingsTestEnd:");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void productNoLiveItemsBeforeTest()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.JANUARY);
+		Product bacon = addBacon(entry);
+		Set<Item> items = im.getItems(bacon);
+		for(Item item : items)
+		{
+			Facade.removeItemFromStorage(item);
+			im.removeItem(item);
+			im.removeItem(item.getItemBarcode());
+		}
+		Calendar startDate = Calendar.getInstance();
+		Calendar endDate = Calendar.getInstance();
+		startDate.add(Calendar.DAY_OF_MONTH, 1);
+		endDate.set(Calendar.MONTH, Calendar.DECEMBER);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(bacon, startDate, endDate, true);
+		result2 = getTestReport(bacon, startDate, endDate, false);
+		System.out.println("First result productNoLiveItemsBeforeTest:");
+		System.out.println(result1.toString());
+		System.out.println("Second result productNoLiveItemsBeforeTest:");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void productNoLiveItemsBeforeTestTwo()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.JANUARY);
+		Set<Item> items = addItems(entry);
+		Product p = null;
+		for(Item item : items)
+		{
+			Facade.removeItemFromStorage(item);
+			p = item.getProduct();
+		}
+		Calendar startDate = Calendar.getInstance();
+		Calendar endDate = Calendar.getInstance();
+		startDate.add(Calendar.DAY_OF_MONTH, 1);
+		endDate.set(Calendar.MONTH, Calendar.DECEMBER);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(p, startDate, endDate, true);
+		result2 = getTestReport(p, startDate, endDate, false);
+		System.out.println("First result productNoLiveItemsBeforeTestTwo:");
+		System.out.println(result1.toString());
+		System.out.println("Second result productNoLiveItemsBeforeTestTwo:");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void productNoLiveItemsFirstDayTest()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.JANUARY);
+		Product bacon = addBacon(entry);
+		Set<Item> items = im.getItems(bacon);
+		for(Item item : items)
+		{
+			Facade.removeItemFromStorage(item);
+			im.removeItem(item);
+			im.removeItem(item.getItemBarcode());
+		}
+		Calendar startDate = Calendar.getInstance();
+		Calendar endDate = Calendar.getInstance();
+		endDate.set(Calendar.MONTH, Calendar.DECEMBER);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(bacon, startDate, endDate, true);
+		result2 = getTestReport(bacon, startDate, endDate, false);
+		System.out.println("First result productNoLiveItemsFirstDayTest:");
+		System.out.println(result1.toString());
+		System.out.println("Second result productNoLiveItemsFirstDayTest:");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void productNoLiveItemsFirstDayTestTwo()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.JANUARY);
+		Set<Item> items = addItems(entry);
+		Product p = null;
+		for(Item item : items)
+		{
+			Facade.removeItemFromStorage(item);
+			p = item.getProduct();
+		}
+		Calendar startDate = Calendar.getInstance();
+		Calendar endDate = Calendar.getInstance();
+		endDate.set(Calendar.MONTH, Calendar.DECEMBER);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(p, startDate, endDate, true);
+		result2 = getTestReport(p, startDate, endDate, false);
+		System.out.println("First result productNoLiveItemsFirstDayTestTwo:");
+		System.out.println(result1.toString());
+		System.out.println("Second result productNoLiveItemsFirstDayTestTwo:");
+		if(result2 != null)
+			System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void productNoLiveItemsMiddleTest()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.JANUARY);
+		Product bacon = addBacon(entry);
+		Set<Item> items = im.getItems(bacon);
+		for(Item item : items)
+		{
+			Facade.removeItemFromStorage(item);
+			im.removeItem(item);
+			im.removeItem(item.getItemBarcode());
+		}
+		Calendar startDate = Calendar.getInstance();
+		startDate.add(Calendar.DAY_OF_MONTH, -100);
+		Calendar endDate = Calendar.getInstance();
+		endDate.set(Calendar.MONTH, Calendar.DECEMBER);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(bacon, startDate, endDate, true);
+		result2 = getTestReport(bacon, startDate, endDate, false);
+		System.out.println("First result productNoLiveItemsMiddleTest:");
+		System.out.println(result1.toString());
+		System.out.println("Second result productNoLiveItemsMiddleTest:");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void productNoLiveItemsMiddleTestTwo()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.JANUARY);
+		Set<Item> items = addItems(entry);
+		Product p = null;
+		for(Item item : items)
+		{
+			Facade.removeItemFromStorage(item);
+			p = item.getProduct();
+		}
+		Calendar startDate = Calendar.getInstance();
+		startDate.add(Calendar.DAY_OF_MONTH, -100);
+		Calendar endDate = Calendar.getInstance();
+		endDate.set(Calendar.MONTH, Calendar.DECEMBER);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(p, startDate, endDate, true);
+		result2 = getTestReport(p, startDate, endDate, false);
+		System.out.println("First result productNoLiveItemsMiddleTest:");
+		System.out.println(result1.toString());
+		System.out.println("Second result productNoLiveItemsMiddleTest:");
+		if(result2 != null)
+			System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void productNoLiveItemsLastDayTest()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.JANUARY);
+		Product bacon = addBacon(entry);
+		Set<Item> items = im.getItems(bacon);
+		for(Item item : items)
+		{
+			Facade.removeItemFromStorage(item);
+			im.removeItem(item);
+			im.removeItem(item.getItemBarcode());
+		}
+		Calendar startDate = Calendar.getInstance();
+		startDate.add(Calendar.DAY_OF_MONTH, -100);
+		Calendar endDate = Calendar.getInstance();
+		TestReportStructure result1, result2;
+		result1 = getTestReport(bacon, startDate, endDate, true);
+		result2 = getTestReport(bacon, startDate, endDate, false);
+		System.out.println("First result productNoLiveItemsLastDayTest:");
+		System.out.println(result1.toString());
+		System.out.println("Second result productNoLiveItemsLastDayTest:");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void productNoLiveItemsLastDayTestTwo()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.JANUARY);
+		Set<Item> items = addItems(entry);
+		Product p = null;
+		for(Item item : items)
+		{
+			Facade.removeItemFromStorage(item);
+			p = item.getProduct();
+		}
+		Calendar startDate = Calendar.getInstance();
+		startDate.add(Calendar.DAY_OF_MONTH, -100);
+		Calendar endDate = Calendar.getInstance();
+		TestReportStructure result1, result2;
+		result1 = getTestReport(p, startDate, endDate, true);
+		result2 = getTestReport(p, startDate, endDate, false);
+		System.out.println("First result productNoLiveItemsLastDayTest:");
+		System.out.println(result1.toString());
+		System.out.println("Second result productNoLiveItemsLastDayTest:");
+		if(result2 != null)
+			System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void purgedAndAddedAgainTest()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.JANUARY);
+		Product bacon = addBacon(entry);
+		Set<Item> items = im.getItems(bacon);
+		for(Item item : items)
+		{
+			Facade.removeItemFromStorage(item);
+			im.removeItem(item);
+			im.removeItem(item.getItemBarcode());
+			im.annihilateItem(item.getItemBarcode());
+		}
+		pm.removeProduct(bacon);
+		im.purgeProduct(bacon);
+		Calendar startDate = Calendar.getInstance();
+		startDate.add(Calendar.DAY_OF_MONTH, -100);
+		Calendar endDate = Calendar.getInstance();
+		endDate.add(Calendar.DAY_OF_MONTH, 100);
+		entry = Calendar.getInstance();
+		entry.add(Calendar.DAY_OF_MONTH, -10);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(bacon, startDate, endDate, true);
+		result2 = getTestReport(bacon, startDate, endDate, false);
+		System.out.println("First result purgedAndAddedAgainTest:");
+		System.out.println(result1.toString());
+		System.out.println("Second result purgedAndAddedAgainTest:");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void purgedAndAddedAgainTestTwo()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.JANUARY);
+		Set<Item> items = addItems(entry);
+		Product p = null;
+		for(Item item : items)
+		{
+			Facade.removeItemFromStorage(item);
+			p = item.getProduct();
+		}
+		pm.removeProduct(p);
+		im.purgeProduct(p);
+		Facade.deleteProduct(p);
+		Calendar startDate = Calendar.getInstance();
+		startDate.add(Calendar.DAY_OF_MONTH, -100);
+		Calendar endDate = Calendar.getInstance();
+		endDate.add(Calendar.DAY_OF_MONTH, 100);
+		entry = Calendar.getInstance();
+		entry.add(Calendar.DAY_OF_MONTH, -10);
+		addItems(entry);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(p, startDate, endDate, true);
+		result2 = getTestReport(p, startDate, endDate, false);
+		System.out.println("First result purgedAndAddedAgainTestTwo:");
+		System.out.println(result1.toString());
+		System.out.println("Second result purgedAndAddedAgainTestTwo:");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void yearSpanTest()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.add(Calendar.DAY_OF_YEAR, -1000);
+		Product bacon = addBacon(entry);
+		Calendar startDate = Calendar.getInstance();
+		Calendar endDate = Calendar.getInstance();
+		startDate.add(Calendar.DAY_OF_YEAR, -4000);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(bacon, startDate, endDate, true);
+		result2 = getTestReport(bacon, startDate, endDate, false);
+		System.out.println("First result yearSpanTest:");
+		System.out.println(result1.toString());
+		System.out.println("Second result yearSpanTest:");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void yearSpanTestTwo()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.add(Calendar.DAY_OF_YEAR, -1000);
+		Set<Item> items = addItems(entry);
+		Product p = null;
+		for(Item item : items)
+		{
+			p = item.getProduct();
+		}
+		Calendar startDate = Calendar.getInstance();
+		Calendar endDate = Calendar.getInstance();
+		startDate.add(Calendar.DAY_OF_YEAR, -4000);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(p, startDate, endDate, true);
+		result2 = getTestReport(p, startDate, endDate, false);
+		System.out.println("First result yearSpanTestTwo:");
+		System.out.println(result1.toString());
+		System.out.println("Second result yearSpanTestTwo:");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@Test
+	public void productShelfLifeZeroTest()
+	{
+		Calendar entry = Calendar.getInstance();
+		Set<Item> items = addItems(entry);
+		Product p = null;
+		for(Item item : items)
+		{
+			p = item.getProduct();
+		}
+		p.setShelfLife(0);
+		Calendar startDate = Calendar.getInstance();
+		Calendar endDate = Calendar.getInstance();
+		startDate.add(Calendar.DAY_OF_YEAR, -400);
+		TestReportStructure result1, result2;
+		result1 = getTestReport(p, startDate, endDate, true);
+		result2 = getTestReport(p, startDate, endDate, false);
+		System.out.println("First result yearSpanTestTwo:");
+		System.out.println(result1.toString());
+		System.out.println("Second result yearSpanTestTwo:");
+		System.out.println(result2.toString());
+		assertTrue(result1.equals(result2));
+	}
+	
+	@After
+	public void cleanTest()
+	{
+	}
+}

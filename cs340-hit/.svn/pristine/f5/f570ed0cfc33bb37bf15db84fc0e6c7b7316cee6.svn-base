@@ -1,0 +1,71 @@
+
+package model.persistence;
+
+import model.Product;
+
+/** The class representing a Database Product
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+public class DatabaseProductDataObject implements ProductDataObject
+{
+	private Product product;
+
+	/** Creates a DatabaseProductDataObject representing a Product
+		@param product The Product to be represented
+	*/
+	public DatabaseProductDataObject(Product product)
+	{
+		this.product = product;
+	}
+
+	public Product getProduct()
+	{
+		return product;
+	}
+
+	/** @return Returns the unix timestamp of the Product's Creation Date */
+	public int creationDate()
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+
+	/** @return Returns the string form of the Product's Barcode */
+	public String barcode()
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+
+	/** @return Returns the string form of the Product's Description */
+	public String description()
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+
+	/** @return Returns the amount of the Product's Size */
+	public double amount()
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+	
+	/** @return Returns the unit of the Product's Size */
+	public String amountUnit()
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+
+	/** @return Returns the shelf life in months of the Product */
+	public int shelfLife()
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+
+	/** @return Returns the 3 Month Supply of the Product */
+	public int threeMonthSupply()
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+
+}
+

@@ -1,0 +1,51 @@
+package model;
+
+//import java.util.Collection;
+//import java.util.NoSuchElementException;
+//import java.util.Set;
+
+/** This interface represents a Product Group, a collection
+ *  of related products
+ *
+ * @author Talonos
+ */
+public class ProductGroupImpl extends ProductContainerImpl implements ProductGroup
+{
+	private static final long serialVersionUID = -7577752507400234391L;
+
+	/**
+     * Gets the amount of supply needed in a three month supply.
+     * Note that because this returns a pointer to the size held in the Product
+     * group internally, editing the returned size object edits the supply
+     * in this product group. Beware setting two product groups to have the same
+     * size object! Use the Size(Size) constructor to duplicate one if need be!
+     * @return the type and amount necessary to fuel a 3 month supply.
+     */
+    @Override
+    public Size getSupply()
+    {
+    	throw new UnsupportedOperationException("Implement");
+    }
+    
+    /**
+     * Sets the 3 month supply of the product group.
+     * @param supply the new Supply type.
+     * @throws IllegalArgumentException if the type is count and the amount is non-integer. 
+     */
+    @Override
+    public void setSupply(Size supply) throws IllegalArgumentException
+    {
+    	throw new UnsupportedOperationException("Implement");
+    }
+    
+    /**
+     * Converts this ProductGroup into a String representation of this 
+     * ProductGroup, for use with debugging.
+     * @return String representation of product group
+     */
+    @Override
+    public String toString()
+    {
+    	throw new UnsupportedOperationException("Implement");
+    }
+}

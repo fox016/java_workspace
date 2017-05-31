@@ -1,0 +1,34 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package common.commands;
+
+/**
+ *
+ * @author Talonos
+ */
+public class CmdTransferItem implements Command
+{
+
+    /**
+     * Moves an item from one storage unit to the other.
+     */
+    @Override
+    public void doAction() 
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * Moves an item the the other storage unit to the one. Note that I just reversed
+     * the order of "one" and "other" in comparison to imply that it undoes the above
+     * operation. That is exactly what this does.
+     */
+    @Override
+    public void undoAction() 
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+}

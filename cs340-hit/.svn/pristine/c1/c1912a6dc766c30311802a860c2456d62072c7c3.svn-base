@@ -1,0 +1,106 @@
+
+package model.persistence;
+
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import model.ProductGroup;
+
+/** This class is responsible for executing individual sql statements concerning ProductGroups
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+class GroupSql
+{
+	/** Stores a newly created ProductGroup in the data persistence model and adds a new
+	 * entry to the parentToChild table
+		@param pgdo The GroupDataObject representing the ProductGroup
+	*/
+	void createGroup(DatabaseGroupDataObject pgdo) {
+
+		try {
+			addGroup(pgdo);
+			
+			PreparedStatement insertParToChild = DatabaseFacade.instance().connection()
+					.prepareStatement(SqlStatement.insertParToChild);
+			insertParToChild.setInt(1,pgdo.parent());
+			insertParToChild.setInt(2, pgdo.groupId());
+			insertParToChild.executeUpdate();
+
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		DatabaseFacade.instance().updateLastIds();
+	}
+
+
+
+	/**
+	 * Updates an existing ProductGroup in the data persistence model.
+	 * 
+	 * @param pgdo
+	 *            The GroupDataObject representing the ProductGroup
+	 */
+	void updateGroup(DatabaseGroupDataObject pgdo) {
+		try {
+			removeGroup(pgdo);
+			addGroup(pgdo);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	/** Removes an ProductGroup from the data persistence model as well the
+	 * parent to child relationship from the parentToChild table.
+		@param pgdo The GroupDataObject representing the ProductGroup
+	*/
+	void deleteGroup(DatabaseGroupDataObject pgdo) {
+
+		try {
+			removeGroup(pgdo);
+			
+			PreparedStatement remParToChild = DatabaseFacade.instance().connection()
+					.prepareStatement(SqlStatement.deleteParToChild);
+			remParToChild.setInt(1,pgdo.groupId());
+			remParToChild.setInt(2, pgdo.groupId());
+			remParToChild.executeUpdate();
+
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	/**
+	 * This method inserts a product into the ProductGroup table
+	 * @param pgdo the product to insert
+	 * @throws SQLException
+	 */
+	private void addGroup(DatabaseGroupDataObject pgdo) throws SQLException {
+		PreparedStatement stmt = DatabaseFacade.instance().connection()
+				.prepareStatement(SqlStatement.createProductGroup);
+		stmt.setInt(1, pgdo.groupId());
+		stmt.setString(2, pgdo.name());
+		stmt.setDouble(3, pgdo.amount());
+		stmt.setString(4, pgdo.amountUnit());
+		stmt.executeUpdate();
+	}
+
+	/**
+	 * This method deletes a product from the ProductGroup table
+	 * @param pgdo
+	 * @throws SQLException
+	 */
+	private void removeGroup(DatabaseGroupDataObject pgdo) throws SQLException {
+		PreparedStatement stmt = DatabaseFacade.instance().connection()
+				.prepareStatement(SqlStatement.deleteProductGroup);
+		stmt.setInt(1, pgdo.groupId());
+		stmt.executeUpdate();
+	}
+
+}
+

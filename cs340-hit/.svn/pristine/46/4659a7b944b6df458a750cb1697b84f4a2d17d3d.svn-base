@@ -1,0 +1,77 @@
+package model;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+/** This class is responsible for saving and retrieving 
+ *  data via Java serialization
+ * 
+ * @author Nathan Fox
+ *
+ */
+public class DataSerializer
+{
+	private static DataSerializer _dataSerializer;
+
+	private DataSerializer()
+	{
+	}
+	
+	/** Returns the single instance of DataSerializer
+	 * 
+	 * @return	The single instance of DataSerializer
+	 */
+	public static DataSerializer instance()
+	{
+		if(_dataSerializer == null)
+			_dataSerializer = new DataSerializer();
+		return _dataSerializer;
+	}
+	
+	/** Saves all non-static data for the given house
+	 * 
+	 * @param filename	The full class path to save the data to
+	 * @throws FileNotFoundException Informs caller that file is not found
+	 * @throws IOException Informs caller that write to file failed
+	 */
+	public void save(String filename) throws FileNotFoundException, IOException
+	{
+		// Create IO Objects
+		FileOutputStream fos = new FileOutputStream(filename);
+		ObjectOutputStream out = new ObjectOutputStream(fos);
+		
+		// Write House
+		out.writeObject(House.instance());
+		
+		// Close
+		out.close();
+		fos.close();
+	}
+	
+	/** Loads all non-static data from the given file and
+	 *  creates a House
+	 * 
+	 * @param housePtr Pointer to House object that is being loaded
+	 * @param filename The full class path to load the data from
+	 * @throws IOException Informs caller that read from file failed
+	 * @throws FileNotFoundException Informs caller that file wasn't found
+	 * @throws ClassNotFoundException Informs caller that house could not be read in
+	 */
+	public void load(House housePtr, String filename) throws FileNotFoundException, IOException, ClassNotFoundException
+	{
+		// Create IO Objects
+		FileInputStream fis = new FileInputStream(filename);
+		ObjectInputStream in = new ObjectInputStream(fis);
+		
+		// Read House
+		housePtr = (House) in.readObject();
+		
+		// Close
+		in.close();
+		fis.close();
+	}
+}

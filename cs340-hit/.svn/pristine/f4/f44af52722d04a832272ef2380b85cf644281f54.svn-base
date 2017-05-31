@@ -1,0 +1,64 @@
+
+package gui.item;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.Map;
+import java.util.Map.Entry;
+
+import model.ProductBarcode;
+
+public class BarcodePrinterTest
+{
+
+	@Test
+	public void testSetUpMapping()
+	{
+		BarcodePrinter bp = new BarcodePrinter();
+		//this is not verified automatically, but visually
+		Map<String, String> mappings = bp.getCodeMap();
+		//visually inspect the map
+		System.out.println("Barcode Mappings:\n" + mappings.toString());
+
+		assertTrue(mappings.size() == 10);
+		for(Map.Entry<String, String> entry : mappings.entrySet())
+		{
+			String key = entry.getKey();
+			String value = entry.getValue();
+			assertTrue(key.length() == 1);
+			assertTrue(value.length() == 7);
+		}
+	}
+
+	@Test
+	public void testSequenceGeneration()
+	{
+		BarcodePrinter bp = new BarcodePrinter();
+		//barcode is from http://electronics.howstuffworks.com/gadgets/high-tech-gadgets/upc3.htm
+		String result = bp.getBarcodeSequence(new ProductBarcode("043000181706"));
+		String expected =
+			"bsb" + //start
+			"sssbbsb" + //0
+			"sbsssbb" + //4
+			"sbbbbsb" + //3
+			"sssbbsb" + //0
+			"sssbbsb" + //0
+			"sssbbsb" + //0
+			"sbsbs" + //middle sequence
+			"bbssbbs" + //1
+			"bssbsss" + //8
+			"bbssbbs" + //1
+			"bsssbss" + //7
+			"bbbssbs" + //0
+			"bsbssss" + //6
+			"bsb"; //end sequence
+		System.out.println("Result:  \t" + result);
+		System.out.println("Expected:\t" + expected);
+		assertEquals(result, expected);
+	}
+
+}
+

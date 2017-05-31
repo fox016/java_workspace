@@ -1,0 +1,47 @@
+package model.report;
+
+import java.io.IOException;
+import java.util.Calendar;
+
+import model.House;
+import model.StorageUnit;
+import model.ProductGroup;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+public class ProductStatisticsReportTest
+{
+	private House house = House.instance();
+	private StorageUnit[] units;
+	private ProductGroup[] groups;
+	
+	@Before
+	public void initTest()
+	{
+		
+	}
+	
+	@Test
+	public void toDaylightSavingsTest()
+	{
+		Calendar startDate = Calendar.getInstance();
+		Calendar endDate = Calendar.getInstance();
+		startDate.set(Calendar.MONTH, Calendar.SEPTEMBER);
+		startDate.set(Calendar.DAY_OF_MONTH, 1);
+		endDate.set(Calendar.MONTH, Calendar.DECEMBER);
+		endDate.set(Calendar.DAY_OF_MONTH, 1);
+		try {
+			ReportGenerator.generateProductStatisticsTestReport("test", startDate, endDate);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	@After
+	public void cleanTest()
+	{
+	}
+}

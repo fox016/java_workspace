@@ -1,0 +1,98 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.io.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/** Size is a class that had an amount and a SupplyType,
+ *  such as "3.5 KILOGRAMS"
+ *
+ * @author Talonos
+ */
+public class Size implements Serializable
+{
+	private static final long serialVersionUID = 8675755791864828169L;
+	
+	private double amount;
+    private SupplyType type;
+
+    /**
+     * Duplicates a size object by creating a new size object with the same 
+     * parameters.
+     * @param toDuplicate the size of the object to duplicate.
+     */
+    public Size(Size toDuplicate)
+    {
+    	return toDuplicate.clone();
+    }
+    
+    /**
+     * Creates a new size object. Error checks to make sure that the new size
+     * has a type and amount that are consistent, that the amount is positive, 
+     * etc.
+     * @param amount the amount to set the size to.
+     * @param type the type to set the size to.
+     * @throws IllegalArgumentException if the amount or type is invalid. 
+     */
+    public Size(double amount, SupplyType type) throws IllegalArgumentException
+    {
+    	if(type == null || amount < 0)
+    		throw new IllegalArgumentException("Type cannot be null and amount cannot be negative");
+    	
+    	// TODO check to make sure type makes sense
+    	
+		 this.amount = amount;
+		 this.type = type;
+    }
+    
+    /**
+     * Returns the amount in this Size object.
+     * @return the amount in this size.
+     */
+    public double getAmount() 
+    {
+        return amount;
+    }
+
+    /**
+     * Changes the amount in this size object. Also, checks invalid sizes.
+     * @param amount the amount to change it to.
+     * @throws IllegalArgumentException if the amount is invalid. 
+     */
+    public void setAmount(double amount) throws IllegalArgumentException
+    {
+        if (amount < 0)
+        {
+            throw new IllegalArgumentException("Amount cannot be negative.");
+        }
+        //This isn't done yet. I forgot I was only writing a class, and started
+        //coding on it before catching myself and stopping.I'll finish it later.
+        this.amount = amount;
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+    
+    /**
+     * Returns the type in this Size object.
+     * @return the amount in this size.
+     */
+    public SupplyType getType() 
+    {
+        return type;
+    }
+
+    /**
+     * Changes the type of this size object. Also, checks to make sure the type makes sense.
+     * @param type the amount to change it to.
+     * @throws IllegalArgumentException if the type is invalid. 
+     */
+    public void setType(SupplyType type) 
+    {
+        this.type = type;
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+    
+}

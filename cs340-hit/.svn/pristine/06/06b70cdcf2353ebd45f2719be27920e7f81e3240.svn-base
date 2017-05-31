@@ -1,0 +1,27 @@
+
+package model.persistence;
+
+/** The class representing a Serialized Product Group
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+public class SerializationGroupDataObject implements ProductGroupDataObject
+{
+	private ProductGroup group;
+
+	/** Creates a SerializationGroupDataObject representing a ProductGroup 
+		@param group The Product Group to be represented
+	*/
+	public SerializationGroupDataObject(ProductGroup group)
+	{
+		this.group = group;
+	}
+
+	public ProductGroup getGroup()
+	{
+		return group;
+	}
+
+}
+

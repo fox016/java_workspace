@@ -1,0 +1,72 @@
+
+package model.persistence;
+
+import java.util.Set;
+
+import model.ProductGroup;
+
+/** The class representing a Database Product Group
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+public class DatabaseGroupDataObject implements ProductGroupDataObject
+{
+	private ProductGroup group;
+
+	/** Creates a DatabaseGroupDataObject representing a ProductGroup 
+		@param group The Product Group to be represented
+	*/
+	public DatabaseGroupDataObject(ProductGroup group)
+	{
+		this.group = group;
+	}
+
+	public ProductGroup getGroup()
+	{
+		return group;
+	}
+
+	/** @return Returns the string form of the Group's name*/
+	public String name()
+	{
+		throw new UnsupportedOperationException("Not Implementing");
+	}
+
+	/** @return Returns the Set of strings representing all Products in the Group */
+	public Set<String> pBarcodes()
+	{
+		throw new UnsupportedOperationException("Not Implementing");
+	}
+
+	/** @return Returns the Set of children Ids of the Group */
+	public Set<Integer> children()
+	{
+		throw new UnsupportedOperationException("Not Implementing");
+	}
+
+	/** @return Returns the Id of the Group's Parent */
+	public int parent()
+	{
+		throw new UnsupportedOperationException("Not Implementing");
+	}
+
+	/** @return Returns the Id of the Group's StorageUnit */
+	public int root()
+	{
+		throw new UnsupportedOperationException("Not Implementing");
+	}
+
+	/** @return Returns the amount of the Product Group's Size */
+	public double amount()
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+	
+	/** @return Returns the unit of the Product Group's Size */
+	public String amountUnit()
+	{
+		throw new UnsupportedOperationException("Not Implemented");
+	}
+}
+

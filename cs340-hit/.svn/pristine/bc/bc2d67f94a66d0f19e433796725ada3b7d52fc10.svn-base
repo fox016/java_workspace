@@ -1,0 +1,43 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+import model.persistence.PersistenceFacade;
+import model.persistence.PersistenceFactory;
+
+/**
+ *
+ * @author chris
+ */
+class FacadeIO {
+	private static final String FILEPATH = "./";
+	
+	/**
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
+	static void loadHouse()
+			throws FileNotFoundException, IOException, ClassNotFoundException
+	{
+		DataSerializer.instance().load(FILEPATH);
+	}
+	
+	/**
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 * @throws ClassNotFoundException 
+	 */
+	static void saveHouse() throws FileNotFoundException, IOException, ClassNotFoundException
+	{
+		PersistenceFacade saveFacade = PersistenceFactory.getFacade();
+		saveFacade.saveAll();
+	}
+
+}
+

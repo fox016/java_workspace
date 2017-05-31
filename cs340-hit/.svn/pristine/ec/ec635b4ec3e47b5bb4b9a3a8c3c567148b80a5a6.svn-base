@@ -1,0 +1,500 @@
+package model.report;
+
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+import model.*;
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class ClintPSReportTest {
+
+	//May 15, 2005 at 12:35:15 pm
+	static Calendar endDate = new GregorianCalendar(2005, Calendar.MAY, 15, 12, 35, 15);
+	//April 15, 2005
+	static Calendar startDate = new GregorianCalendar(2005, Calendar.APRIL, 15);
+		
+	static Product createProduct(){
+		Calendar creationDate = new GregorianCalendar(2010, Calendar.FEBRUARY, 12);
+		Size size = new Size(1.5, SupplyType.POUNDS);
+		String desc = "Bacon";
+		int threeMonthSupply = 2;
+		int shelfLife = 1;
+		ProductBarcode barcode = new ProductBarcode("123");
+		Product bacon = new Product(creationDate, barcode, desc, size, shelfLife, threeMonthSupply);
+		return bacon;
+	}
+	
+	private void setStartDate(Calendar start){
+		startDate = start;
+	}
+	
+	private void setEndDate(Calendar end){
+		endDate = end;
+	}
+	
+	static TestReportStructure foo(Product p, boolean original)
+	{
+		try
+		{
+			TestReportBuilder builder = new TestReportBuilder();
+
+			Visitor visitor = (original) ?
+				new ProductStatisticsVisitor(builder, startDate, endDate) :
+				new ChrisPSVisitor(builder, startDate, endDate);
+			p.accept(visitor);
+			visitor.finish();
+			
+			return builder.getTestStructure();
+		}
+		catch(Exception e)
+		{
+			return null;
+		}
+	}
+	
+	static void test(Product p, String title) throws IOException
+	{
+		System.out.println("\n");
+		System.out.println(title);
+
+		TestReportStructure nate = foo(p, true);
+		TestReportStructure chris = foo(p, false);
+		boolean same = true;
+		
+		if(chris == null) // I don't know why this is null sometimes - Nate
+		{
+			same = false;
+			assertTrue(same);
+			return;
+		}
+
+		System.out.println("Nate\tChris");
+		for(int k = 0; k < 10; k++)
+		{
+			String nateCell = nate.get(1,k);
+			String chrisCell = chris.get(1,k);
+
+			System.out.println(nateCell + "\t" + chrisCell);
+			if(!nateCell.equals(chrisCell))
+				same = false;
+		}
+
+		assertTrue(same);
+	}
+	@Before
+	public void initTest()
+	{
+		House.reset();
+		ItemManager.reset();
+		ProductManager.reset();
+	}
+
+	
+	@Test//(expected=NullPointerException.class)
+	public void test9a() throws IOException{
+		
+		Product bacon = createProduct();
+		StorageUnit fridge = new StorageUnitImpl("fridge");
+		
+		ProductManager.instance().addProduct(bacon);
+		Facade.addProductToContainer(bacon, fridge);
+			
+		Calendar entryDate = new GregorianCalendar(2009, Calendar.FEBRUARY, 12);
+		Item bacon1 = new Item(bacon, fridge, entryDate);
+		Facade.addItem(bacon1);
+		Facade.removeItemFromStorage(bacon1);
+		
+		Facade.deleteProductFromContainer(bacon, fridge);
+		Facade.deleteProduct(bacon);
+		
+		Calendar start = new GregorianCalendar(2012,Calendar.FEBRUARY,12);
+		Calendar end = new GregorianCalendar(2012, Calendar.MAY,12);
+		
+		setStartDate(start);
+		setEndDate(end);
+		
+		test(bacon, "9a");		
+	}	
+	
+	//We first make sure that the test works normally before purging
+	@Test
+	public void test9b() throws IOException{
+		
+		Product bacon = createProduct();
+		StorageUnit fridge = new StorageUnitImpl("fridge");
+		
+		ProductManager.instance().addProduct(bacon);
+		Facade.addProductToContainer(bacon, fridge);
+			
+		Calendar entryDate = new GregorianCalendar(2010, Calendar.FEBRUARY, 12);
+		Item bacon1 = new Item(bacon, fridge, entryDate);
+		
+		Facade.addItem(bacon1);
+		Facade.removeItemFromStorage(bacon1);
+		
+		Facade.deleteProductFromContainer(bacon, fridge);
+		Facade.deleteProduct(bacon);
+		
+		Calendar start = new GregorianCalendar(2010,Calendar.FEBRUARY,12);
+		Calendar end = new GregorianCalendar(2010, Calendar.MAY,12);
+		
+		setStartDate(start);
+		setEndDate(end);
+		
+		test(bacon, "9b");		
+	}
+	
+	@Test
+	public void test9c() throws IOException{
+		Product bacon = createProduct();
+		StorageUnit fridge = new StorageUnitImpl("fridge");
+		
+		ProductManager.instance().addProduct(bacon);
+		Facade.addProductToContainer(bacon, fridge);
+			
+		Calendar entryDate = new GregorianCalendar(2010, Calendar.FEBRUARY, 20);
+		Item bacon1 = new Item(bacon, fridge, entryDate);
+		Facade.addItem(bacon1);
+		Facade.removeItemFromStorage(bacon1);
+		
+		Facade.deleteProductFromContainer(bacon, fridge);
+		Facade.deleteProduct(bacon);
+		
+		Calendar start = new GregorianCalendar(2012,Calendar.FEBRUARY,12);
+		Calendar end = new GregorianCalendar(2012, Calendar.MAY,12);
+		
+		setStartDate(start);
+		setEndDate(end);
+		
+		test(bacon, "9c");		
+	}
+	
+	@Test
+	public void test9d() throws IOException{
+		Product bacon = createProduct();
+		StorageUnit fridge = new StorageUnitImpl("fridge");
+		
+		ProductManager.instance().addProduct(bacon);
+		Facade.addProductToContainer(bacon, fridge);
+			
+		Calendar entryDate = new GregorianCalendar(2010, Calendar.MAY, 12);
+		Item bacon1 = new Item(bacon, fridge, entryDate);
+		Facade.addItem(bacon1);
+		Facade.removeItemFromStorage(bacon1);
+		
+		Facade.deleteProductFromContainer(bacon, fridge);
+		Facade.deleteProduct(bacon);
+		
+		Calendar start = new GregorianCalendar(2012,Calendar.FEBRUARY,12);
+		Calendar end = new GregorianCalendar(2012, Calendar.MAY,12);
+		
+		setStartDate(start);
+		setEndDate(end);
+		
+		test(bacon, "9d");		
+	}
+	
+	@Test
+	public void test10a() throws IOException{
+		Product bacon = createProduct();
+		StorageUnit fridge = new StorageUnitImpl("fridge");
+		
+		ProductManager.instance().addProduct(bacon);
+		Facade.addProductToContainer(bacon, fridge);
+			
+		Calendar entryDate = new GregorianCalendar(2010, Calendar.MAY, 12);
+		Item bacon1 = new Item(bacon, fridge, entryDate);
+		Facade.addItem(bacon1);
+		Facade.removeItemFromStorage(bacon1);
+		
+		Facade.deleteProductFromContainer(bacon, fridge);
+		Facade.deleteProduct(bacon);
+		
+		Calendar start = new GregorianCalendar(2012,Calendar.FEBRUARY,12);
+		Calendar end = new GregorianCalendar(2012, Calendar.FEBRUARY,12);
+		end.add(Calendar.MONTH, 100);
+		
+		setStartDate(start);
+		setEndDate(end);
+		
+		test(bacon, "10a");		
+	}
+	@Test
+	public void test10b() throws IOException{
+		Product bacon = createProduct();
+		StorageUnit fridge = new StorageUnitImpl("fridge");
+		
+		ProductManager.instance().addProduct(bacon);
+		Facade.addProductToContainer(bacon, fridge);
+			
+		Calendar entryDate = new GregorianCalendar(2010, Calendar.MAY, 12);
+		Item bacon1 = new Item(bacon, fridge, entryDate);
+		Facade.addItem(bacon1);
+		Facade.removeItemFromStorage(bacon1);
+		
+		Facade.deleteProductFromContainer(bacon, fridge);
+		Facade.deleteProduct(bacon);
+		
+		Calendar start = new GregorianCalendar(2012,Calendar.FEBRUARY,12);
+		Calendar end = new GregorianCalendar(2012, Calendar.FEBRUARY,12);
+		end.add(Calendar.MONTH, 1);
+		
+		setStartDate(start);
+		setEndDate(end);
+		
+		test(bacon, "10b");		
+	}
+	
+	@Test
+	public void test11a() throws IOException{
+		Product bacon = createProduct();
+		StorageUnit fridge = new StorageUnitImpl("fridge");
+		
+		ProductManager.instance().addProduct(bacon);
+		Facade.addProductToContainer(bacon, fridge);
+			
+		Calendar entryDate = new GregorianCalendar(2010, Calendar.MAY, 12);
+		Item bacon1 = new Item(bacon, fridge, entryDate);
+		Facade.addItem(bacon1);
+		Facade.removeItemFromStorage(bacon1);
+		
+		Facade.deleteProductFromContainer(bacon, fridge);
+		Facade.deleteProduct(bacon);
+		
+		
+		Calendar end = new GregorianCalendar(2012, Calendar.MARCH,29);
+		Calendar start = new GregorianCalendar(2012, Calendar.MARCH,29);
+		start.add(Calendar.MONTH, -1);
+		
+		setStartDate(start);
+		setEndDate(end);
+		
+		test(bacon, "11a");			
+	}
+	
+	@Test
+	public void test11b() throws IOException{
+		Product bacon = createProduct();
+		StorageUnit fridge = new StorageUnitImpl("fridge");
+		
+		ProductManager.instance().addProduct(bacon);
+		Facade.addProductToContainer(bacon, fridge);
+			
+		Calendar entryDate = new GregorianCalendar(2010, Calendar.MAY, 12);
+		Item bacon1 = new Item(bacon, fridge, entryDate);
+		Facade.addItem(bacon1);
+		Facade.removeItemFromStorage(bacon1);
+		
+		Facade.deleteProductFromContainer(bacon, fridge);
+		Facade.deleteProduct(bacon);
+		
+		Calendar end = new GregorianCalendar(2012, Calendar.MARCH,30);
+		Calendar start = new GregorianCalendar(2012, Calendar.MARCH,30);
+		start.add(Calendar.MONTH, -1);
+		
+		setStartDate(start);
+		setEndDate(end);
+		
+		test(bacon, "11a");			
+	}
+	
+	@Test
+	public void test11c() throws IOException{
+		Product bacon = createProduct();
+		StorageUnit fridge = new StorageUnitImpl("fridge");
+		
+		ProductManager.instance().addProduct(bacon);
+		Facade.addProductToContainer(bacon, fridge);
+			
+		Calendar entryDate = new GregorianCalendar(2010, Calendar.MAY, 12);
+		Item bacon1 = new Item(bacon, fridge, entryDate);
+		Facade.addItem(bacon1);
+		Facade.removeItemFromStorage(bacon1);
+		
+		Facade.deleteProductFromContainer(bacon, fridge);
+		Facade.deleteProduct(bacon);
+		
+		Calendar end = new GregorianCalendar(2012, Calendar.MARCH,31);
+		Calendar start = new GregorianCalendar(2012, Calendar.MARCH,31);
+		start.add(Calendar.MONTH, -1);
+		
+		setStartDate(start);
+		setEndDate(end);
+		
+		test(bacon, "11a");			
+	}
+	//12 is included in the previous tests
+
+	@Test
+	public void test13() throws IOException{
+		Product bacon = createProduct();
+		StorageUnit fridge = new StorageUnitImpl("fridge");
+		
+		ProductManager.instance().addProduct(bacon);
+		Facade.addProductToContainer(bacon, fridge);
+			
+		Calendar entryDate = new GregorianCalendar(2010, Calendar.DECEMBER, 20);
+		Item bacon1 = new Item(bacon, fridge, entryDate);
+		Facade.addItem(bacon1);
+		Facade.removeItemFromStorage(bacon1);
+		
+		Facade.deleteProductFromContainer(bacon, fridge);
+		Facade.deleteProduct(bacon);
+		
+		Calendar start = new GregorianCalendar(2012,Calendar.DECEMBER,15);
+		Calendar end = new GregorianCalendar(2013, Calendar.FEBRUARY,15);
+		
+		setStartDate(start);
+		setEndDate(end);
+		
+		test(bacon, "12");		
+	}
+	
+	@Test
+	public void test14a() throws IOException{
+		Calendar creationDate = new GregorianCalendar(2010, Calendar.FEBRUARY, 12);
+		Size size = new Size(9437528.070707200707107047, SupplyType.POUNDS);
+		String desc = "HIddly diddly hiddly diddly hiddly diddly dooo hiddly diddly"
+				+ "Hiddly diddly hiddly diddly hiddly diddly doo hiddly diddly doyvin"
+				+ "9081498gh1098ho)($)*^$)*^)^&^)*&";
+		int threeMonthSupply = 48450257;
+		int shelfLife = 148296292;
+		ProductBarcode barcode = new ProductBarcode("I once saw a man who walked over a "
+				+"rainbow that went all the way to the moon.");
+		Product bacon = new Product(creationDate, barcode, desc, size, shelfLife, threeMonthSupply);
+		StorageUnit fridge = new StorageUnitImpl("fridge");
+		
+		ProductManager.instance().addProduct(bacon);
+		Facade.addProductToContainer(bacon, fridge);
+			
+		Calendar entryDate = new GregorianCalendar(2010, Calendar.FEBRUARY, 20);
+		Item bacon1 = new Item(bacon, fridge, entryDate);
+		Facade.addItem(bacon1);
+		Facade.removeItemFromStorage(bacon1);
+		
+		Facade.deleteProductFromContainer(bacon, fridge);
+		Facade.deleteProduct(bacon);
+		
+		Calendar start = new GregorianCalendar(2012,Calendar.FEBRUARY,12);
+		Calendar end = new GregorianCalendar(2012, Calendar.MAY,12);
+		
+		setStartDate(start);
+		setEndDate(end);
+		
+		test(bacon, "14a");			
+	}
+	@Test
+	public void test14a2() throws IOException {
+		Calendar creationDate = new GregorianCalendar(2010, Calendar.FEBRUARY,
+				12);
+		Size size = new Size(9437528.070707200707107047, SupplyType.POUNDS);
+		String desc = "This is another ridiculous description This" 
+				+ "is another ridiculous description This is another ridiculous "
+				+ "description This is another ridiculous description This is another"
+				+ "ridiculous description This is another ridiculous description This is"
+				+ "another ridiculous description This is another ridiculous descriptionThis"
+				+ "is another ridiculous description This is another ridiculous description"
+				+ "This is another ridiculous description This is another ridiculous" +
+				"description This is another ridiculous descriptionThis is another ridiculous" +
+				" description";
+		int threeMonthSupply = 48450257;
+		int shelfLife = 148296292;
+		ProductBarcode barcode = new ProductBarcode(
+				"I once saw a man who walked over a "
+						+ "rainbow that went all the way to the moon.");
+		Product bacon = new Product(creationDate, barcode, desc, size,
+				shelfLife, threeMonthSupply);
+		StorageUnit fridge = new StorageUnitImpl("fridge");
+
+		ProductManager.instance().addProduct(bacon);
+		Facade.addProductToContainer(bacon, fridge);
+			
+		Calendar entryDate = new GregorianCalendar(2010, Calendar.FEBRUARY, 20);
+		Item bacon1 = new Item(bacon, fridge, entryDate);
+		Facade.addItem(bacon1);
+		Facade.removeItemFromStorage(bacon1);
+		
+		Facade.deleteProductFromContainer(bacon, fridge);
+		Facade.deleteProduct(bacon);
+		
+		Calendar start = new GregorianCalendar(2012,Calendar.FEBRUARY,12);
+		Calendar end = new GregorianCalendar(2012, Calendar.MAY,12);
+		
+		setStartDate(start);
+		setEndDate(end);
+		
+		test(bacon, "14a2");			
+	}
+	
+	
+	@Test
+	public void test14b() throws IOException{
+		Calendar creationDate = new GregorianCalendar(2010, Calendar.FEBRUARY, 12);
+		Size size = new Size(.0000001, SupplyType.POUNDS);
+		String desc = "a";
+		int threeMonthSupply = 1;
+		int shelfLife = 1;
+		ProductBarcode barcode = new ProductBarcode(".");
+		Product bacon = new Product(creationDate, barcode, desc, size, shelfLife, threeMonthSupply);
+		StorageUnit fridge = new StorageUnitImpl("fridge");
+		
+		ProductManager.instance().addProduct(bacon);
+		Facade.addProductToContainer(bacon, fridge);
+			
+		Calendar entryDate = new GregorianCalendar(2010, Calendar.FEBRUARY, 20);
+		Item bacon1 = new Item(bacon, fridge, entryDate);
+		Facade.addItem(bacon1);
+		Facade.removeItemFromStorage(bacon1);
+		
+		Facade.deleteProductFromContainer(bacon, fridge);
+		Facade.deleteProduct(bacon);
+		
+		Calendar start = new GregorianCalendar(2012,Calendar.FEBRUARY,12);
+		Calendar end = new GregorianCalendar(2012, Calendar.MAY,12);
+		
+		setStartDate(start);
+		setEndDate(end);
+		
+		test(bacon, "14b");			
+	}
+	@Test
+	public void test14d() throws IOException{
+		Calendar creationDate = new GregorianCalendar(2010, Calendar.FEBRUARY, 12);
+		Size size = new Size(.0000001, SupplyType.POUNDS);
+		String desc = "a";
+		int threeMonthSupply = -1;
+		int shelfLife = -1;
+		ProductBarcode barcode = new ProductBarcode(".");
+		Product bacon = new Product(creationDate, barcode, desc, size, shelfLife, threeMonthSupply);
+		StorageUnit fridge = new StorageUnitImpl("fridge");
+		
+		ProductManager.instance().addProduct(bacon);
+		Facade.addProductToContainer(bacon, fridge);
+			
+		Calendar entryDate = new GregorianCalendar(2010, Calendar.FEBRUARY, 20);
+		Item bacon1 = new Item(bacon, fridge, entryDate);
+		Facade.addItem(bacon1);
+		Facade.removeItemFromStorage(bacon1);
+		
+		Facade.deleteProductFromContainer(bacon, fridge);
+		Facade.deleteProduct(bacon);
+		
+		Calendar start = new GregorianCalendar(2012,Calendar.FEBRUARY,12);
+		Calendar end = new GregorianCalendar(2012, Calendar.MAY,12);
+		
+		setStartDate(start);
+		setEndDate(end);
+		
+		assertNull(foo(bacon,false));		
+	}
+	
+}
+
+
+

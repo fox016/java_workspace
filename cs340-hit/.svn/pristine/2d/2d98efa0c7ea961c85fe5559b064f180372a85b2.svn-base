@@ -1,0 +1,244 @@
+package model.report;
+
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.Calendar;
+import java.util.HashSet;
+import java.util.Set;
+
+import model.Item;
+import model.ItemManager;
+import model.StorageUnit;
+import model.ProductGroup;
+import model.Product;
+
+	/** 
+		This class extracts information needed for the Product Statistics Report
+		@author Christopher Tensmeyer
+		@version March 6th, 2013
+	*/
+
+class ProductStatisticsVisitor implements Visitor
+{
+	private ReportBuilder builder;
+	private final int COLUMNS = 10;
+	
+	private Calendar startDate;
+	private Calendar endDate;
+
+	/** Constructs a ProductStatisticsVisitor
+		@param builder The builder that constructs the Report
+		@param numMonths The number of months to use in
+			constructing the Product Statistics Report
+		@throws IOException
+	*/
+	public ProductStatisticsVisitor(ReportBuilder builder, int numMonths)
+		throws IOException
+	{
+		this.builder = builder;
+		builder.writeTitle("Product Report (" + numMonths + " Months)");
+		builder.startTable(COLUMNS);	
+		builder.writeTableHeader(getColumnTitles());
+		calculateDateRange(numMonths);
+	}
+	
+	/**
+	 * Calculates range of dates to be used to build report
+	 * Sets class variables startDate and endDate
+	 * 
+	 * @param months Number of months to go back
+	 */
+	private void calculateDateRange(int months)
+	{
+		endDate = Calendar.getInstance();
+		endDate = rewindToMidnight(endDate);
+		startDate = (Calendar)endDate.clone();
+		startDate.add(Calendar.MONTH, months * -1);
+		
+		//System.out.println(DateUtils.formatDateTime(startDate.getTime()));
+		//System.out.println(DateUtils.formatDateTime(endDate.getTime()));
+	}
+
+	/** Visits a StorageUnit
+		@param unit The StorageUnit to visit
+	*/
+	public void visit(StorageUnit unit)
+	{
+		throw new UnsupportedOperationException("Storage Unit Visit Not Implemented");
+	}
+
+	/** Visits a ProductGroup
+		@param group The ProductGroup to visit
+	*/
+	public void visit(ProductGroup group)
+	{
+		throw new UnsupportedOperationException("Product Group Visit Not Implemented");
+	}
+
+	/** Visits a Product
+		@param product The Product to visit
+	*/
+	public void visit(Product product)
+	{
+		// Get all items of product
+		Set<Item> allItems = ItemManager.instance().getItems(product);
+		Set<Item> usedItems = getUsedItems(allItems);
+		Set<Item> currentItems = getCurrentItems(allItems);
+		
+		// Calculate necessary values
+		int currentSupply = currentItems.size();
+		String averageSupply = "0.0"; // TODO
+		int minSupply = 0; // TODO
+		int maxSupply = 0; // TODO
+		int usedSupply = usedItems.size();
+		int addedSupply = getAddedSupply(allItems);
+		String averageUsedAge = getAverageAge(usedItems);
+		long maxUsedAge = getMaxAge(usedItems);
+		String averageCurrentAge = getAverageAge(currentItems);
+		long maxCurrentAge = getMaxAge(currentItems);
+		
+		// Set row values
+		String[] row = new String[COLUMNS];
+		row[0] = product.getDescription();
+		row[1] = product.getBarcode().toString();
+		row[2] = product.getSize().toString();
+		row[3] = product.getThreeMonthSupply() + "";
+		row[4] = currentSupply + " / " + averageSupply;
+		row[5] = minSupply + " / " + maxSupply;
+		row[6] = usedSupply + " / " + addedSupply;
+		row[7] = product.getShelfLife() + " months";
+		row[8] = averageUsedAge + " days / " + maxUsedAge + " days";
+		row[9] = averageCurrentAge + " days / " + maxCurrentAge + " days";
+		
+		// Write row to file
+		try {
+			builder.writeTableRow(row);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * @param items
+	 * @return The age of the oldest item in the set of items
+	 */
+	private long getMaxAge(Set<Item> items)
+	{
+		long maxAge = 0;
+		for(Item item : items)
+		{
+			Calendar endTime = item.getExitTime();
+			if(endTime == null)
+				endTime = endDate;
+			else
+				endTime = rewindToMidnight(endTime);
+			long ageMillis = endTime.getTimeInMillis() - item.getEntryDate().getTimeInMillis();
+			long ageDays = Math.round(ageMillis / (24.0 * 60.0 * 60.0 * 1000.0));
+			if(ageDays > maxAge)
+				maxAge = ageDays;
+		}
+		return maxAge;
+	}
+
+	/**
+	 * @param items
+	 * @return The average age of all items in the set of items
+	 */
+	private String getAverageAge(Set<Item> items) {
+		double averageUsedAge = 0;
+		double totalAge = 0;
+		for(Item item : items)
+		{
+			Calendar endTime = item.getExitTime();
+			if(endTime == null)
+				endTime = endDate;
+			else
+				endTime = rewindToMidnight(endTime);
+			long ageMillis = endTime.getTimeInMillis() - item.getEntryDate().getTimeInMillis();
+			double ageDays = ageMillis / (24.0 * 60.0 * 60.0 * 1000.0);
+			totalAge += ageDays;
+		}
+		averageUsedAge = totalAge / items.size();
+		DecimalFormat df = new DecimalFormat("#0.0");
+		return df.format(averageUsedAge);
+	}
+
+	/**
+	 * @param allItems
+	 * @return All items that were removed after the report's start date
+	 */
+	private Set<Item> getUsedItems(Set<Item> allItems) {
+		Set<Item> usedItems = new HashSet<>();
+		for(Item item : allItems)
+		{
+			if(!item.isInSystem())
+			{
+				if(item.getExitTime().compareTo(startDate) >= 0)
+				{
+					usedItems.add(item);
+				}
+			}
+		}
+		return usedItems;
+	}
+	
+	/**
+	 * @param allItems
+	 * @return All items that have not been removed
+	 */
+	private Set<Item> getCurrentItems(Set<Item> allItems) {
+		Set<Item> currentItems = new HashSet<>();
+		for(Item item : allItems)
+		{
+			if(item.isInSystem())
+			{
+				assert(item.getExitTime() == null);
+				currentItems.add(item);
+			}
+		}
+		return currentItems;
+	}
+	
+	/**
+	 * @param allItems
+	 * @return Count of all items (live or dead) that were added to the system
+	 * after the report's start date
+	 */
+	private int getAddedSupply(Set<Item> allItems) {
+		int addedSupply = 0;
+		for(Item item : allItems)
+		{
+			if(item.getEntryDate().compareTo(startDate) >= 0)
+			{
+				addedSupply++;
+			}
+		}
+		return addedSupply;
+	}
+	
+	/**
+	 * @return Column titles for this report
+	 */
+	private String[] getColumnTitles(){
+		String[] columnTitles = {"Description","Barcode", "Size", "3-Month Supply",
+				"Supply: Cur/Avg", "Supply: Min/Max", "Supply: Used/Added", "Shelf Life",
+				"Used Age: Avg/Max", "Cur Age: Avg/Max"};
+		return columnTitles;
+	}
+	
+	/**
+	 * @param c A calendar object to rewind
+	 * @return The calendar object rewinded back to midnight
+	 */
+	private Calendar rewindToMidnight(Calendar c)
+	{
+		c.set(Calendar.HOUR, 0);
+		c.set(Calendar.AM_PM, Calendar.AM);
+		c.set(Calendar.MINUTE, 0);
+		c.set(Calendar.SECOND, 0);
+		c.set(Calendar.MILLISECOND, 0);
+		
+		return c;
+	}
+}
+

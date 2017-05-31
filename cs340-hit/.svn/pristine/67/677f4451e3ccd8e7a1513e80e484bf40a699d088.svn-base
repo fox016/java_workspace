@@ -1,0 +1,35 @@
+
+package model.persistence;
+
+import model.Item;
+
+/** This class is responsible for executing individual sql statements concerning Items
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+class ItemSql
+{
+	/** Gets an Item 
+		@param id Specifies which Item to get
+		@return Returns the ItemDataObject for the Item of id
+	*/
+	ItemDataObject getItem(int id) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Stores a newly created Item in the data persistence model.
+		@param ido The ItemDataObject representing the Item
+	*/
+	void createItem(ItemDataObject ido) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Updates an existing Item in the data persistence model.
+		@param ido The ItemDataObject representing the Item
+	*/
+	void updateItem(ItemDataObject ido) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Removes an Item from the data persistence model.
+		@param ido The ItemDataObject representing the Item
+	*/
+	void deleteItem(ItemDataObject ido) { throw new UnsupportedOperationException("Not Implemented"); }
+
+}
+

@@ -1,0 +1,25 @@
+package model;
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class ProductTest {
+
+	@Test (expected = IllegalArgumentException.class)
+	public void setEntryDateTestException()
+	{
+		Item item = new Item(null, null);
+		//June 25, 1910
+		Calendar entryDate = new GregorianCalendar(1910, 5, 25);
+		item.setEntryDate(entryDate);
+	}
+
+}

@@ -1,0 +1,42 @@
+package model;
+
+import java.io.Serializable;
+import java.util.Map;
+
+/**
+ * 
+ * This class manages actions that are to be performed on a product,
+ * including accessing, adding, deleting and editing products.
+ */
+
+public class ProductManager implements Serializable{
+
+		
+	/**
+	 * A map that allows us to access Products through their unique barcode.
+	 */
+	Map<Barcode, Product> productSet;
+	
+	/** 
+	 * @param newProduct The new product to be added
+	 */
+	
+	public void addProduct(Product newProduct){};
+	
+	/**
+	 * Deletes a product using the given barcode
+	 * @param productToDelete The Barcode of the product we want to delete.
+	 */
+	
+	public void deleteProduct(Barcode productToDelete){};
+	
+	/**
+	 * Updates the Product
+	 * 
+	 * @param updatedProduct The Product containing the updated values that are to replace
+	 * the old Product's values
+	 */
+	public void update(Product updatedProduct){};
+	
+	
+}

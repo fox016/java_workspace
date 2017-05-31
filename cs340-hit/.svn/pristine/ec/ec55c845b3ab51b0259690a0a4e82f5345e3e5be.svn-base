@@ -1,0 +1,60 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package common.plugin;
+
+import java.util.concurrent.Semaphore;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ *
+ * @author Talonos
+ */
+class CheckForFailsThread implements Runnable
+{
+    private Semaphore foundAnAnswer;
+    private Semaphore failed;
+    private int numberOfPlugins;
+    
+    public CheckForFailsThread(int numberOfPlugins, Semaphore foundAnAnswer, Semaphore failed)
+    {
+        this.numberOfPlugins = numberOfPlugins;
+        this.foundAnAnswer = foundAnAnswer;
+        this.failed = failed;
+    }
+
+    @Override
+    public void run() 
+    {
+        for (int x = 0; x < 100; x++)
+        {
+            try 
+            {
+                Thread.sleep(100);
+                //Monitor your semaphore. If it gets full, it means all threads have failed.
+                if(failed.tryAcquire(numberOfPlugins))
+                {
+                    //Tell the pluginmanager there is an answer. (There isn't, but it'll 
+                    //find that out soon enough.)
+                    foundAnAnswer.release();
+                    System.err.println("All plugins failed! Giving up on description...");
+                    break;
+                }
+            } 
+            catch (InterruptedException ex) 
+            {
+                //Complain mightily and start again.
+                System.out.println("Don't inturrupt me! I'm not done yet!");
+                this.run();
+            }
+        }
+        //Timeout. You all fail.
+        System.err.println("Plugin timeout! Giving up on description...");
+        foundAnAnswer.release();
+    }
+    
+    
+    
+}

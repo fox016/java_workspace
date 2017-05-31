@@ -1,0 +1,254 @@
+package gui.batches;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import model.FacadeDeleteImpl;
+import model.Item;
+import model.ItemBarcode;
+import model.ItemManager;
+import model.Product;
+import model.ProductBarcode;
+import gui.common.*;
+import gui.item.ItemData;
+import gui.product.*;
+
+/**
+ * Controller class for the remove item batch view.
+ */
+public class RemoveItemBatchController extends Controller implements
+		IRemoveItemBatchController {
+	
+	private boolean useScanner;
+	private Thread timer;
+	private Set<ProductBarcode> productBarcodes;
+	private Map<Product, Set<Item>> deadBatchItems;
+	
+	/**
+	 * Constructor.
+	 * 
+	 * @param view Reference to the remove item batch view.
+	 */
+	public RemoveItemBatchController(IView view) {
+		super(view);
+
+		construct();
+		productBarcodes = new HashSet<ProductBarcode>();
+		deadBatchItems = new HashMap<Product, Set<Item>>();
+		useScanner = true;
+		getView().enableItemAction(false);
+		getView().setUseScanner(useScanner);
+	}
+	
+	/**
+	 * Returns a reference to the view for this controller.
+	 */
+	@Override
+	protected IRemoveItemBatchView getView() {
+		return (IRemoveItemBatchView)super.getView();
+	}
+
+	/**
+	 * Loads data into the controller's view.
+	 * 
+	 *  {@pre None}
+	 *  
+	 *  {@post The controller has loaded data into its view}
+	 */
+	@Override
+	protected void loadValues() {
+	}
+
+	/**
+	 * Sets the enable/disable state of all components in the controller's view.
+	 * A component should be enabled only if the user is currently
+	 * allowed to interact with that component.
+	 * 
+	 * {@pre None}
+	 * 
+	 * {@post The enable/disable state of all components in the controller's view
+	 * have been set appropriately.}
+	 */
+	@Override
+	protected void enableComponents() {
+		
+		getView().enableRedo(false);
+		getView().enableUndo(false);
+	}
+
+	/**
+	 * This method is called when the "Item Barcode" field is changed
+	 * in the remove item batch view by the user.
+	 */
+	@Override
+	public void barcodeChanged() {
+		getView().enableItemAction(isValidBarcode());
+		if(timer != null)
+			timer.interrupt();
+		timer = null;
+		
+		if(useScanner)
+		{
+			if(!getView().getBarcode().isEmpty())
+			{
+				timer = new Thread()
+				{
+					@Override
+					public void run()
+					{
+						try
+						{
+							sleep(1000);
+						}
+						catch(InterruptedException e)
+						{
+							return;
+						}
+						removeItem();
+					}
+				};
+				timer.start();
+			}
+		}
+		
+	}
+	
+	/**
+	 * In this context, a valid barcode is a non-null, nonempty string.
+	 * Nonexistant barcodes will bring up an error dialogue box.
+	 * @return if the current view barcode is valid
+	 */
+	private boolean isValidBarcode(){
+		String barcode = getView().getBarcode();
+		return barcode != null && !barcode.isEmpty();
+	}
+	
+	/**
+	 * This method is called when the "Use Barcode Scanner" setting is changed
+	 * in the remove item batch view by the user.
+	 */
+	@Override
+	public void useScannerChanged() {
+		useScanner = getView().getUseScanner();
+	}
+	
+	/**
+	 * This method is called when the selected product changes
+	 * in the remove item batch view.
+	 */
+	@Override
+	public void selectedProductChanged() {
+		ProductData productData = getView().getSelectedProduct();
+		Product selectedProduct = Translator.instance().getProductFromData(productData);
+		if(selectedProduct == null)
+			return;
+		
+		Set<Item> itemsOfProduct = deadBatchItems.get(selectedProduct);
+		ItemData[] itemData = Translator.instance().getDataFromItems(itemsOfProduct);
+		if(itemsOfProduct == null)
+			return;
+		
+		getView().setItems(itemData);
+	}
+	
+	/**
+	 * This method is called when the user clicks the "Remove Item" button
+	 * in the remove item batch view.
+	 */
+	@Override
+	public void removeItem() {
+		
+		String barcodeStr = getView().getBarcode();
+		try {
+			ItemBarcode itemBarcode = new ItemBarcode(barcodeStr);
+			if(!ItemManager.instance().contains(itemBarcode)){
+				getView().displayErrorMessage("The specified item does not exist");
+				return;
+			}
+			Item itemToRemove = ItemManager.instance().getItem(itemBarcode);
+			FacadeDeleteImpl.instance().removeItemFromStorage(itemToRemove);
+			resetBarcode();
+			
+			//Add deadItem to the Map
+			if(deadBatchItems.containsKey(itemToRemove.getProduct())){
+				Set<Item> items = deadBatchItems.get(itemToRemove.getProduct());
+				items.add(itemToRemove);
+			}
+			else{
+				Set<Item> items = new HashSet<Item>();
+				items.add(itemToRemove);	
+				deadBatchItems.put(itemToRemove.getProduct(), items);
+			}
+			
+			//update view to contain the items' product
+			ProductBarcode prodBarcodeOfItem = itemToRemove.getProductBarcode();
+			productBarcodes.add(prodBarcodeOfItem);
+			ProductData[] pData = Translator.instance().getDataFromProductBarcodes(productBarcodes);
+			setCountsForData(pData);
+			getView().setProducts(pData);
+			
+			
+			
+			
+			
+			
+			
+		} catch (IllegalArgumentException e) {
+			getView().displayErrorMessage("The specified item does not exist");
+			resetBarcode();
+			return;
+		}		
+		
+		
+	}
+	
+	/*
+	private void addDeadItem(){
+		
+	}
+	*/
+	
+	private void setCountsForData(ProductData[] pData){
+		for(ProductData data : pData){
+			Product prod = Translator.instance().getProductFromData(data);
+			Set<Item> itemsOfProd = deadBatchItems.get(prod);
+			int removedCount = itemsOfProd.size();
+			data.setCount(String.valueOf(removedCount));
+		}
+		
+	}
+	
+	public void resetBarcode(){
+		getView().setBarcode("");
+		barcodeChanged();
+	}
+	
+	/**
+	 * This method is called when the user clicks the "Redo" button
+	 * in the remove item batch view.
+	 */
+	@Override
+	public void redo() {
+	}
+
+	/**
+	 * This method is called when the user clicks the "Undo" button
+	 * in the remove item batch view.
+	 */
+	@Override
+	public void undo() {
+	}
+
+	/**
+	 * This method is called when the user clicks the "Done" button
+	 * in the remove item batch view.
+	 */
+	@Override
+	public void done() {
+		getView().close();
+	}
+
+}
+

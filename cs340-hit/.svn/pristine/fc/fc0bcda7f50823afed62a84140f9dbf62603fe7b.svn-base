@@ -1,0 +1,194 @@
+package model;
+
+import static org.junit.Assert.*;
+
+import java.util.Iterator;
+import java.util.Set;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.ArrayList;
+
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.Test;
+
+public class FacadeTest {
+	
+	private static Facade f;
+	
+	private static StorageUnit su1;
+	private static StorageUnit su2;
+	private static StorageUnit su3;
+	protected static ArrayList<Product> products;
+	protected static ArrayList<Item> items;
+	protected static ArrayList<Calendar> itemDates;
+	protected static ArrayList<Calendar> productDates;
+
+	@Before
+	public void initFacadeTest()
+	{
+		ItemManager.reset();
+		House.reset();
+		ProductManager.reset();
+		f = FacadeImpl.instance();
+	
+		su1 = f.addStorageUnit("Kitchen");
+		su2 = f.addStorageUnit("Bathroom");
+		su3 = f.addStorageUnit("Basement");
+		
+		Set<StorageUnit> units = f.getStorageUnits();
+		assertFalse(units.isEmpty());
+		assertTrue(units.size() == 3);
+		assertTrue(House.instance().containsUnit(su1));
+		assertTrue(House.instance().containsUnit(su2));
+		assertTrue(House.instance().containsUnit(su3));
+
+		StorageUnit su4 = new StorageUnitImpl("Other");
+		assertFalse(House.instance().containsUnit(su4));
+
+		initDates();
+		initProducts();
+		initItems();
+	}
+
+	private static void initDates()
+	{
+		productDates = new ArrayList<Calendar>();
+		itemDates = new ArrayList<Calendar>();
+		//get a bunch of dates
+		//month fields are JANUARY=0, ... , DECEMBER=11
+		for(int k = 0; k < 12; k++)
+			productDates.add(new GregorianCalendar(2000 , k, k * 2 + 1));
+
+		for(int k = 0; k < 24; k++)
+			itemDates.add(new GregorianCalendar(2000 + k / 4, k / 2, k + 1));
+	}
+
+	private static void initItems()
+	{
+		items = new ArrayList<Item>();
+		//Make Items
+		for(int k = 0; k < 24; k++)
+		{
+			StorageUnit tmp;
+			if(k % 3 == 0)
+				tmp = su1;
+			else if(k % 3 == 1)
+				tmp = su2;
+			else
+				tmp = su3;
+			Item item = new Item(products.get(k / 3), tmp, itemDates.get(k));
+			items.add(item);
+		}
+	}
+
+
+	private static void initProducts()
+	{
+		products = new ArrayList<Product>();
+		Product p1 = new Product(productDates.get(0), new ProductBarcode("1024"), "8oz Cans of Sprite", new Size(12, SupplyType.COUNT), 0, 5);
+		Product p2 = new Product(productDates.get(1), new ProductBarcode("2048"), "8oz Cans of Fanta", new Size(12, SupplyType.COUNT), 10, 5);
+		Product p3 = new Product(productDates.get(2), new ProductBarcode("4048"), "8oz Cans of Dr Pepper", new Size(12, SupplyType.COUNT), 2, 5);
+		Product p4 = new Product(productDates.get(3), new ProductBarcode("8096"), "Brown Sugar", new Size(5, SupplyType.POUNDS), 10, 5);
+		Product p5 = new Product(productDates.get(4), new ProductBarcode("16192"), "White Sugar", new Size(4, SupplyType.POUNDS), 15, 5);
+		Product p6 = new Product(productDates.get(5), new ProductBarcode("32384"), "Water", new Size(5, SupplyType.GALLONS), 24, 5);
+		Product p7 = new Product(productDates.get(6), new ProductBarcode("64768"), "Beef Jerky", new Size(2, SupplyType.KILOGRAMS), 12, 5);
+		Product p8 = new Product(productDates.get(7), new ProductBarcode("129536"), "Turkey Jerky", new Size(2, SupplyType.KILOGRAMS), 12, 5);
+		Product p9 = new Product(productDates.get(8), new ProductBarcode("259072"), "Toilet Paper", new Size(24, SupplyType.COUNT), 0, 5);
+
+		products.add(p1);
+		products.add(p2);
+		products.add(p3);
+		products.add(p4);
+		products.add(p5);
+		products.add(p6);
+		products.add(p7);
+		products.add(p8);
+		products.add(p9);
+	}
+	
+	@Test(expected = IllegalArgumentException.class)
+	public void testAddNullStorageUnit()
+	{
+		f.addStorageUnit(null);
+	}
+	
+	@Test(expected = IllegalArgumentException.class)
+	public void testAddEmptyStorageUnit()
+	{
+		f.addStorageUnit("");
+	}
+	
+	@Test(expected = IllegalArgumentException.class)
+	public void testAddDuplicateStorageUnit()
+	{
+		f.addStorageUnit("Library");
+		f.addStorageUnit("Library");
+	}
+	
+	@Test
+	public void testUpdateUnitName()
+	{
+		f.setStorageUnitName(su3, "Dungeon");
+		assertTrue(su3.getName().equals("Dungeon"));
+		assertTrue(House.instance().containsUnit(su3));
+		
+		Set<StorageUnit> units = f.getStorageUnits();
+		Iterator<StorageUnit> iter = units.iterator();
+		while(iter.hasNext())
+			assertFalse(iter.next().getName().equals("Basement"));
+		
+		StorageUnit temp = f.addStorageUnit("Basement");
+		assertTrue(temp.getName().equals("Basement"));
+		f.deleteStorageUnit(temp);
+		assertTrue(House.instance().containsUnit(su3));
+		
+		units = f.getStorageUnits();
+		iter = units.iterator();
+		while(iter.hasNext())
+			assertFalse(iter.next().getName().equals("Basement"));
+		
+		f.setStorageUnitName(su3, "Basement");
+		assertTrue(su3.getName().equals("Basement"));
+	}
+
+	@Test
+	public void testProductGroups()
+	{
+		ProductGroup pg1 = f.addProductGroup("PG1", new Size(1.0, SupplyType.COUNT), su1);
+		Set<String> names = f.getChildContainers(su1);
+		assertTrue(names.contains(pg1.getName()));
+		assertEquals(pg1, su1.getProductContainer(pg1.getName()));
+
+		Product p1 = products.get(0);
+		f.addProductToContainer(p1, pg1);
+	}
+
+	@Test
+	public void addItems()
+	{
+		for(int k = 0; k < items.size(); k++)
+		{
+			Item item = items.get(k);
+			assertNotNull(item);
+			assertTrue(f.canAddItem(item));
+			f.addItem(item);
+		}
+		Item faulty = new Item(null, null, null);
+		assertFalse(f.canAddItem(faulty));
+	}
+	
+	/*
+		We preform a reset instead of clearing the StorageUnit every time
+	@AfterClass
+	public static void testRemoveStorageUnit()
+	{
+		f.deleteStorageUnit(su1);
+		f.deleteStorageUnit(su2);
+		f.deleteStorageUnit(su3);
+	//	f.deleteStorageUnit(House.instance().getUnitByName("Library"));
+		
+		assertTrue(House.instance().getAllUnits().isEmpty());
+	}
+	*/
+}

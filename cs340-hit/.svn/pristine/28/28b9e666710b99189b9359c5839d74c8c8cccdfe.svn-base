@@ -1,0 +1,294 @@
+
+package model;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+import org.junit.Before;
+import java.util.ArrayList;
+import java.util.Calendar;
+import static java.util.Calendar.*;
+import java.util.GregorianCalendar;
+
+public class ItemTest
+{
+	private static Product p1;
+	private static Product p2;
+	private static StorageUnit su;
+
+	@Before
+	public void setUpItems()
+	{
+		p1 = new Product(new GregorianCalendar(2000,0,1),
+			new ProductBarcode("1024"), "8oz Cans of Sprite", new Size(12, SupplyType.COUNT), 0, 5);
+		p2 = new Product(new GregorianCalendar(2001, 2, 3),
+			new ProductBarcode("2048"), "8oz Cans of Fanta", new Size(12, SupplyType.COUNT), 10, 5);
+		su = new StorageUnitImpl("Kitchen");
+		ProductManager.instance().addProduct(p1);
+		ProductManager.instance().addProduct(p2);
+	}
+
+	@Test
+	public void constructorNullTest()
+	{
+		Item item = new Item(null, null);
+		assertNull(item.getProduct());
+		assertNull(item.getStorageUnit());
+		assertTrue(Item.isValidEntryDate(item.getEntryDate()));
+		assertNull(item.getProductBarcode());
+		assertNull(item.getItemBarcode());
+		assertNull(item.getExitTime());
+		assertTrue(item.isInSystem());
+		assertNull(item.getExpirationDate());
+	}
+
+	@Test
+	public void constructorTest()
+	{
+		Item item = new Item(p1, su);
+		assertEquals(item.getProduct(), p1);
+		assertEquals(item.getProductBarcode(), p1.getBarcode());
+		assertEquals(item.getStorageUnit(), su);
+		assertTrue(Item.isValidEntryDate(item.getEntryDate()));
+		assertNull(item.getItemBarcode());
+		assertTrue(item.isInSystem());
+		assertNull(item.getExpirationDate());
+	}
+
+	@Test
+	public void assignBarcodeTest()
+	{
+		Item item = new Item(p1, su);
+		assertNull(item.getItemBarcode());
+		item.setItemBarcode(new ItemBarcode());
+		assertNotNull(item.getItemBarcode());
+
+		Item item2 = new Item(p1, su);
+		ItemManager.instance().insert(item2, new ItemBarcode());
+		assertNotNull(item2.getItemBarcode());
+	}
+
+	@Test (expected = NullPointerException.class)
+	public void assignBarcodeExceptionTest()
+	{
+		Item item = new Item(null, null);
+		item.setItemBarcode(null);
+	}
+
+	@Test (expected = ItemException.class)
+	public void reassignBarcodeExceptionTest()
+	{
+		Item item = new Item(null, null);
+		item.setItemBarcode(new ItemBarcode());
+		item.setItemBarcode(new ItemBarcode());
+	}
+
+	@Test
+	public void expirationDateTest()
+	{
+		//January 1st, 2005
+		Calendar entryDate = new GregorianCalendar(2005, 0, 1);
+
+		Item item1 = new Item(null, null, entryDate);
+		assertFalse(item1.hasExpirationDate());
+		assertNull(item1.getExpirationDate());
+
+		//p1 does not have a shelfLife, so item2 does not have an expiration date
+		Item item2 = new Item(p1, su, entryDate);
+		assertFalse(item2.hasExpirationDate());
+		assertNull(item2.getExpirationDate());
+
+		Calendar expected = new GregorianCalendar(2005, 10, 1);
+		Item item3 = new Item(p2, su, entryDate);
+		assertTrue(item3.hasExpirationDate());
+		Calendar result = item3.getExpirationDate();
+		assertNotNull(result);
+		assertEquals(result,expected);
+	}
+
+	@Test
+	public void setEntryDateTest()
+	{
+		Item item = new Item(null, null);
+		//June 25, 2010
+		Calendar entryDate = new GregorianCalendar(2010, 5, 25);
+		item.setEntryDate(entryDate);
+		assertEquals(item.getEntryDate(), entryDate);
+	}
+	
+	@Test (expected = IllegalArgumentException.class)
+	public void setEntryDateTestException()
+	{
+		Item item = new Item(null, null);
+		//June 25, 1910
+		Calendar entryDate = new GregorianCalendar(1910, 5, 25);
+		item.setEntryDate(entryDate);
+	}
+
+	@Test
+	public void validDateTest()
+	{
+		//June 25, 1910
+		Calendar date1 = new GregorianCalendar(1910, 5, 25);
+		//December 31, 1999
+		Calendar date2 = new GregorianCalendar(1999, 11, 31);
+		//January 1, 2000
+		Calendar date3 = new GregorianCalendar(2000, 0, 1);
+		//January 2, 2000
+		Calendar date4 = new GregorianCalendar(2000, 0, 2);
+		//June 25, 2010
+		Calendar date5 = new GregorianCalendar(2010, 5, 25);
+		//The current time
+		Calendar date6 = Calendar.getInstance();
+		//Future time
+		Calendar date7 = Calendar.getInstance();
+		date7.add(Calendar.MONTH, 1);
+
+		assertFalse(Item.isValidEntryDate(null));
+		assertFalse(Item.isValidEntryDate(date1));
+		assertFalse(Item.isValidEntryDate(date2));
+		assertTrue(Item.isValidEntryDate(date3));
+		assertTrue(Item.isValidEntryDate(date4));
+		assertTrue(Item.isValidEntryDate(date5));
+		assertTrue(Item.isValidEntryDate(date6));
+		assertFalse(Item.isValidEntryDate(date7));
+	}
+
+	@Test
+	public void setStorageUnitText()
+	{
+		Item item = new Item(null, null);
+		assertNull(item.getStorageUnit());
+		item.setStorageUnit(su);
+		assertEquals(item.getStorageUnit(), su);
+	}
+
+	@Test
+	public void removeSimpleTest()
+	{
+		Item item = new Item(null, null);
+		assertTrue(item.isInSystem());
+		item.remove();
+		assertFalse(item.isInSystem());
+	}
+
+	@Test (expected = ItemAlreadyRemovedException.class)
+	public void removeExceptionTest()
+	{
+		Item item = new Item(null, null);
+		assertTrue(item.isInSystem());
+		item.remove();
+		assertFalse(item.isInSystem());
+		item.remove();
+	}
+
+	@Test
+	public void equalsTest()
+	{
+		Item item1 = new Item(p1, su);
+		item1.setItemBarcode(new ItemBarcode());
+		Item item2 = new Item(p2, su);
+		item2.setItemBarcode(new ItemBarcode());
+		Item item3 = item2;
+		Item item4 = new Item(p1, su); // no barcode
+		Item item5 = new Item(p1, su); // no barcode
+		Item item6 = new Item(p1, su);
+		item6.setItemBarcode(item2.getItemBarcode()); //this should never happen in pratice
+
+		assertTrue(item1.equals(item1));
+		assertTrue(item2.equals(item2));
+		assertTrue(item3.equals(item3));
+		assertTrue(item2.equals(item3));
+		assertTrue(item4.equals(item4));
+		assertTrue(item6.equals(item2));
+
+		assertFalse(item1.equals(item3));
+		assertFalse(item1.equals(item2));
+		assertFalse(item1.equals(item4));
+		assertFalse(item2.equals(item4));
+		assertFalse(item4.equals(item2));
+		assertFalse(item4.equals(item5));
+		assertFalse(item1.equals(null));
+		assertFalse(item1.equals("Not Item"));
+	}
+
+	@Test
+	public void hashCodeTest()
+	{
+		Item item1 = new Item(p1, su);
+		int hash1 = item1.hashCode();
+		item1.setItemBarcode(new ItemBarcode());
+		int hash2 = item1.hashCode();
+		assertTrue(hash1 != 0);
+		assertTrue(hash2 != 0);
+		assertTrue(hash1 != hash2);
+	}
+
+	@Test
+	public void isExpiredByTest()
+	{
+		//Jan 1st, 2005
+		Calendar entryDate = new GregorianCalendar(2005, 0, 1);
+		Item item1 = new Item(p1, su, entryDate); //no shelf life
+		Item item2 = new Item(p2, su, entryDate); //shelf life 10 months
+
+		Calendar date1 = new GregorianCalendar(2005, 10, 1); //the expire date
+		Calendar date2 = new GregorianCalendar(2005, 9, 29); //couple days before expire date
+		Calendar date3 = new GregorianCalendar(2005, 10, 2); //day after expire date
+		Calendar date4 = new GregorianCalendar(2007, 10, 2); //Well after
+
+		assertFalse(item1.hasExpirationDate());
+		assertFalse(item1.isExpiredBy(entryDate));
+		assertFalse(item1.isExpiredBy(date1));
+		assertFalse(item1.isExpiredBy(date2));
+		assertFalse(item1.isExpiredBy(date3));
+		assertFalse(item1.isExpiredBy(date4));
+
+		assertTrue(item2.hasExpirationDate());
+		assertFalse(item2.isExpiredBy(entryDate));
+		assertTrue(item2.isExpiredBy(date1));
+		assertFalse(item2.isExpiredBy(date2));
+		assertTrue(item2.isExpiredBy(date3));
+		assertTrue(item2.isExpiredBy(date4));
+	}
+
+	@Test (expected = NullPointerException.class)
+	public void isExpiredByExceptionTest()
+	{
+		Item item1 = new Item(p1, su);
+		item1.isExpiredBy(null);
+	}
+
+	@Test
+	public void isProductTest()
+	{
+		Item item1 = new Item(p1, su);
+		assertTrue(item1.isProduct(p1));
+		assertFalse(item1.isProduct(p2));
+		assertFalse(item1.isProduct(null));
+	}
+
+	@Test
+	public void isValidItemTest()
+	{
+		Item item1 = new Item(null, null);
+		Item item2 = new Item(p1, null);
+		Item item3 = new Item(null, su);
+		Item item4 = new Item(p1, su, new GregorianCalendar(1999,0,1));
+
+		assertFalse(item1.isValidItem());
+		assertFalse(item2.isValidItem());
+		assertFalse(item3.isValidItem());
+		assertFalse(item4.isValidItem());
+
+		Item item5 = new Item(p1, su, new GregorianCalendar(2000, 5, 5));
+		Item item6 = new Item(p1, su);
+
+		assertTrue(item5.isValidItem());
+		assertTrue(item6.isValidItem());
+
+	}
+		
+
+
+}
+	

@@ -1,0 +1,268 @@
+package model;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Set;
+
+public class FacadeImpl implements Facade
+{
+	private static final String FILEPATH = "./saveFile.txt";
+	
+	// ----------------------------------- Create
+	
+	public StorageUnit addStorageUnit(String name) throws IllegalArgumentException
+	{
+		if(name == null || name.length() < 1)
+			throw new IllegalArgumentException("Invalid Storage Unit Name");
+		
+		StorageUnit newUnit = new StorageUnitImpl(name);
+		House.instance().addStorageUnit(newUnit);
+		
+		return newUnit;
+	}
+	
+	public ProductGroup addProductGroup(String name, ProductContainer parent) throws IllegalArgumentException
+	{
+		ProductGroup newPG = parent.addContainer(name);
+		return newPG;
+	}
+	
+	public void addItem(Item item) throws IllegalArgumentException
+	{
+		if(ItemManager.instance().canInsertItem(item))
+			ItemManager.instance().insert(item,  new ItemBarcode());
+		else
+			throw new IllegalArgumentException("Invalid item");
+	}
+	
+	public void addProductToSystem(Product product)
+	{
+		ProductManager.instance().addProduct(product);
+	}
+	
+	public void addProductToContainer(Product product, ProductContainer container)
+	{
+		ProductManager.instance().addContainer(product, container);
+	}
+	
+	// ----------------------------------- Read
+	
+	public Set<StorageUnit> getStorageUnits() 
+	{
+		return House.instance().getAllUnits();
+	}
+	
+	public Set<String> getChildContainers(ProductContainer parent)
+	{
+		return parent.getContainers();
+	}
+	
+	public Set<ProductBarcode> getProductsByContainer(ProductContainer container)
+	{
+		return container.getProducts();
+	}
+	
+	public Set<Item> getItemsByContainer(ProductContainer container)
+	{
+		return ItemManager.instance().getItems(container, false);
+	}
+	
+	public Set<Item> getItemsByProduct(StorageUnit unit, Product product)
+	{
+		return ItemManager.instance().getItems(unit, product, true);
+	}
+	
+	public ProductContainer getProductContainer(StorageUnit unit, Product product)
+	{
+		// TODO ???
+		return null;
+	}
+	
+	public Product getProductByBarcode(ProductBarcode barcode)
+	{
+		return ProductManager.instance().getProductByBarcode(barcode);
+	}
+	
+	// ----------------------------------- Update
+	
+	public void setStorageUnitName(StorageUnit unit, String newName)
+	{
+		House.instance().setName(unit, newName);
+	}
+	
+	public void updateProductGroup(ProductGroup oldGroup, ProductGroup newGroup)
+	{
+		// TODO
+	}
+	
+	public void updateItem(Item oldItem, Item newItem)
+	{
+		// TODO
+	}
+	
+	public void updateProduct(Product oldProduct, Product newProduct)
+	{
+		// TODO
+	}
+	
+	public void transferProduct(Product product, ProductContainer container) 
+	{
+		// TODO
+	}
+	
+	public void transferItem(Item item, StorageUnit newUnit)
+	{
+		ItemManager.instance().transfer(item, newUnit);
+	}
+	
+	public void removeItemFromStorage(Item item)
+	{
+		ItemManager.instance().removeItem(item.getItemBarcode());
+	}
+	
+	// ----------------------------------- Delete
+	
+	public void deleteStorageUnit(StorageUnit unit)
+	{
+		// TODO What happens to items/product groups in storage unit when it is removed?
+		
+		House.instance().removeStorageUnit(unit);
+	}
+	
+	public void deleteProductGroup(ProductGroup group)
+	{
+		// TODO What happeens to items/products in product group when it is removed?
+	}
+	
+	public void deleteProduct(Product product)
+	{
+		if(ItemManager.instance().canPurge(product))
+			ItemManager.instance().purgeProduct(product);
+	}
+	
+	// ----------------------------------- Validation
+	
+	public boolean canAddStorageUnit(String unitName) {
+		return House.instance().isValidName(unitName);
+	}
+	
+	public boolean canAddProductGroup(ProductGroup group, ProductContainer parent)
+	{
+		// TODO
+		return true;
+	}
+	
+	public boolean canAddItem(Item item, StorageUnit unit)
+	{
+		// TODO
+		return true;
+	}
+	
+	public boolean canAddProduct(Product product, ProductContainer container)
+	{
+		// TODO
+		return true;
+	}
+	
+	public boolean canUpdateStorageUnit(StorageUnit oldUnit, StorageUnit newUnit)
+	{
+		// TODO
+		return true;
+	}
+	
+	public boolean canUpdateProductGroup(ProductGroup oldGroup, ProductGroup newGroup)
+	{
+		// TODO
+		return true;
+	}
+	
+	public boolean canUpdateItem(Item oldItem, Item newItem)
+	{
+		// TODO
+		return true;
+	}
+	
+	public boolean canUpdateProduct(Product oldProduct, Product newProduct)
+	{
+		// TODO
+		return true;
+	}
+	
+	public boolean canTransferProduct(Product product, ProductContainer newContainer)
+	{
+		// TODO
+		return true;
+	}
+	
+	public boolean canTransferItem(Item item, StorageUnit newUnit)
+	{
+		// TODO
+		return true;
+	}
+	
+	public boolean canRemoveItemFromStorage(Item item)
+	{
+		// TODO
+		return true;
+	}
+	
+	public boolean canDeleteStorageUnit(StorageUnit unit)
+	{
+		// TODO
+		return true;
+	}
+	
+	public boolean canDeleteProductGroup(ProductGroup group)
+	{
+		// TODO
+		return true;
+	}
+	
+	public boolean canDeleteItem(Item item)
+	{
+		// TODO
+		return true;
+	}
+	
+	public boolean canDeleteProduct(Product product)
+	{
+		// TODO
+		return true;
+	}
+	
+	// ----------------------------------- Data Persistence
+	
+	public void loadHouse()
+	{
+		try {
+			House.instance().load(FILEPATH);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void saveHouse()
+	{
+		try {
+			House.instance().save(FILEPATH);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+}
+
+
+
+
+

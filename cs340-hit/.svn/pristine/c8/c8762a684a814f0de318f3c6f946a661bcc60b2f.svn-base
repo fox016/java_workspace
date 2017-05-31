@@ -1,0 +1,24 @@
+
+package model;
+
+/**
+ * Class Facade
+ * 	This is an interface for defining what functionality clients have
+ * 		in using the Core Model. 
+ * @author Christopher Tensmeyer
+ * @version Phase 1.5 Jan 26, 2013
+*/
+public class Facade
+{
+	/** Constructor
+	 * 
+	 */
+	public Facade()
+	{
+
+	}
+}
+
+
+
+

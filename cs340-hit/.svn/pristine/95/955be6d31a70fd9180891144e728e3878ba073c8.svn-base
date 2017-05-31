@@ -1,0 +1,43 @@
+
+package model.persistence;
+
+import model.ProductGroup;
+
+/** This class is responsible for executing individual sql statements concerning ProductGroups
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+class GroupSql
+{
+	/** Stores a newly created ProductGroup in the data persistence model.
+		@param pgdo The GroupDataObject representing the ProductGroup
+	*/
+	void createGroup(DatabaseGroupDataObject pgdo) {
+		/*
+		 * "INSERT INTO ProductGroup(groupID, threeMonthSupply, amount, measurement)
+		 * VALUES(...
+		 */
+		
+		throw new UnsupportedOperationException("Not Implemented");
+		}
+
+	/** Updates an existing ProductGroup in the data persistence model.
+		@param pgdo The GroupDataObject representing the ProductGroup
+	*/
+	void updateGroup(DatabaseGroupDataObject pgdo) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Removes an ProductGroup from the data persistence model.
+		@param pgdo The GroupDataObject representing the ProductGroup
+	*/
+	void deleteGroup(DatabaseGroupDataObject pgdo) {
+		/*
+		 * "DELETE FROM ProductGroup WHERE groupID=...
+		 */
+		
+		throw new UnsupportedOperationException("Not Implemented");
+		
+	}
+
+}
+

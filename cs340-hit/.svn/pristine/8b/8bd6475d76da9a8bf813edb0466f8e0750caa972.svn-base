@@ -1,0 +1,35 @@
+
+package model.persistence;
+
+import model.StorageUnit;
+
+/** This class is responsible for executing individual sql statements concerning Units
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+class UnitSql
+{
+	/** Gets an Unit 
+		@param id Specifies which Storage Unit to get
+		@return Returns the UnitDataObject for the Unit of id
+	*/
+	UnitDataObject getUnit(int id) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Stores a newly created Unit in the data persistence model.
+		@param udo The UnitDataObject representing the Unit
+	*/
+	void createUnit(UnitDataObject udo) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Updates an existing Unit in the data persistence model.
+		@param udo The UnitDataObject representing the Unit
+	*/
+	void updateUnit(UnitDataObject udo) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Removes an Unit from the data persistence model.
+		@param udo The UnitDataObject representing the Unit
+	*/
+	void deleteUnit(UnitDataObject udo) { throw new UnsupportedOperationException("Not Implemented"); }
+
+}
+

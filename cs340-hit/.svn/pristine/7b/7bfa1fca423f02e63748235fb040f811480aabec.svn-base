@@ -1,0 +1,111 @@
+
+
+package model;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import java.util.ArrayList;
+import java.util.Calendar;
+import static java.util.Calendar.*;
+import java.util.GregorianCalendar;
+
+
+public class TestBase 
+{
+	//the idea is that all of these are valid Objects of their type
+	protected static House house;
+	protected static ArrayList<StorageUnit> storageUnits;
+	protected static ArrayList<ProductGroup> productGroups;
+	protected static ArrayList<Product> products;
+	protected static ArrayList<Item> items;
+	protected static ArrayList<Calendar> itemDates;
+	protected static ArrayList<Calendar> productDates;
+	protected static ArrayList<Size> sizes;
+
+	@BeforeClass
+	public static void setUpModel()
+	{
+		house = House.instance();	
+		storageUnits = new ArrayList<StorageUnit>();
+		productGroups = new ArrayList<ProductGroup>();
+		products = new ArrayList<Product>();
+		items = new ArrayList<Item>();
+		itemDates = new ArrayList<Calendar>();
+		productDates = new ArrayList<Calendar>();
+		ProductManager pManager = ProductManager.instance();
+		ItemManager iManager = ItemManager.instance();
+
+		//get a bunch of dates
+		//month fields are JANUARY=0, ... , DECEMBER=11
+		for(int k = 0; k < 12; k++)
+			productDates.add(new GregorianCalendar(2000 , k, k * 2 + 1));
+
+		for(int k = 0; k < 24; k++)
+			itemDates.add(new GregorianCalendar(2000 + k / 4, k / 2, k));
+
+		//two storage units
+		StorageUnit su1 = new StorageUnitImpl("Kitchen");
+		StorageUnit su2 = new StorageUnitImpl("Basement");
+		house.addStorageUnit(su1);
+		house.addStorageUnit(su2);
+		storageUnits.add(su1);
+		storageUnits.add(su2);
+
+		//TODO PGs need to be implemented.  There is not a constuctor nor fields
+		//five StorageUnits
+		/*
+			ProductGroup pg1 = new ProductGroup("Soda");
+			ProductGroup pg2 = new ProductGroup();
+			ProductGroup pg3 = new ProductGroup();
+			ProductGroup pg4 = new ProductGroup();
+			ProductGroup pg5 = new ProductGroup();
+		*/
+
+		//TODO how do we add Products to the System?  Through the Product manager or Directly?
+		//TODO add sizes to the sizes ArrayList if needed
+		//These are for the Kitchen
+		Product p1 = new Product(productDates.get(0), new ProductBarcode("1024"), "8oz Cans of Sprite", new Size(12, SupplyType.COUNT), 0, 5);
+		Product p2 = new Product(productDates.get(1), new ProductBarcode("2048"), "8oz Cans of Fanta", new Size(12, SupplyType.COUNT), 10, 5);
+		Product p3 = new Product(productDates.get(2), new ProductBarcode("4048"), "8oz Cans of Dr Pepper", new Size(12, SupplyType.COUNT), 2, 5);
+		Product p4 = new Product(productDates.get(3), new ProductBarcode("8096"), "Brown Sugar", new Size(5, SupplyType.POUNDS), 10, 5);
+		Product p5 = new Product(productDates.get(4), new ProductBarcode("16192"), "White Sugar", new Size(4, SupplyType.POUNDS), 15, 5);
+
+		//these are for the basement
+		Product p6 = new Product(productDates.get(5), new ProductBarcode("32384"), "Water", new Size(5, SupplyType.GALLONS), 24, 5);
+		Product p7 = new Product(productDates.get(6), new ProductBarcode("64768"), "Beef Jerky", new Size(2, SupplyType.KILOGRAMS), 12, 5);
+		Product p8 = new Product(productDates.get(7), new ProductBarcode("129536"), "Turkey Jerky", new Size(2, SupplyType.KILOGRAMS), 12, 5);
+		Product p9 = new Product(productDates.get(8), new ProductBarcode("259072"), "Toilet Paper", new Size(24, SupplyType.COUNT), 0, 5);
+
+		products.add(p1);
+		products.add(p2);
+		products.add(p3);
+		products.add(p4);
+		products.add(p5);
+		products.add(p6);
+		products.add(p7);
+		products.add(p8);
+		products.add(p9);
+		pManager.addProduct(p1);
+		pManager.addProduct(p2);
+		pManager.addProduct(p3);
+		pManager.addProduct(p4);
+		pManager.addProduct(p5);
+		pManager.addProduct(p6);
+		pManager.addProduct(p7);
+		pManager.addProduct(p8);
+		pManager.addProduct(p9);
+
+		//Add products to the Product Groups
+
+		//Make Items
+		for(int k = 0; k < 24; k++)
+		{
+			StorageUnit tmp = k < 12 ? su1 : su2;
+			Item item = new Item(products.get(k / 3), tmp, itemDates.get(k));
+			items.add(item);
+			iManager.insert(item, new ItemBarcode());
+		}
+	}
+}

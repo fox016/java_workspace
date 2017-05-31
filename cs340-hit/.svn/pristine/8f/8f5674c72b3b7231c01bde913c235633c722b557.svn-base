@@ -1,0 +1,132 @@
+
+package model.persistence;
+
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Set;
+
+import model.StorageUnit;
+
+/** This class is responsible for executing individual sql statements concerning Units
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+class UnitSql
+{
+	/** Gets an Unit 
+		@param id Specifies which Storage Unit to get
+		@return Returns the UnitDataObject for the Unit of id
+	*/
+	UnitDataObject getUnit(int id) {
+		throw new UnsupportedOperationException("Not Implemented");
+		}
+
+	/** Stores a newly created Unit in the data persistence model.
+		@param udo The UnitDataObject representing the Unit
+	*/
+	void createUnit(DatabaseUnitDataObject udo) {		
+		try {
+			addUnit(udo);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+		DatabaseFacade.instance().updateLastIds();
+	}
+	/**
+	 * Handles all SQL operations involving updating a unit in the database.
+	 * 
+	 * @param udo
+	 *            The UnitDataObject representing the Unit
+	 */
+	void updateUnit(DatabaseUnitDataObject udo) {
+		try {
+			removeUnit(udo);
+			addUnit(udo);
+			remContToProduct(udo);
+			Set<String> prodBarcodes = udo.pBarcodes();
+			for(String barcode : prodBarcodes){
+				insContToProduct(udo, barcode);
+			}
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+
+
+	/** Removes an Unit from the data persistence model and removes the parentToChild entry
+	 * associated with the unit removed.
+		@param udo The UnitDataObject representing the Unit
+	*/
+	void deleteUnit(DatabaseUnitDataObject udo) {
+		
+		try {
+			removeUnit(udo);		
+			remParToChild(udo);
+
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private void remParToChild(DatabaseUnitDataObject udo) throws SQLException {
+		PreparedStatement remParToChild = DatabaseFacade.instance().connection()
+				.prepareStatement(SqlStatement.deleteParToChild);
+		remParToChild.setInt(1,udo.unitId());
+		remParToChild.setInt(2, udo.unitId());
+		remParToChild.executeUpdate();
+	}
+
+	private void removeUnit(DatabaseUnitDataObject udo) throws SQLException {
+		PreparedStatement stmt = DatabaseFacade.instance().connection()
+				.prepareStatement(SqlStatement.deleteUnit);
+		stmt.setInt(1, udo.unitId());
+		stmt.executeUpdate();
+	}
+	
+	/**
+	 * Handles SQL operation of adding a unit into the Unit table
+	 * @param udo the unit to be added
+	 * @throws SQLException
+	 */
+	private void addUnit(DatabaseUnitDataObject udo) throws SQLException {
+		PreparedStatement stmt = DatabaseFacade.instance().connection()
+				.prepareStatement(SqlStatement.createUnit);
+		stmt.setInt(1, udo.unitId());
+		stmt.setString(2, udo.name());
+		stmt.executeUpdate();
+	}
+	/**
+	 * Deals only with removing products from a container in the containerToProduct table.
+	 * @param pgdo
+	 * @throws SQLException
+	 */
+	private void remContToProduct(DatabaseUnitDataObject udo)
+			throws SQLException {
+		PreparedStatement remContToProduct = DatabaseFacade.instance()
+				.connection()
+				.prepareStatement(SqlStatement.removeContToProduct);
+		remContToProduct.setInt(1, udo.unitId());
+		remContToProduct.executeUpdate();
+	}
+	
+	/**
+	 * Handles inserting into the containerToProduct method in the database.
+	 * @param udo The unit we need to update
+	 * @throws SQLException
+	 */
+	private void insContToProduct(DatabaseUnitDataObject udo, String prodBarcode)
+			throws SQLException {
+		PreparedStatement insContToProduct = DatabaseFacade.instance().connection()
+				.prepareStatement(SqlStatement.insertContToProduct);
+		insContToProduct.setInt(1,udo.unitId());
+		insContToProduct.setString(2, prodBarcode);
+		insContToProduct.executeUpdate();
+	}
+}
+

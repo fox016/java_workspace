@@ -1,0 +1,101 @@
+package gui.common;
+
+import gui.item.ItemData;
+import gui.product.ProductData;
+import gui.inventory.ProductContainerData;
+import java.util.NoSuchElementException;
+import model.Item;
+import model.Product;
+import model.ProductContainer;
+
+/**
+ *
+ * @author Talonos
+ */
+public class Translator 
+{
+    private static Translator _translator;
+    
+    public static Translator instance()
+    {
+    	if(_translator == null)
+    		_translator = new Translator();
+    	return _translator;
+    }
+    
+    private Translator()
+    {
+    }
+   
+    /**
+     * Turns an item into an item data.
+     * @param i the item to turn into an item data.
+     * @return a new ItemData representing that Item.
+     */
+    public ItemData getDataFromItem(Item i)
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+
+    /**
+     * Turns an itemData into an item. It does so by looking at the 
+     * itemdata's Barcode, which means that you don't meed to worry about
+     * the itemData ever not matching its original object.
+     * @param i the itemData whose item you will retrieve.
+     * @return the Item that ItemData represented.
+     * @throws NoSuchElementException if that product is not in the database.
+     */
+    public Item getItemFromData(ItemData i) throws NoSuchElementException
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+    
+    /**
+     * Turns a product into a ProductData
+     * @param p the Product to turn into a ProductData
+     * @return a new ProductData representing that product.
+     */
+    public ProductData getDataFromProduct(Product p)
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+    
+    /**
+     * Turns a ProductData into a Product. It does so by looking at the 
+     * ProductData's Barcode, which means that you don't meed to worry about
+     * the itemData ever not matching its original object.
+     * @param p the ProductData whose item you will retrieve.
+     * @return the Product that ItemData represented.
+     * @throws NoSuchElementException if that product is not in the database.
+     */
+    public Product getProductFromData(ProductData p) throws NoSuchElementException
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+    
+    /**
+     * Turns a ProductContainer into a ProductContainerData
+     * @param pc the ProductContainer to turn into a product.
+     * @return a new ProductContainerData representing this Product.
+     */
+    public ProductContainerData getDataFromProductContainer(ProductContainer pc)
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+    
+    /**
+     * Retrieves a ProductContainer from a tagged ProductContainerData. Note that
+     * because ProductContainerData does not have a spot for the ID of the Product
+     * Container, we must rely on the "Tagable" interface to allow a ProductContainer
+     * Data refer back to it's corresponding ProductContainer. I am, of course,
+     * leery of this. Test any methods using this method more rigorously than
+     * usual.
+     * @param pc
+     * @return 
+     */
+    public ProductContainer getProductContainerFromData(ProductContainerData pc)
+    {
+        throw new UnsupportedOperationException("Not yet Implemented!");
+    }
+    
+}

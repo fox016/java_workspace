@@ -1,0 +1,38 @@
+package model;
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class ProductTest {
+
+	@Test
+	public void nullTest()
+	{
+		Product product = new Product(new GregorianCalendar(2000,3,4), new ProductBarcode("345"),
+			"String Cheese", new Size(2, SupplyType.COUNT),3, 4);
+		
+		assertNotNull(product);
+		assertNotNull(product.getCreationDate());
+		assertNotNull(product.getBarcode());
+		assertNotNull(product.getDescription());
+		assertNotNull(product.getShelfLife());
+		assertNotNull(product.getSize());
+		assertNotNull(product.getThreeMonthSupply());
+	}
+	
+	@Test (expected = IllegalArgumentException.class)
+	public void setEntryDateTestException()
+	{
+		Product product = new Product(new GregorianCalendar(2000,3,4), new ProductBarcode("345"),
+				"String Cheese", new Size(2, SupplyType.COUNT),3, 4);
+	}
+
+}

@@ -1,0 +1,668 @@
+package gui.batches;
+
+import common.commands.*;
+import java.awt.Desktop;
+import java.io.File;
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.Set;
+
+import gui.common.*;
+import gui.inventory.*;
+import gui.item.BarcodePrinter;
+import gui.item.ItemData;
+import gui.product.ProductData;
+import java.util.*;
+
+import model.*;
+
+/**
+ * Controller class for the add item batch view.
+ * 
+ * @author Nate Fox
+ */
+public class AddItemBatchController extends Controller implements
+		IAddItemBatchController, Observer {
+	
+	private boolean useScanner;
+	
+	// Set of all items added during the lifetime of this controller and their products
+	private Map<ProductBarcode, Set<Item>> allBatchItems;
+	private List<Product> allBatchProducts;
+	
+	private ProductContainerData targetData;
+	private StorageUnit targetContainer;
+	
+	private Translator translator;
+        private boolean expectingUpdate = false;
+        
+        private CommandStack stack = new CommandStack();
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param view Reference to the add item batch view.
+	 * @param target Reference to the storage unit to which items are being added.
+	 */
+	public AddItemBatchController(IView view, ProductContainerData target) {
+		super(view);
+		
+		construct();
+		
+		translator = new Translator();
+		
+		targetData = target;
+		targetContainer = translator.getProductContainerFromData(targetData).beStorageUnit();
+		
+		useScanner = true;
+		allBatchItems = new TreeMap<ProductBarcode, Set<Item>>();
+		allBatchProducts = new ArrayList<Product>();
+		
+		getView().setUseScanner(useScanner);
+		
+		Facade.addAnObserver(this);
+		Facade.addAnObserver(this);
+	}
+
+	/**
+	 * Returns a reference to the view for this controller.
+	 */
+	@Override
+	protected IAddItemBatchView getView() {
+		return (IAddItemBatchView) super.getView();
+	}
+
+	/**
+	 * Loads data into the controller's view.
+	 * 
+	 *  {@pre None}
+	 *  
+	 *  {@post The controller has loaded data into its view}
+	 */
+	@Override
+	protected void loadValues() {
+		getView().setBarcode("");
+		if(!getView().getCount().equals("1"))
+			getView().setCount("1");
+		getView().setEntryDate(new Date());
+		this.barcodeChanged();
+		this.countChanged();
+		this.entryDateChanged();
+	}
+
+	/**
+	 * Sets the enable/disable state of all components in the controller's view.
+	 * A component should be enabled only if the user is currently
+	 * allowed to interact with that component.
+	 * 
+	 * {@pre None}
+	 * 
+	 * {@post The enable/disable state of all components in the controller's view
+	 * have been set appropriately.}
+	 */
+	@Override
+	protected void enableComponents() {
+		if(useScanner)
+			getView().enableItemAction(false);
+		else
+			getView().enableItemAction(isValidItemBatch());
+                
+		getView().enableRedo(stack.canRedo());
+		getView().enableUndo(stack.canUndo());
+	}
+
+	/**
+	 * This method is called when the "Entry Date" field in the
+	 * add item batch view is changed by the user.
+	 * 
+	 * Note from Nate: no action is required because date
+	 * field ensures correct date range
+	 */
+	@Override
+	public void entryDateChanged() {
+		enableComponents();
+	}
+
+	/**
+	 * This method is called when the "Count" field in the
+	 * add item batch view is changed by the user.
+	 */
+	@Override
+	public void countChanged() {
+		enableComponents();
+	}
+	
+	private Thread timer;
+
+	/**
+	 * This method is called when the "Product Barcode" field in the
+	 * add item batch view is changed by the user.
+	 */
+	@Override
+	public void barcodeChanged() 
+        {
+		enableComponents();
+		
+		if(timer != null)
+			timer.interrupt();
+		timer = null;
+		
+		// If using the scanner, start timer
+		if(useScanner)
+		{
+			if(!getView().getBarcode().isEmpty())
+			{
+				timer = new Thread()
+				{
+					@Override
+					public void run()
+					{
+						try
+						{
+							sleep(1000);
+						}
+						catch(InterruptedException e)
+						{
+							return;
+						}
+						addItem();
+					}
+				};
+				timer.start();
+			}
+		}
+	}
+
+	/**
+	 * This method is called when the "Use Barcode Scanner" setting in the
+	 * add item batch view is changed by the user.
+	 */
+	@Override
+	public void useScannerChanged() {
+		useScanner = getView().getUseScanner();
+		if(useScanner)
+		{
+			loadValues();
+		}
+		enableComponents();
+	}
+
+	/**
+	 * This method is called when the selected product changes
+	 * in the add item batch view.
+	 */
+	@Override
+	public void selectedProductChanged() {
+		setItemList();
+	}
+
+	/**
+	 * This method is called when the user clicks the "Add Item" button
+	 * in the add item batch view.
+	 */
+	@Override
+	public void addItem() {
+		
+		if(!isValidItemBatch())
+		{
+			getView().displayErrorMessage("You must provide a " +
+					"product barcode and a valid count");
+			loadValues();
+			return;
+		}
+		
+		// Get product
+		String barcodeStr = getView().getBarcode();
+		ProductBarcode barcode = new ProductBarcode(barcodeStr);
+		Product product = ProductManager.instance().getProductByBarcode(barcode);
+		
+		// If product doesn't yet exist, launch addProductView
+		if(product == null)
+		{
+                        expectingUpdate = true;
+			getView().displayAddProductView(targetContainer);
+			return; //We return because further addition of the product
+                        //handled in the notification methods.
+		}
+		
+                CmdMultiCommand c = new CmdMultiCommand(new ArrayList<Command>());
+		if(!targetContainer.hasProduct(product.getBarcode()))
+		{
+                        Command c1 = new CmdAddProduct(product.getBarcode(), (StorageUnit)targetContainer);
+                        c1.doAction();
+			c.getCommands().add(c1);
+		}
+		addItems(c, product);
+	}
+	
+	/**
+	 * Adds items of given product.  Gets other necessary data from view.
+	 * 
+	 * @param product
+	 */
+	private void addItems(CmdMultiCommand multiCom, Product product)
+	{	
+		// Get fields
+		Date entryDate = getView().getEntryDate();
+		String countStr = getView().getCount();
+		
+		int count = Integer.parseInt(countStr);
+		
+		// Translate Date to Calendar
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(entryDate);
+		
+		//Add the batch of items, put it in a list.
+		List<Item> addedItems = addBatchItems(product, cal,
+                        targetContainer.getRoot(), count);
+                //Put those items into a command object
+                for (Item i : addedItems)
+                {
+                    Command c = new CmdAddItem(i);
+                    multiCom.getCommands().add(c);
+                }
+                //Stack the command object
+                stack.push(multiCom);
+                
+                //There are two collections: One with products and one with items.
+                //Suspicion: Product list is the keyset for the item map.
+		if(!allBatchItems.containsKey(product.getBarcode()))
+		{
+			allBatchItems.put(product.getBarcode(), new HashSet<Item>());
+			allBatchProducts.add(product);
+		}
+		allBatchItems.get(product.getBarcode()).addAll(addedItems);
+		
+		// Update product list
+		setProductTable();
+		
+		// Update item list if new product is selected product
+		if(getView().getSelectedProduct() != null &&
+				 translator.getProductFromData(
+						getView().getSelectedProduct()).equals(product))
+		{
+			setItemList();
+		}
+		
+		// Reset values and enable/disable
+		this.loadValues();
+                
+                Facade.commitItemBatch();
+	}
+	
+	/**
+	 * Refreshes item list based on selected product. Uses allBatchItems map
+	 * to generate list
+	 */
+	private void setItemList()
+	{
+		ProductData selectedData = getView().getSelectedProduct();
+		
+		if(selectedData == null)
+                {
+                    getView().setItems(new ItemData[0]);
+                    return;
+                }
+		
+		Product selectedProduct = translator.getProductFromData(selectedData);
+		
+		if(allBatchItems.get(selectedProduct.getBarcode()) == null)
+		{
+			getView().setItems(new ItemData[0]);
+			return;
+		}
+		
+		ItemData[] data =
+				translator.getDataFromItems(
+						allBatchItems.get(selectedProduct.getBarcode()));
+		getView().setItems(data);
+	}
+	
+	/**
+	 * This method is called when the user clicks the "Redo" button
+	 * in the add item batch view.
+	 */
+	/**
+	 * This method is called when the user clicks the "Redo" button
+	 * in the transfer item batch view.
+	 */
+	@Override
+	public void redo() 
+        {
+            Command c = stack.redo();
+            enableComponents();
+            handleViewRefreshRedo(c);
+            Facade.commitItemBatch();
+	}
+
+	/**
+	 * This method is called when the user clicks the "Undo" button
+	 * in the transfer item batch view.
+	 */
+	@Override
+	public void undo() 
+        {
+			Command c = null;
+			try{
+				c = stack.undo();
+			}catch(IllegalArgumentException e)
+			{
+				// Do nothing
+			}
+            enableComponents();
+            handleViewRefreshUndo(c);
+            Facade.commitItemBatch();
+	}
+
+	/**
+	 * This method is called when the user clicks the "Done" button
+	 * in the add item batch view.
+	 */
+	@Override
+	public void done() {
+		
+		// Clean up
+		useScanner = true;
+		
+		// Get all items
+		Collection<Set<Item>> allItems = allBatchItems.values();
+		
+		if(allItems.isEmpty())
+		{
+			closeView();
+			return;
+		}
+		
+		Set<Item> itemSet = new HashSet<>();
+		for(Set<Item> tSet : allItems)
+		{
+			itemSet.addAll(tSet);
+		}
+		
+		// Generate PDF
+		BarcodePrinter printer = new BarcodePrinter();
+		File pdf;
+		try {
+			pdf = printer.writeBarcodesToPdf(itemSet);
+		} catch (IOException e) {
+			getView().displayErrorMessage(e.getMessage());
+			closeView();
+			return;
+		}
+		
+		// Open PDF
+		try {
+			Desktop.getDesktop().open(pdf);
+		} catch (IOException e) {
+			getView().displayErrorMessage(e.getMessage());
+		}
+
+		closeView();
+	}
+	
+	
+	/**
+	 * Removes observers and closes view
+	 * 
+	 */
+	private void closeView()
+	{
+		Facade.deleteAnObserver(this);
+		Facade.deleteAnObserver(this);
+		allBatchItems.clear();
+		allBatchProducts.clear();
+		getView().close();
+	}
+
+	@Override
+	public void update(Observable o, Object arg) {
+		
+		Notification n = (Notification)arg;
+		
+		if(n.getObject() == null)
+		{
+			//System.out.println(n.getObjectType() + ", " + n.getOperationType());
+			loadValues();
+			return;
+		}
+		
+		switch(n.getObjectType())
+		{
+			case PRODUCT:
+				switch(n.getOperationType())
+				{
+					case CREATE:
+                                            if (expectingUpdate)
+                                            {
+                                                expectingUpdate = false;
+						addProductUpdate((Product)n.getObject());
+                                            }
+						break;
+				}
+				break;
+		}
+	}
+	
+	/**
+	 * Whenever a product is added to the model, this method fires
+	 * 
+	 * @param product The product added to the model
+	 */
+	public void addProductUpdate(Product product)
+	{
+			if(product == null)
+			{
+				loadValues();
+				return;
+			}
+		
+            CmdMultiCommand c = new CmdMultiCommand(new ArrayList<Command>());
+            
+            Command c1 = new CmdCreateProduct(product);
+            //Don't "Do action" on that command. It was done already by the CreateProductController.
+            c.getCommands().add(c1);
+            
+            if(!targetContainer.hasProduct(product.getBarcode()))
+            {
+                Command c2 = new CmdAddProduct(product.getBarcode(), (StorageUnit)targetContainer);
+                c2.doAction();
+		c.getCommands().add(c2);
+            }
+                
+            addItems(c, product);
+	}
+
+	/**
+	 * Sets product table using allBatchItems key set
+	 * 
+	 */
+	private void setProductTable() 
+        {
+		
+		// Save selection
+		ProductData selectedData = getView().getSelectedProduct();
+		
+		// Update table and coutns for each product
+		ProductData[] products = new ProductData[allBatchProducts.size()];
+		
+		for(int i = 0; i < products.length; i++)
+		{
+			products[i] = translator.getDataFromProduct(allBatchProducts.get(i));
+			products[i].setCount("" + allBatchItems.get(allBatchProducts.get(i).getBarcode()).size());
+			if(selectedData != null)
+			{
+				if(products[i].getBarcode().equals(selectedData.getBarcode()))
+				{
+					selectedData = products[i];
+				}
+			}
+		}
+		getView().setProducts(products);
+		getView().selectProduct(selectedData);
+	}
+	
+	/**
+	 * Checks barcode and count to make sure they are valid
+	 * Barcode cannot be null or empty
+	 * Count must be positive integer
+	 * 
+	 * @return true iff all input is valid
+	 */
+	private boolean isValidItemBatch()
+	{
+		String barcodeStr = getView().getBarcode();
+		String countStr = getView().getCount();
+		
+		if(barcodeStr == null || barcodeStr.isEmpty())
+                {
+                    return false;
+                }
+
+		// Ensure count is numeric
+		int count = 0;
+		try
+		{
+			count = Integer.parseInt(countStr);
+		}catch(NumberFormatException e)
+		{
+			return false;
+		}
+		
+		// Ensure count is positive
+		if(count <= 0)
+                {
+                    return false;
+                }
+		
+		return true;
+	}
+
+    private List<Item> addBatchItems(Product product, Calendar cal, StorageUnit root, int count) 
+    {
+        List<Item> toReturn = new ArrayList<>();
+        for (int x = 0; x < count; x++)
+        {
+            Item i = Facade.createItem(product, cal, root);
+            Facade.addItem(i, root);
+            toReturn.add(i);
+        }
+        return toReturn;
+    }
+
+    private void handleViewRefreshRedo(Command c) 
+    {
+        //Because all we ever put into this thing are multicommands, we should get the
+        //same commands out. Thus, we can assume this is a safe cast.
+        CmdMultiCommand multiCom = (CmdMultiCommand)c;
+        List<Command>commands = multiCom.getCommands();
+        //One way or another, we know we are adding items. Skip to that part of the command,
+        //and get all the items into a list.
+        List<Item> addedItems = new ArrayList<>();
+        for (int x = skipToFirstItem(commands); x < commands.size(); x++)
+        {
+            addedItems.add(((CmdAddItem)commands.get(x)).getItem());
+        }
+        //These items must be added to the map. If we don't already have their product information,
+        //we need to add it to its map as well.
+        Item sampleItem = addedItems.get(0);
+        Product p = sampleItem.getProduct();
+        if(!allBatchItems.containsKey(p.getBarcode()))
+	{
+            allBatchItems.put(p.getBarcode(), new HashSet<Item>());
+            allBatchProducts.add(p);
+	}
+	allBatchItems.get(p.getBarcode()).addAll(addedItems);
+
+        // Update product list
+	setProductTable();
+        
+        // Update item list if new product is selected product
+	if(getView().getSelectedProduct() != null && 
+                translator.getProductFromData(getView().getSelectedProduct()).equals(p))
+	{
+            setItemList();
+	}
+        if (getView().getSelectedProduct()==null)
+        {
+            setItemList();
+        }
+		
+	// Reset values and enable/disable
+	this.loadValues();
+    }
+
+    private void handleViewRefreshUndo(Command c) 
+    {
+        //Because all we ever put into this thing are multicommands, we should get the
+        //same commands out. Thus, we can assume this is a safe cast.
+        CmdMultiCommand multiCom = (CmdMultiCommand)c;
+        List<Command>commands = multiCom.getCommands();
+        //One way or another, we know we are deleting items. Skip to that part of the command,
+        //and get all the items into a list.
+        List<Item> addedItems = new ArrayList<>();
+        for (int x = skipToFirstItem(commands); x < commands.size(); x++)
+        {
+            addedItems.add(((CmdAddItem)commands.get(x)).getItem());
+        }
+        //These items must be removed from the map. If that empties a product, we must
+        //remove it from a map as well.
+        Item sampleItem = addedItems.get(0);
+        Product p = sampleItem.getProduct();
+        //If this undoes the creation of an item, p.getBarCode will throw a null pointer exception.
+        //Thus, to get p's barcode, we have to go kind of a circuitous route...
+        if (p==null)
+        {
+            p = ((CmdCreateProduct)(commands.get(0))).getProduct();
+        }
+        //Now it is safe to pull out a barcode.
+        ProductBarcode pBarcode = p.getBarcode();
+        allBatchItems.get(p.getBarcode()).removeAll(addedItems);
+        if (allBatchItems.get(p.getBarcode()).isEmpty())
+        {
+            allBatchItems.remove(p.getBarcode());
+            allBatchProducts.remove(p);
+        }
+
+        // Update product list
+	setProductTable();
+        
+        // Update item list if new product is selected product
+	if(getView().getSelectedProduct() != null && 
+                translator.getProductFromData(getView().getSelectedProduct()).equals(p))
+	{
+            setItemList();
+	}
+        if (getView().getSelectedProduct()==null)
+        {
+            setItemList();
+        }
+		
+	// Reset values and enable/disable
+	this.loadValues();
+    }
+
+    /**
+     * Returns the first CmdAddItem in a list of commands.
+     * @param commands the list to skip through
+     * @return the index of the first cmdAddItem;
+     */
+    private int skipToFirstItem(List<Command> commands) 
+    {
+        int x = 0;
+        while (!(commands.get(x) instanceof CmdAddItem))
+        {
+            x++;
+        }
+        return x;
+    }
+        
+        
+}
+

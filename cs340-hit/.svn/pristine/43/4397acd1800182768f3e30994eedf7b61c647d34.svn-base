@@ -1,0 +1,124 @@
+
+package model;
+
+import static org.junit.Assert.*;
+
+import java.util.Iterator;
+import java.util.Set;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.ArrayList;
+
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.Test;
+
+public class FacadeTest {
+	protected static StorageUnit kitchen;
+	protected static StorageUnit bathroom;
+	protected static StorageUnit basement;
+	protected static ArrayList<Product> products;
+	protected static ArrayList<Item> items;
+	protected static ArrayList<Calendar> itemDates;
+	protected static ArrayList<Calendar> productDates;
+	protected static Size defaultSize = new Size(1.0, SupplyType.COUNT);
+
+	protected static void init()
+	{
+		ItemManager.reset();
+		House.reset();
+		ProductManager.reset();
+		Facade.reset();
+	
+		kitchen = Facade.addStorageUnit("Kitchen");
+		bathroom = Facade.addStorageUnit("Bathroom");
+		basement = Facade.addStorageUnit("Basement");
+		
+		Set<StorageUnit> units = Facade.getStorageUnits();
+		assertFalse(units.isEmpty());
+		assertTrue(units.size() == 3);
+		assertTrue(House.instance().containsUnit(kitchen));
+		assertTrue(House.instance().containsUnit(bathroom));
+		assertTrue(House.instance().containsUnit(basement));
+
+		StorageUnit su4 = new StorageUnitImpl("Other");
+		assertFalse(House.instance().containsUnit(su4));
+
+		initDates();
+		initProducts();
+		initItems();
+	}
+
+	protected static void initDates()
+	{
+		productDates = new ArrayList<Calendar>();
+		itemDates = new ArrayList<Calendar>();
+		//get a bunch of dates
+		//month fields are JANUARY=0, ... , DECEMBER=11
+		for(int k = 0; k < 12; k++)
+			productDates.add(new GregorianCalendar(2000 , k, k * 2 + 1));
+
+		for(int k = 0; k < 24; k++)
+			itemDates.add(new GregorianCalendar(2000 + k / 4, k / 2, k + 1));
+	}
+
+	protected static void initItems()
+	{
+		items = new ArrayList<Item>();
+		//Make Items
+		for(int k = 0; k < 24; k++)
+		{
+			StorageUnit tmp;
+			if(k % 3 == 0)
+				tmp = kitchen;
+			else if(k % 3 == 1)
+				tmp = bathroom;
+			else
+				tmp = basement;
+			Item item = new Item(products.get(k / 3), tmp, itemDates.get(k));
+			items.add(item);
+		}
+	}
+
+
+	protected static void initProducts()
+	{
+		products = new ArrayList<Product>();
+		Product p1 = new Product(productDates.get(0), new ProductBarcode("1024"), "8oz Cans of Sprite", new Size(12, SupplyType.COUNT), 0, 5);
+		Product p2 = new Product(productDates.get(1), new ProductBarcode("2048"), "8oz Cans of Fanta", new Size(12, SupplyType.COUNT), 10, 5);
+		Product p3 = new Product(productDates.get(2), new ProductBarcode("4048"), "8oz Cans of Dr Pepper", new Size(12, SupplyType.COUNT), 2, 5);
+		Product p4 = new Product(productDates.get(3), new ProductBarcode("8096"), "Brown Sugar Brown Sugar Brown Sugar Brown Sugar Brown Sugar Brown Sugar This description is intentionally long", new Size(5, SupplyType.POUNDS), 10, 5);
+		Product p5 = new Product(productDates.get(4), new ProductBarcode("16192"), "White Sugar", new Size(4, SupplyType.POUNDS), 15, 5);
+		Product p6 = new Product(productDates.get(5), new ProductBarcode("32384"), "Water", new Size(5, SupplyType.GALLONS), 24, 5);
+		Product p7 = new Product(productDates.get(6), new ProductBarcode("64768"), "Beef Jerky", new Size(2, SupplyType.KILOGRAMS), 12, 5);
+		Product p8 = new Product(productDates.get(7), new ProductBarcode("129536"), "Turkey Jerky", new Size(2, SupplyType.KILOGRAMS), 12, 5);
+		Product p9 = new Product(productDates.get(8), new ProductBarcode("259072"), "Toilet Paper", new Size(24, SupplyType.COUNT), 0, 5);
+
+		ProductManager.instance().addProduct(p1);
+		ProductManager.instance().addProduct(p2);
+		ProductManager.instance().addProduct(p3);
+		ProductManager.instance().addProduct(p4);
+		ProductManager.instance().addProduct(p5);
+		ProductManager.instance().addProduct(p6);
+		ProductManager.instance().addProduct(p7);
+		ProductManager.instance().addProduct(p8);
+		ProductManager.instance().addProduct(p9);
+
+		products.add(p1);
+		products.add(p2);
+		products.add(p3);
+		products.add(p4);
+		products.add(p5);
+		products.add(p6);
+		products.add(p7);
+		products.add(p8);
+		products.add(p9);
+	}
+
+	@Test
+	public void emptyTest()
+	{
+
+	}
+
+}

@@ -1,0 +1,69 @@
+
+package gui.item;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.io.IOException;
+
+import model.*;
+
+public class BarcodePrinterTest extends FacadeTest
+{
+	@Test
+	public void emptyItemTest() throws IOException
+	{
+		BarcodePrinter bp = new BarcodePrinter("pdfs/emptyTest.pdf");
+		bp.writeBarcodesToPdf(new ArrayList<Item>());
+	}
+
+	@Test
+	public void manyItemTest() throws IOException
+	{
+		//lets us use the Items
+		super.init();
+		
+		BarcodePrinter bp = new BarcodePrinter("pdfs/multipleItemTest.pdf");
+		for(Item item : items)
+		{
+			FacadeImpl.instance().addItem(item);
+			assertNotNull(item.getItemBarcode());
+		}
+		bp.writeBarcodesToPdf(ItemManager.instance().allItems());
+	}
+
+	@Test
+	public void fewItemTest() throws IOException
+	{
+		//lets us use the Items
+		super.init();
+		
+		BarcodePrinter bp = new BarcodePrinter("pdfs/fewItemTest.pdf");
+		for(int k = 0; k < 3; k++)
+		{
+			Item item = items.get(k);
+			FacadeImpl.instance().addItem(item);
+			assertNotNull(item.getItemBarcode());
+		}
+		bp.writeBarcodesToPdf(ItemManager.instance().allItems());
+	}
+
+	@Test
+	public void singleItemTest() throws IOException
+	{
+		//lets us use the Items
+		super.init();
+		
+		BarcodePrinter bp = new BarcodePrinter("pdfs/singleItemTest.pdf");
+		Item item = items.get(0); 
+		FacadeImpl.instance().addItem(item);
+		assertNotNull(item.getItemBarcode());
+		assertTrue(!ItemManager.instance().allItems().isEmpty());
+		bp.writeBarcodesToPdf(ItemManager.instance().allItems());
+	}
+}
+

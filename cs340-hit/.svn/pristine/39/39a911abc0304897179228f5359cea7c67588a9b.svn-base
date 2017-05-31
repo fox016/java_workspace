@@ -1,0 +1,67 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+
+/**
+ *
+ * @author chris
+ */
+public class FacadeIOImpl extends FacadeImpl implements FacadeIO {
+	private static FacadeIO _facade_io;
+	private static final String FILEPATH = "./";
+	
+	private FacadeIOImpl()
+	{
+		super();
+	}
+	
+	/**
+	 * @return The single instance of Facade
+	 */
+	public static FacadeIO instance()
+	{
+		if(_facade_io == null)
+			_facade_io = new FacadeIOImpl();
+		return _facade_io;
+	}
+	
+	/**
+	 * Resets instance
+	 */
+	public static void reset()
+	{
+		_facade_io = null;
+	}
+	
+	
+	/**
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
+	public void loadHouse()
+			throws FileNotFoundException, IOException, ClassNotFoundException
+	{
+		DataSerializer.instance().save(FILEPATH);
+	}
+	
+	/**
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 * @throws ClassNotFoundException 
+	 */
+	public void saveHouse() throws FileNotFoundException, IOException, ClassNotFoundException
+	{
+		DataSerializer.instance().load(FILEPATH);
+	}
+
+}
+

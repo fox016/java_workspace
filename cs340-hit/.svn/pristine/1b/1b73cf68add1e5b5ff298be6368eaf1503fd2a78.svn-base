@@ -1,0 +1,113 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package common.plugin;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ *
+ * @author Talonos
+ */
+public class PluginManager 
+{
+    private static PluginManager instance;
+    private List<Plugin> plugins = new ArrayList<>();
+    
+    /**
+     * Retrieves the Plugin Manager, so that you can perform operations with it.
+     * 
+     * Note that this class is a singleton because it holds, internally, a list of plugins.
+     * As part of our design, we decided that if a class is a collection of methods with
+     * no associated data, it should be static. Because this has associated data, it is
+     * a singleton.
+     * 
+     * @return 
+     */
+    public static PluginManager inst()
+    {
+        if (instance == null)
+        {
+            instance = new PluginManager();
+        }
+        return instance;
+    }
+    
+    private PluginManager()
+    {
+        File directory = new File("plugins");
+        List<File> files = Arrays.asList(directory.listFiles());
+        for (File tFile : files)
+        {
+            if (!tFile.isFile())
+            {
+                System.err.println("Error! Subdirectory in directory! Ignoring!");
+                continue;
+            }
+            if (!tFile.getName().endsWith(".class"))
+            {
+                System.err.println("Error! Non-class file in directory! Ignoring!");
+                continue;
+            }
+            //The following code was retrieved from ExampleDepot.com, then heavily modified
+            //and edited. The purpose of this assignment is to learn how to use
+            //java reflection, amongst other things, and so I feel that learning from online
+            //examples is appropriate. If you object to my use of online example code,
+            //feel free to talk to me.
+            
+    //http://stackoverflow.com/questions/6219829/method-to-dynamically-load-java-class-files
+            try 
+            {
+                // Convert File to a URL
+                URL url = directory.toURI().toURL();
+                //Apparently, the classloader requires an array of URLs. This puts
+                //the URL into an array by itself.
+                URL[] urls = new URL[]{url};
+
+                // Create a new class loader with the directory
+                ClassLoader cl = new URLClassLoader(urls);
+
+                // Load in the class. Note we only get stuff before the first "dot".
+                Class loadedClass = cl.loadClass("plugins."+tFile.getName().split(".")[0]);
+                if (!Arrays.asList(loadedClass.getInterfaces()).contains(Plugin.class))
+                {
+                    System.err.println("Error! Non-plugin class file in directory! Ignoring!");
+                    continue;
+                }
+                //Add it to our list of plugins.
+                plugins.add((Plugin)(loadedClass.newInstance()));
+            } 
+            catch (MalformedURLException | ClassNotFoundException | 
+                    InstantiationException | IllegalAccessException e) 
+            {
+                System.err.println("I got a "+e.getClass().getName()+", and I have no "
+                        + "idea what caused it. Here are the details:");
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Launches each plugin in a separate thread to try and find the description
+     * associated with a given barcode. If one of the plugins responds more quickly
+     * than another plugin, then all the other plugins will be interrupted and killed.
+     * This method returns the description given by the fastest plugin, or a blank
+     * string if the plugins all either fail to find a description or hang for more than
+     * fifteen seconds.
+     * @param barcode
+     * @return 
+     */
+    public String getDescFromBarCode(String barcode) 
+    {
+        //This method is a stub right now!
+        return "";
+    }
+    
+}

@@ -1,0 +1,85 @@
+package model.report;
+
+import static org.junit.Assert.*;
+
+import java.io.IOException;
+import java.util.Calendar;
+
+import model.Facade;
+import model.House;
+import model.ItemManager;
+import model.Product;
+import model.ProductBarcode;
+import model.ProductManager;
+import model.Size;
+import model.StorageUnit;
+import model.ProductGroup;
+import model.SupplyType;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+public class ProductStatisticsReportTest
+{
+	private static House house = House.instance();
+	private static ItemManager im = ItemManager.instance();
+	private static ProductManager pm = ProductManager.instance();
+	
+	@BeforeClass
+	public static void initTest()
+	{
+		House.reset();
+		ItemManager.reset();
+		ProductManager.reset();
+	}
+	
+	public void addBacon(Calendar entry)
+	{
+		if(house.isValidName("Kitchen"))
+			Facade.addStorageUnit("Kitchen");
+		
+		Product p = new Product(
+							entry,
+							new ProductBarcode("111"),
+							"Bacon",
+							new Size(1, SupplyType.POUNDS),
+							12,
+							5);
+		
+		Facade.createProduct(p);
+		Facade.addBatchItems(p, entry, house.getUnitByName("Kitchen"), 10);
+	}
+	
+	@Test
+	public void toDaylightSavingsTest()
+	{
+		Calendar entry = Calendar.getInstance();
+		entry.set(Calendar.MONTH, Calendar.FEBRUARY);
+		addBacon(entry);
+		
+		Calendar startDate = Calendar.getInstance();
+		Calendar endDate = Calendar.getInstance();
+		startDate.set(Calendar.MONTH, Calendar.SEPTEMBER);
+		startDate.set(Calendar.DAY_OF_MONTH, 1);
+		endDate.set(Calendar.MONTH, Calendar.DECEMBER);
+		endDate.set(Calendar.DAY_OF_MONTH, 1);
+		TestReportStructure result;
+		try {
+			result = ReportGenerator.generateProductStatisticsTestReport("test", startDate, endDate);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		}
+		
+		System.out.println(result.toString());
+		assertTrue(result.numRows() == 2);
+	}
+	
+	@After
+	public void cleanTest()
+	{
+	}
+}

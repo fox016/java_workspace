@@ -1,0 +1,112 @@
+package model;
+
+/**
+ * This class is a singleton used to generate new
+ * ItemBarcodes such that two ItemBarcodes never have
+ * the same value
+ * 
+ * @author Nate Fox
+ *
+ */
+public class BarcodeGenerator {
+	
+	private static final int BARCODE_SIZE = 12;
+	
+	private static BarcodeGenerator _generator;
+	private int[] lastCode; // Holds the last code generated, used to determine next code
+	
+	// Constructor called only during first call to instance()
+	private BarcodeGenerator()
+	{
+		if(lastCode != null) return;
+		
+		lastCode = new int[BARCODE_SIZE];
+		
+		lastCode[0] = 4; // Always start with 4
+		for(int i = 1; i < lastCode.length; i++)
+			lastCode[i] = 0;
+		
+		lastCode[lastCode.length - 1] = getCheck(lastCode);
+	}
+	
+	/**
+	 * Returns the single instance of BarcodeGenerator
+	 * 
+	 * @return The single instance of BarcodeGenerator
+	 */
+	public static BarcodeGenerator instance()
+	{
+		if(_generator == null)
+			_generator = new BarcodeGenerator();
+		return _generator;
+	}
+	
+	/**
+	 * Generates the next Barcode value
+	 * 
+	 * @return The next generated Barcode value (as String)
+	 */
+	public String generateBarcode()
+	{
+		int[] code = new int[BARCODE_SIZE];
+		
+		code[0] = 4; // Always start with 4
+		
+		// Calculate next barcode value
+		boolean changeNext = true;
+		for(int i = 1; i < lastCode.length - 1; i++)
+		{
+			if(changeNext)
+			{
+				code[i] = (lastCode[i] + 1) % 10;
+				if(code[i] == 0) changeNext = true;
+				else changeNext = false;
+			}
+			else
+			{
+				code[i] = lastCode[i];
+				changeNext = false;
+			}
+		}
+		
+		// Calculate check digit (final digit)
+		code[code.length - 1] = getCheck(code);
+		
+		// Update lastCode
+		lastCode = code;
+		
+		// Convert int[] to char[]
+		char[] charCode = new char[BARCODE_SIZE];
+		for(int i = 0; i < charCode.length; i++)
+			charCode[i] = (Integer.toString(code[i])).charAt(0);
+		
+		return new String(charCode);
+	}
+	
+	/**
+	 * Calculates the check digit (final digit) of a UPC-A barcode
+	 * 
+	 * @param code An integer array representing the incomplete Barcode
+	 * @return The check digit of the UPC-A barcode
+	 */
+	private int getCheck(int[] code)
+	{
+		int sumOdd = 0;
+		int sumEven = 0;
+		for(int i = 0; i < code.length - 1; i++) // Don't include last digit
+		{
+			if(i % 2 == 1) // Tests to see if i+1 is even, really
+				sumEven += code[i];
+			else
+				sumOdd += code[i];
+		}
+		
+		int result = (sumOdd * 3 + sumEven) % 10;
+
+		// Return check digit
+		if(result != 0)
+			return 10 - result;
+		return 0;
+	}
+
+}

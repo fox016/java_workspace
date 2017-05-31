@@ -1,0 +1,135 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package model;
+
+/** Enumerates all possible supply types (measurements)
+ *
+ * @author Talonos
+ */
+public enum SupplyType 
+{
+   COUNT, POUNDS, OUNCES, GRAMS, KILOGRAMS, GALLONS, QUARTS, PINTS, FLUID_OUNCES, LITERS; 
+
+	public static SupplyType parse(String str)
+	{
+		if(str.equals("COUNT"))
+			return COUNT;
+		else if(str.equals("POUNDS"))
+			return POUNDS;
+		else if(str.equals("OUNCES"))
+			return OUNCES;
+		else if(str.equals("GRAMS"))
+			return GRAMS;
+		else if(str.equals("KILOGRAMS"))
+			return KILOGRAMS;
+		else if(str.equals("GALLONS"))
+			return GALLONS;
+		else if(str.equals("QUARTS"))
+			return QUARTS;
+		else if(str.equals("PINTS"))
+			return PINTS;
+		else if(str.equals("FLUID_OUNCES"))
+			return FLUID_OUNCES;
+		else if(str.equals("LITERS"))
+			return LITERS;
+		else throw new RuntimeException(str + " is not a proper SupplyType");
+	}
+
+	public static boolean isWeight(SupplyType type)
+	{
+		switch(type)
+		{
+			case POUNDS:
+				return true;
+			case OUNCES:
+				return true;
+			case GRAMS:
+				return true;
+			case KILOGRAMS:
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	public static boolean isVolume(SupplyType type)
+	{
+		switch(type)
+		{
+			case GALLONS:
+				return true;
+			case QUARTS:
+				return true;
+			case PINTS:
+				return true;
+			case FLUID_OUNCES:
+				return true;
+			case LITERS:
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	public static boolean isCount(SupplyType type)
+	{
+		return type == COUNT;
+	}
+
+	public static boolean isSame(SupplyType one, SupplyType two)
+	{
+		return isWeight(one) == isWeight(two) &&
+				 isVolume(one) == isVolume(two);
+	}
+
+	private static double toPounds(SupplyType type)
+	{
+		switch(type)
+		{
+			case POUNDS:
+				return 1.0;
+			case OUNCES:
+				return 0.0625;
+			case GRAMS:
+				return 0.002205;
+			case KILOGRAMS:
+				return 2.205;
+			default:
+				throw new IllegalArgumentException(type + " is not a measurement of Weight");
+		}
+	}
+
+	private static double toLiters(SupplyType type)
+	{
+		switch(type)
+		{
+			case GALLONS:
+				return 3.785;
+			case QUARTS:
+				return 0.9464;
+			case PINTS:
+				return 0.4732;
+			case FLUID_OUNCES:
+				return 0.02957;
+			case LITERS:
+				return 1.0;
+			default:
+				throw new IllegalArgumentException(type + " is not a measurement of Volume");
+		}
+	}
+
+	public static double convert(SupplyType one, SupplyType two)
+	{
+		if(!isSame(one, two))
+			throw new IllegalArgumentException(one + " cannot be converted to " + two);
+		if(one == COUNT)
+			return 1.0;
+		else if(isWeight(one))
+			return toPounds(one) * (1.0 / toPounds(two));
+		else
+			return toLiters(one) * (1.0 / toLiters(two));
+	}
+}
+

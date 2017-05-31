@@ -1,0 +1,228 @@
+package model;
+
+/** This class represents a StorageUnit, which contains
+ *  Items and Product Groups
+ *
+ * @author Talonos
+ */
+public class StorageUnitImpl extends ProductContainerImpl implements StorageUnit
+{
+	private static final long serialVersionUID = -2049857044314078747L;
+	
+        /**
+         * Constructs a new StorageUnitImpl with the given name. Does no error
+         * checking! Error checking is done in the parent object, before adding
+         * this storageUnitImple to the set.
+         * @param name 
+         */
+	public StorageUnitImpl(String name)
+	{
+		super.rename(name);
+	}
+    
+    /**
+     * Removes an item from this storage unit. By default, this item does not go
+     * anywhere else. To transfer items from one Storage Unit to another, use
+     * TransferItems.
+     * <br><br>
+     * This method calls the item manager to notify that the item was removed,
+     * and then sets the items "removed" flag to true.
+     * 
+     * @throws IllegalArgumentException if item is not in this Storage Unit
+     * 
+     * @param item The item to remove
+     */
+    @Override
+    public void removeItem(Item item) throws IllegalArgumentException
+    {
+        if(item == null)
+    	{
+            throw new IllegalArgumentException("Cannot remove null Item from Storage Unit");
+    	}
+        if(ItemManager.instance().isRemoved(null))
+        {
+            throw new IllegalArgumentException("Item is already removed!");
+        }
+    	if(!(this.containsItem(item)))
+    	{
+    	    throw new IllegalArgumentException("Cannot remove item " +
+    	      item.getItemBarcode().toString() + " because it is not in unit " + this.getName());
+        }
+        
+        ItemManager.instance().removeItem(item.getItemBarcode());
+    }
+    
+    /**
+     * Transfers an item from the calling storage unit to the storage unit
+     * specified by "Destination".
+     * <br><br>
+     * 
+     * @throws IllegalArgumentException item must be in unit, destination must be valid Storage Unit
+     * @param item the item object of the item to transfer.
+     * @param destination the storage unit to transfer them to.
+     */
+    @Override
+    public void transferItem(Item item, StorageUnit destination) throws IllegalArgumentException
+    {
+        if(item == null)
+    	{
+            throw new IllegalArgumentException("Cannot transfer a null Item from Storage Unit");
+    	}
+        if(destination == null)
+    	{
+    	    throw new IllegalArgumentException("Cannot transfer item to null Storage Unit");
+    	}
+    	if(!(this.containsItem(item)))
+    	{
+    	    throw new IllegalArgumentException("Cannot transfer item " +
+    	        item.getItemBarcode().toString() + " because it is not in unit " + this.getName());
+    	}
+    	if(destination.equals(this))
+    	{
+    	    throw new IllegalArgumentException("Item already in Storage Unit " + this.getName());
+    	}
+        if(ItemManager.instance().isRemoved(null))
+        {
+            throw new IllegalArgumentException("Item is removed!");
+        }
+
+        ItemManager.instance().transfer(item, destination);
+    }
+    
+    /**
+     * This method should be called from the House, which
+     * checks to make sure that the new name is valid
+     * 
+     * @Deprecated Not needed and unsafe. House should contain a list of 
+     * "ChangableProductContainer", which has a rename method. If you make the
+     * rename method public, then anybody can call it! Also, by putting it in
+     * storage unit, you cannot polymorphically inherit it from the base class
+     * "ProductContainer," weakening the composite design.
+     * @throws IllegalArgumentException if name is not valid
+     * @param newName
+     */
+    @Override
+    public void setName(String newName) throws IllegalArgumentException
+    {
+    	if(!(House.instance().isValidName(newName)))
+    	{
+    	    throw new IllegalArgumentException("The name " + newName + 
+                    " is not valid");
+    	}
+    	
+    	rename(newName);
+    }
+    
+    /**
+     * Returns true if and only if the item is in this Storage Unit
+     * 
+     * @param item The item to check
+     * @throws IllegalArgumentException item cannot be null
+     * @return true if and only if the item is in this Storage Unit
+     */
+    @Override
+    public boolean containsItem(Item item) throws IllegalArgumentException
+    {
+    	if(item == null)
+    	{
+    	    throw new IllegalArgumentException("Cannot check Storage Unit " + 
+                    this.getName() + " for null item");
+    	}
+    	
+    	if(item.getStorageUnit().equals(this))
+        {
+    	    return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    /**
+     * Tests the equality of two storageUnits.
+     * @param other the other storage unit to compare to.
+     * @return true if the two storage units are equals, false otherwise.
+     */
+    @Override
+    public boolean equals(Object other)
+    {
+    	if(other == null)
+    	{
+    		throw new IllegalArgumentException("Cannot compare Storage "
+                        + "Unit to null");
+    	}
+        if (other instanceof StorageUnit)
+        {
+            return this.getName().equals(((StorageUnit) other).getName());
+        }
+        return false;
+    }
+
+    @Override
+    public StorageUnit getRoot()
+    { 
+        return this; 
+    }
+
+    @Override
+    public ProductGroup beProductGroup() 
+    {
+        return null;
+    }
+
+    @Override
+    public StorageUnit beStorageUnit() 
+    {
+        return this;
+    }
+
+    @Override
+    public int compareTo(Object o) 
+    {
+        if (!(o instanceof StorageUnit))
+        {
+            return -1;
+        }
+        return this.getName().compareTo(((StorageUnit)o).getName());
+    }
+    
+     /**
+      * Gets the productContainer the target product is located in.
+      * @param p the Product to search for.
+      * @return the productContainer this product is located in.
+      */
+    @Override
+     public ProductContainer getProductContainer(Product product)
+     {
+    	if (products.contains(product))
+        {
+            return this;
+        }
+        else
+        {
+            for (ProductContainer tContainer : groups)
+            {
+                ProductContainer location = tContainer.getProductContainer(product);
+                if (location != null)
+                {
+                    return location;
+                }
+            }
+        }
+        return this;
+     }
+
+    
+    /**
+      * Returns the parent of this product container, which is null because this
+      * container is actually a StorageUnit (Whose parent is, therefore, the house).
+      * @return null
+      */
+    @Override
+    public ProductContainer getParent() 
+    {
+        return null;
+    }
+
+}

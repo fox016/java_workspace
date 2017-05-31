@@ -1,0 +1,42 @@
+
+Phase 1
+	Bug 1 - Nathan, can you track it down?  I'm not sure it's a bug with ItemManager, but it could be.
+		testAddItemToProductGroup is failing
+		We have a SU with a single PG child.
+		We add a Product to the child, and we add an Item of that Product to the SU
+			The Item is in the child
+		We query the SU for all Items in it and it's subtree
+			The Item is in the set
+		We query the SU for it's immediate items, ignoring it's subtree
+			The Item is in the set
+			This is an error
+
+	Bug 2 ProductContainerImpl Test is failing - Brennan
+		Testcase: testGetProductContainer_Product took 0.003 sec
+			FAILED
+		expected:<null> but was:<model.StorageUnitImpl@8734792>
+		junit.framework.AssertionFailedError: expected:<null> but was:<model.StorageUnitImpl@8734792>
+			at model.ProductContainerImplTest.testGetProductContainer_Product(ProductContainerImplTest.java:357)
+	Bug 3 - Clint
+		Product lacks a robust equals method
+		Recommended that we centralize the validation code for Product.
+			ProductManager needs to validate Products better in some cases
+				Sometimes it only checks to see if Product is null
+	
+	Bug 4 Inside of a TreeSet, it uses compareTo, and it is trying to compare Products and ProductBarcodes - Clint + Brennan
+		Testcase: testAddItemToStorageUnit took 0.004 sec
+			Caused an ERROR
+		model.ProductBarcode cannot be cast to model.Product
+		java.lang.ClassCastException: model.ProductBarcode cannot be cast to model.Product
+			at model.Product.compareTo(Product.java:13)
+			at java.util.TreeMap.getEntry(TreeMap.java:346)
+			at java.util.TreeMap.containsKey(TreeMap.java:227)
+			at java.util.TreeSet.contains(TreeSet.java:234)
+			at model.StorageUnitImpl.getProductContainer(StorageUnitImpl.java:97)
+			at model.ItemManager.addItemToContainerSet(ItemManager.java:556)
+			at model.ItemManager.insert(ItemManager.java:396)
+			at model.FacadeImpl.addItemNoNotify(FacadeImpl.java:99)
+			at model.FacadeImpl.addItem(FacadeImpl.java:83)
+			at model.TreeTest.testAddItemToStorageUnit(TreeTest.java:201)
+				
+

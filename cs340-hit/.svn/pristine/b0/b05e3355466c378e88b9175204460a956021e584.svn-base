@@ -1,0 +1,60 @@
+
+package model.persistence;
+
+import model.Item;
+
+/** The class representing a Serialized Item
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+public class DatabaseItemDataObject implements ItemDataObject
+{
+	private Item item;
+
+	/** Creates a DatabaseItemDataObject representing an Item
+		@param item The Item to be represented
+	*/
+	public DatabaseItemDataObject(Item item)
+	{
+		this.item = item;
+	}
+
+	public Item getItem()
+	{
+		return item;
+	}
+
+	/** @return Returns the string form of the Item's Product Barcode */
+	public String pBarcode()
+	{
+		throw new UnsupportedOperationException("Not Implementing");
+	}
+
+	/** @return Returns the string form of the Item's Item Barcode */
+	public String iBarcode()
+	{
+		throw new UnsupportedOperationException("Not Implementing");
+	}
+
+	/** @return Returns the unix timestamp of the Item's Exit Date
+					or -1 if it is unspecified */
+	public int entryDate()
+	{
+		throw new UnsupportedOperationException("Not Implementing");
+	}
+
+	/** @return Returns the StorageUnit Id of the Item's StorageUnit */
+	public int unitId()
+	{
+		throw new UnsupportedOperationException("Not Implementing");
+	}
+	
+	/** @return Returns the isLive() value of the Item */
+	public boolean live()
+	{
+		throw new UnsupportedOperationException("Not Implementing");
+	}
+
+}
+

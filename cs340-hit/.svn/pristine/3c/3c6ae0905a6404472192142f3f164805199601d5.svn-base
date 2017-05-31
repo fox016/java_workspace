@@ -1,0 +1,356 @@
+package model;
+
+import model.report.Visitor;
+
+import java.io.Serializable;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.TreeSet;
+
+/** This interface represents a Product Container, which
+ *  can contain Products and other Product Containers
+ *
+ * @author Talonos
+ */
+public abstract class ProductContainerImpl implements Serializable, ChangableProductContainer
+{
+	private static final long serialVersionUID = -5146316949073717664L;
+        
+        private long ID = -1;
+	
+	private String name;
+        protected Set<ChangableProductContainer> groups;
+        protected Set<ProductBarcode> products;
+        
+        /**
+         * creates a new Product Container Impl. Called from derived classes.
+         */
+        public ProductContainerImpl()
+        {
+            assert(true);
+            groups = new TreeSet<ChangableProductContainer>();
+            products = new TreeSet<ProductBarcode>();
+            ID = BarcodeGenerator.instance().generatePCID();
+        }
+
+    /**
+     * Renames a child product container stored within this product container.
+     * Handles error checking for valid names, etc.
+     * @param oldName The name of the product container whose name will change.
+     * @param newName The new name to give the product container.
+     * @throws NoSuchElementException if there is no product by the name of
+     * "oldName"
+     * @throws IllegalArgumentException if the name is already taken or is 
+     * otherwise invalid.
+     */
+    @Override
+    public void renameContainer(String oldName, String newName) 
+            throws NoSuchElementException, IllegalArgumentException
+    {
+    	if (oldName == null)
+        {
+            throw new IllegalArgumentException("Old name cannot be null!");
+        }
+        if (!isValidName(newName))
+        {
+            throw new IllegalArgumentException("New name is invalid!");
+        }
+        ChangableProductContainer foundProductGroup = 
+                getChangableProductContainer(oldName);
+        if (foundProductGroup == null)
+        {
+            throw new NoSuchElementException(oldName+" does not exist!");
+        }
+        foundProductGroup.rename(newName);
+    }
+    
+    /**
+     * Adds a product group to this product container. Handles error checking.
+     * Because storage units cannot contain other storage units, the container
+     * added, by default, is a product group. The top level container (the house)
+     * has its own interface for adding storage units.
+     * @param name The name of the product group to add.
+     * @return the new ProductGroup just returned.
+     * @throws IllegalArgumentException if the name is already taken or is 
+     * otherwise invalid.
+     */
+    @Override
+    public ProductGroup addContainer(String name) throws IllegalArgumentException
+    {
+    	if (!isValidName(name))
+        {
+            throw new IllegalArgumentException("proposed name is invalid!");
+        }
+        ChangableProductContainer toAdd = new ProductGroupImpl(name, this);
+        groups.add(toAdd);
+        return toAdd.beProductGroup();
+    }
+    
+    /**
+     * Deletes a product container from this product container. This method will
+     * only work if the product container to be deleted exists and is empty.
+     * @param name the name of the product to delete.
+     * @throws NoSuchElementException if the named product container doesn't exist.
+     */
+    @Override
+    public void deleteContainer(String name) throws NoSuchElementException
+    {
+        ProductContainer foundContainer = getProductContainer(name);
+        if (foundContainer == null)
+        {
+            throw new NoSuchElementException(name+" does not exist!");
+        }
+        groups.remove(this.getProductContainer(name));
+    }
+    
+    /**
+     * Checks to see if the proposed name is valid in this product group. 
+     * It is valid if it meets the criteria for a valid name and if the name is 
+     * not already taken in this group. Validation criteria include the name not
+     * being taken, not being null, and not being a blank string.
+     * @param proposedName
+     * @return true if and only if given name meets criteria and is not taken.
+     */
+    @Override
+    public boolean isValidName(String proposedName)
+    {
+        assert(true);
+        if (proposedName == null || proposedName.equals(""))
+        {
+            return false;
+        }
+    	for (ChangableProductContainer groupImLookingAt : groups)
+        {
+            if (groupImLookingAt.getName().equals(proposedName))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * Returns the product container specified by the string Name, or null if no
+     * product container by that name exists as a child node to this container.
+     * 
+     * Note that this is a ProductContainer object, not a 
+     * ChangableProductContainer object, so you cannot simply call a rename 
+     * method on it.
+     * @param name the name of the product container to return
+     * @return the named container.
+     */
+    @Override
+    public ProductContainer getProductContainer(String name)
+    {
+        assert(true);
+        return getChangableProductContainer(name);
+    }
+    
+    // As above, but returns a changable one.
+    private ChangableProductContainer getChangableProductContainer(String name)
+    {
+        assert(true);
+    	ChangableProductContainer foundContainer = null;
+        for (ChangableProductContainer groupImLookingAt : groups)
+        {
+            if (groupImLookingAt.getName().equals(name))
+            {
+                foundContainer = groupImLookingAt;
+            }
+        }
+        return foundContainer;
+    }
+    
+    /**
+     * Returns a set of strings containing the names of all child product
+     * containers.
+     * @return The set of strings of the names of all child product containers.
+     */
+    @Override
+    public Set<String> getContainers()
+    {
+        assert(true);
+    	Set<String> toReturn = new TreeSet<String>();
+        for (ProductContainer container : groups)
+        {
+            toReturn.add(container.getName());
+        }
+        return toReturn;
+    }
+   
+//    /**
+//     * Returns child product containers
+//     */
+//    public Set<ProductContainer> getChildContainers(){
+//    	assert(true);
+//    	return groups;
+//    }
+    
+    /**
+     * Returns a set of strings containing the names of all products within this
+     * product group.  Does not recursively descend the tree structure to gather
+     * all products in sub-products!
+     * 
+     * The set returned is not the same as the internal set. If you change
+     * the set of product barcodes, it does not change the internal products!
+     * @return a set containing the barcodes of all the products.
+     */
+    @Override
+    public Set<ProductBarcode> getProducts()
+    {
+        return getProducts(false);
+    }
+   /**
+    * Returns a set of strings containing the names of all products within this
+    * product group.  Does not recursively descend the tree structure to gather
+    * all products in sub-products!
+    * 
+    * The set returned is not the same as the internal set. If you change
+    * the set of product barcodes, it does not change the internal products!
+    * @return a set containing the barcodes of all the products.
+    */
+    public Set<ProductBarcode> getProducts(boolean recursive)
+    {
+        assert(true);
+        Set<ProductBarcode> barCodes = new TreeSet<ProductBarcode>();
+    	for (ProductBarcode tProd : products)
+        {
+            barCodes.add(tProd);
+        }
+        if (recursive)
+        {
+            for (ProductContainer tGroup : groups)
+            {
+                barCodes.addAll(tGroup.getProducts(true));
+            }
+        }
+        return barCodes;
+    }
+    
+    /**
+     * Removes a product from the Product Group.
+     * @param code the barcode of the product to remove
+     * @throws NoSuchElementException if the named product doesn't exist.
+     */
+    @Override
+    public void removeProduct(ProductBarcode code) throws NoSuchElementException
+    {
+    	if (products.contains(code))
+        {
+            products.remove(code);
+        }
+        else
+        {
+            throw new NoSuchElementException("Product not in this container!");
+        }
+    }
+    
+    /**
+     * Adds a specified product to this productContainer. Not that this assumes
+     * a pre-existing product from the product database: This methods looks up
+     * that function using the name parameter and then adds that product to 
+     * this product group.
+     * @param barcode The name of the product to add.
+     * @throws IllegalArgumentException if the barcode is invalid or the
+     * product already exists in this storage unit.
+     */
+    @Override
+    public void addProduct(ProductBarcode barcode) throws IllegalArgumentException
+    {
+        if (ProductManager.instance().getProductByBarcode(barcode)==null)
+        {
+            throw new IllegalArgumentException("That product does not exist.");
+        }
+        if (this.getRoot().hasProduct(barcode))
+        {
+            throw new IllegalArgumentException("This storageUnit already contains this product!");
+        }
+    	products.add(barcode);
+    }
+    
+    /**
+     * Checks to see whether this product container has a given product.
+     * The search for this product is recursive, affecting all sub-product 
+     * containers.
+     * 
+     * @param code the barcode of the product to check for
+     * @return whether or not the product is in this container. 
+     */
+    @Override
+    public boolean hasProduct(ProductBarcode code)
+    {
+        assert(true);
+    	if (products.contains(code))
+        {
+            return true;
+        }
+        for (ProductContainer tContainer : groups)
+        {
+            if (tContainer.hasProduct(code))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    @Override
+    /**
+     * Renames this productContainer. It doesn't check for the legality of the
+     * new name; that is done in the parent object's class.
+     * 
+     * Note that this method is from the "ChangableProductContainer" interface.
+     * If you are dealing with a StorageUnit object or a ProductGroup object,
+     * you will not be able to see this method. This protects the ProductContainer
+     * from being blindly renamed by anybody, when only the parent of a
+     * ProductContainer should change its name. (Think Phonebook.)
+     * @param newName the new name.
+     */
+    public void rename(String newName) 
+    {
+        assert(true);
+        this.name = newName;
+    }
+     
+    /**
+     * Gets the name of this ProductContainer
+     * @return the name of this ProductContainer.
+     */
+    @Override
+     public String getName()
+     {
+         assert(true);
+         return this.name;
+     }
+    
+    
+
+    @Override
+    public boolean equals(Object obj) 
+    {
+        if (obj == null) 
+        {
+            return false;
+        }
+        if (getClass() != obj.getClass()) 
+        {
+            return false;
+        }
+        final ProductContainerImpl other = (ProductContainerImpl) obj;
+        if (this.ID != other.ID) 
+        {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() 
+    {
+        int hash = 3;
+        hash = 23 * hash + (int) (this.ID ^ (this.ID >>> 32));
+        return hash;
+    }
+
+}
+

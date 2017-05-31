@@ -1,0 +1,96 @@
+
+package model.report;
+
+import java.util.List;
+import java.util.ArrayList;
+
+	/**
+		This class is used in conjunction with TestReportBuilder.
+		Specifically, this class is built by that Builder
+		@author Christopher Tensmeyer
+		@version March 6, 2013
+	*/
+
+class TestReportStructure
+{
+
+	private List<String[]> tableContent;
+	private String title;
+
+	/** Constructs an empty TestStructure */
+	TestReportStructure()
+	{
+		title = "";
+		tableContent = new ArrayList<String[]>();
+	}
+
+	/** Sets the title
+		@param title The new Title
+	*/
+	void setTitle(String title)
+	{
+		this.title = title;
+	}
+
+	/** Adds a Row
+		@param row The row to be added
+	*/
+	void addRow(String[] row)
+	{
+		tableContent.add(row);
+	}
+
+	/** Gets the String in that cell 
+		@param row The row index
+		@param col The col index
+		@return The String contents of the cell
+	*/
+	String get(int row, int col)
+	{
+		return tableContent.get(row)[col];
+	}
+	
+	String getTitle()
+	{
+		return title;
+	}
+
+	int numRows()
+	{
+		return tableContent.size();
+	}
+
+	int numCols(int row)
+	{
+		return tableContent.get(row).length;
+	}
+	
+	@Override
+	public String toString()
+	{
+		String retString = "";
+		for(int r = 0; r < tableContent.size(); r++)
+		{
+			for(int c = 0; c < tableContent.get(r).length; c++)
+			{
+				retString += "[" + tableContent.get(r)[c] + "] ";
+			}
+			retString += "\n";
+		}
+		return retString;
+	}
+	
+	@Override
+	public boolean equals(Object other)
+	{
+		if(!(other instanceof TestReportStructure))
+			return false;
+		if(other == null)
+			return false;
+		if(other.toString().equals(this.toString()))
+			return true;
+		return false;
+	}
+
+}
+

@@ -1,0 +1,160 @@
+
+package model.persistence;
+
+import java.sql.*;
+
+/** This class defines the interaction that the model can have with the database.
+		This class is responsible for opening/commiting/rollingback database transactions
+		The execution of individual statements is delegated by the entity specific classes.
+	@author Chris Tensmeyer
+	@version March 25 2013
+*/
+
+class DatabaseFacade implements PersistenceFacade
+{
+	private Connection connection;
+	
+	private static DatabaseFacade _databaseFacade;
+	
+	public static DatabaseFacade instance()
+	{
+		if (_databaseFacade == null)
+			_databaseFacade = new DatabaseFacade();
+		return _databaseFacade;
+	}
+	
+	private DatabaseFacade()
+	{
+		connection = null;
+	}
+
+	/** @return Returns a database connection object
+	 */
+	public Connection connection()
+	{
+		if(connection != null)
+			return connection;
+		
+		try {
+			Class.forName("org.sqlite.JDBC");
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} // Must have this in classpath
+		try {
+			connection = DriverManager.getConnection("jdbc:sqlite:./HIT_Database.sqlite");
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return connection;
+	}
+
+	/** Stores a newly created Item in the data persistence model.
+		@param ido The ItemDataObject representing the Item
+	*/
+	public void createItem(ItemDataObject ido) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Updates an existing Item in the data persistence model.
+		@param ido The ItemDataObject representing the Item
+	*/
+	public void updateItem(ItemDataObject ido) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Removes an Item from the data persistence model.
+		@param ido The ItemDataObject representing the Item
+	*/
+	public void deleteItem(ItemDataObject ido) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Stores a newly created Product in the data persistence model.
+		@param pdo The ProductDataObject representing the Item
+	*/
+	public void createProduct(ProductDataObject pdo) { throw new UnsupportedOperationException("Not Implemented"); }
+	
+	/** Updates an existing Product in the data persistence model.
+		@param pdo The ProductDataObject representing the Item
+	*/
+	public void updateProduct(ProductDataObject pdo) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Removes a Product from the data persistence model.
+		@param pdo The ProductDataObject representing the Item
+	*/
+	public void deleteProduct(ProductDataObject pdo) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Stores a newly created ProductGroup in the data persistence model.
+		@param pgdo The GroupDataObject representing the Item
+	*/
+	public void createGroup(GroupDataObject pgdo) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Updates an existing ProductGroup in the data persistence model.
+		@param pgdo The GroupDataObject representing the Item
+	*/
+	public void updateGroup(GroupDataObject pgdo) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Removes a ProductGroup from the data persistence model.
+		@param pgdo The GroupDataObject representing the Item
+	*/
+	public void deleteGroup(GroupDataObject pgdo) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Stores a newly created StorageUnit in the data persistence model.
+		@param udo The UnitDataObject representing the Item
+	*/
+	public void createUnit(UnitDataObject udo) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Updates an existing StorageUnit in the data persistence model.
+		@param udo The UnitDataObject representing the Item
+	*/
+	public void updateUnit(UnitDataObject udo) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Removes a StorageUnit from the data persistence model.
+		@param udo The UnitDataObject representing the Item
+	*/
+	public void deleteUnit(UnitDataObject udo) { throw new UnsupportedOperationException("Not Implemented"); }
+
+	/** Loads the persisted model into memory at application start 
+	 * @throws SQLException 
+	 * @throws ClassNotFoundException */
+	public void loadAll() throws SQLException, ClassNotFoundException
+	{
+		DatabaseModelLoader loader = new DatabaseModelLoader();
+		loader.load();
+	}
+
+	/** Saves the memory model into persisted memory at application close */
+	public void saveAll()
+	{
+		return;
+	}
+
+	/** Begins a transaction  */
+	public void begin()
+	{
+		connection = connection();
+	}
+
+	/** Commits a transaction */
+	public void end()
+	{
+		if(connection == null)
+		{
+			throw new IllegalStateException("Cannot end a transaction if connection is null");
+		}
+		try {
+			connection.commit();
+		} catch (SQLException e) {
+			System.out.println("Commit failed: " + e.getMessage());
+		}
+		try {
+			connection.close();
+		} catch (SQLException e) {
+			System.out.println("Close failed: " + e.getMessage());
+		}
+		connection = null;
+	}
+}
+

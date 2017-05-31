@@ -1,0 +1,52 @@
+package model;
+
+import java.util.Set;
+import java.util.TreeSet;
+
+/** A singleton class implementing the House interface
+ * 
+ * @author Nathan Fox
+ *
+ */
+public class HouseImpl implements House
+{
+	private static final long serialVersionUID = -8691851376543756581L;
+	
+	private static House _house; // The single instance of House
+	private Set<StorageUnit> units;
+	
+	private HouseImpl()
+	{
+		units = new TreeSet<StorageUnit>();
+	}
+
+	/** Returns the single instance of House
+	 * 
+	 * @return	The single instance of House
+	 */
+	public static House instance()
+	{
+		if(_house == null)
+			_house = new HouseImpl();
+		return _house;
+	}
+
+	public void addStorageUnit(StorageUnit su)
+	{
+		units.add(su);
+	}
+
+	public void removeStorageUnit(String name)
+	{
+	}
+
+	public boolean setName(String oldName, String newName)
+	{
+		return true;
+	}
+	
+	public boolean isValidName(String name)
+	{
+		return true;
+	}
+}
